@@ -193,6 +193,11 @@ export function getRuntimeMainLoopModel(params: {
  * @returns The default model setting to use
  */
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
+  // OpenAI provider: always use the configured OpenAI model
+  if (getAPIProvider() === 'openai') {
+    return process.env.OPENAI_MODEL || 'gpt-4o'
+  }
+
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
   if (process.env.USER_TYPE === 'ant') {
     return (
@@ -364,6 +369,10 @@ export function renderModelSetting(setting: ModelName | ModelAlias): string {
  * if the model is not recognized as a public model.
  */
 export function getPublicModelDisplayName(model: ModelName): string | null {
+  // For OpenAI provider, show the actual model name (e.g. 'gpt-4o') not a Claude alias
+  if (getAPIProvider() === 'openai') {
+    return null
+  }
   switch (model) {
     case getModelStrings().opus46:
       return 'Opus 4.6'

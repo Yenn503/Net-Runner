@@ -103,13 +103,16 @@ export async function renderAndRun(root: Root, element: React.ReactNode): Promis
 }
 export async function showSetupScreens(root: Root, permissionMode: PermissionMode, allowDangerouslySkipPermissions: boolean, commands?: Command[], claudeInChrome?: boolean, devChannels?: ChannelEntry[]): Promise<boolean> {
   if ("production" === 'test' || isEnvTruthy(false) || process.env.IS_DEMO // Skip onboarding in demo mode
-  || isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) // Skip onboarding for OpenAI provider
   ) {
     return false;
   }
+
+  const isOpenAIProvider = isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI);
   const config = getGlobalConfig();
   let onboardingShown = false;
-  if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
+
+  // Skip onboarding dialog for OpenAI provider (no Anthropic account needed)
+  if (!isOpenAIProvider && (!config.theme || !config.hasCompletedOnboarding) // always show onboarding at least once
   ) {
     onboardingShown = true;
     const {
@@ -130,10 +133,9 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   // Note: non-interactive sessions (CI/CD with -p) never reach showSetupScreens at all.
   // Skip permission checks in claubbit
   if (!isEnvTruthy(process.env.CLAUBBIT)) {
-    // Fast-path: skip TrustDialog import+render when CWD is already trusted.
-    // If it returns true, the TrustDialog would auto-resolve regardless of
-    // security features, so we can skip the dynamic import and render cycle.
-    if (!checkHasTrustDialogAccepted()) {
+    // Skip trust dialog UI for OpenAI provider (no Anthropic auth), but still
+    // run trust state initialization below so the REPL mounts correctly.
+    if (!isOpenAIProvider && !checkHasTrustDialogAccepted()) {
       const {
         TrustDialog
       } = await import('./components/TrustDialog/TrustDialog.js');
@@ -142,6 +144,8 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
 
     // Signal that trust has been verified for this session.
     // GrowthBook checks this to decide whether to include auth headers.
+    // Critical for OpenAI provider: without this, downstream config lookups
+    // may fail silently, preventing the REPL from mounting (frozen terminal).
     setSessionTrustAccepted(true);
 
     // Reset and reinitialize GrowthBook after trust is established.
@@ -153,21 +157,24 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     // Now that trust is established, prefetch system context if it wasn't already
     void getSystemContext();
 
-    // If settings are valid, check for any mcp.json servers that need approval
-    const {
-      errors: allErrors
-    } = getSettingsWithAllErrors();
-    if (allErrors.length === 0) {
-      await handleMcpjsonServerApprovals(root);
-    }
-
-    // Check for claude.md includes that need approval
-    if (await shouldShowClaudeMdExternalIncludesWarning()) {
-      const externalIncludes = getExternalClaudeMdIncludes(await getMemoryFiles(true));
+    // Skip MCP approval dialogs for OpenAI provider (no interactive auth prompts)
+    if (!isOpenAIProvider) {
+      // If settings are valid, check for any mcp.json servers that need approval
       const {
-        ClaudeMdExternalIncludesDialog
-      } = await import('./components/ClaudeMdExternalIncludesDialog.js');
-      await showSetupDialog(root, done => <ClaudeMdExternalIncludesDialog onDone={done} isStandaloneDialog externalIncludes={externalIncludes} />);
+        errors: allErrors
+      } = getSettingsWithAllErrors();
+      if (allErrors.length === 0) {
+        await handleMcpjsonServerApprovals(root);
+      }
+
+      // Check for claude.md includes that need approval
+      if (await shouldShowClaudeMdExternalIncludesWarning()) {
+        const externalIncludes = getExternalClaudeMdIncludes(await getMemoryFiles(true));
+        const {
+          ClaudeMdExternalIncludesDialog
+        } = await import('./components/ClaudeMdExternalIncludesDialog.js');
+        await showSetupDialog(root, done => <ClaudeMdExternalIncludesDialog onDone={done} isStandaloneDialog externalIncludes={externalIncludes} />);
+      }
     }
   }
 
