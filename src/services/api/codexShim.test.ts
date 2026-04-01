@@ -6,6 +6,7 @@ import {
   codexStreamToAnthropic,
   convertAnthropicMessagesToResponsesInput,
   convertCodexResponseToAnthropicMessage,
+  convertToolsToResponsesTools,
 } from './codexShim.js'
 import {
   resolveCodexApiCredentials,
@@ -71,6 +72,77 @@ describe('Codex provider config', () => {
 })
 
 describe('Codex request translation', () => {
+  test('disables strict mode for tools with optional parameters', () => {
+    const tools = convertToolsToResponsesTools([
+      {
+        name: 'Agent',
+        description: 'Spawn a sub-agent',
+        input_schema: {
+          type: 'object',
+          properties: {
+            description: { type: 'string' },
+            prompt: { type: 'string' },
+            subagent_type: { type: 'string' },
+          },
+          required: ['description', 'prompt'],
+          additionalProperties: false,
+        },
+      },
+    ])
+
+    expect(tools).toEqual([
+      {
+        type: 'function',
+        name: 'Agent',
+        description: 'Spawn a sub-agent',
+        parameters: {
+          type: 'object',
+          properties: {
+            description: { type: 'string' },
+            prompt: { type: 'string' },
+            subagent_type: { type: 'string' },
+          },
+          required: ['description', 'prompt'],
+          additionalProperties: false,
+        },
+      },
+    ])
+  })
+
+  test('keeps strict mode for tools whose schema already matches Responses requirements', () => {
+    const tools = convertToolsToResponsesTools([
+      {
+        name: 'Ping',
+        description: 'Ping tool',
+        input_schema: {
+          type: 'object',
+          properties: {
+            value: { type: 'string' },
+          },
+          required: ['value'],
+          additionalProperties: false,
+        },
+      },
+    ])
+
+    expect(tools).toEqual([
+      {
+        type: 'function',
+        name: 'Ping',
+        description: 'Ping tool',
+        parameters: {
+          type: 'object',
+          properties: {
+            value: { type: 'string' },
+          },
+          required: ['value'],
+          additionalProperties: false,
+        },
+        strict: true,
+      },
+    ])
+  })
+
   test('converts assistant tool use and user tool result into Responses items', () => {
     const items = convertAnthropicMessagesToResponsesInput([
       {
