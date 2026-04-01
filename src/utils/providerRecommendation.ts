@@ -23,6 +23,8 @@ const CODING_HINTS = [
   'coder',
   'codellama',
   'codegemma',
+  'codestral',
+  'devstral',
   'starcoder',
   'deepseek-coder',
   'qwen2.5-coder',
@@ -55,6 +57,16 @@ function modelHaystack(model: OllamaModelDescriptor): string {
 
 function includesAny(text: string, needles: string[]): boolean {
   return needles.some(needle => text.includes(needle))
+}
+
+export function isViableOllamaChatModel(model: OllamaModelDescriptor): boolean {
+  return !includesAny(modelHaystack(model), NON_CHAT_HINTS)
+}
+
+export function selectRecommendedOllamaModel<
+  T extends OllamaModelDescriptor,
+>(models: T[]): T | null {
+  return models.find(isViableOllamaChatModel) ?? null
 }
 
 function inferParameterBillions(model: OllamaModelDescriptor): number | null {
@@ -265,7 +277,7 @@ export function recommendOllamaModel(
   models: OllamaModelDescriptor[],
   goal: RecommendationGoal,
 ): RankedOllamaModel | null {
-  return rankOllamaModels(models, goal)[0] ?? null
+  return selectRecommendedOllamaModel(rankOllamaModels(models, goal))
 }
 
 export function applyBenchmarkLatency(
@@ -276,7 +288,7 @@ export function applyBenchmarkLatency(
   const divisor =
     goal === 'latency' ? 120 : goal === 'coding' ? 500 : 240
 
-  return models
+  const scoredModels = models
     .map(model => {
       const latency = benchmarkMs[model.name] ?? null
       const benchmarkPenalty = latency === null ? 0 : latency / divisor
@@ -293,5 +305,13 @@ export function applyBenchmarkLatency(
         score: Number((model.score - benchmarkPenalty).toFixed(2)),
       }
     })
-    .sort((a, b) => compareRankedModels(a, b, goal))
+
+  const benchmarkedModels = scoredModels.filter(model => model.benchmarkMs !== null)
+  if (benchmarkedModels.length === 0) {
+    return scoredModels.sort((a, b) => compareRankedModels(a, b, goal))
+  }
+
+  const unbenchmarkedModels = scoredModels.filter(model => model.benchmarkMs === null)
+  benchmarkedModels.sort((a, b) => compareRankedModels(a, b, goal))
+  return [...benchmarkedModels, ...unbenchmarkedModels]
 }

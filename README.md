@@ -187,7 +187,7 @@ bun run doctor:runtime:json
 # persist a diagnostics report to reports/doctor-runtime.json
 bun run doctor:report
 
-# full local hardening check (typecheck + smoke + runtime doctor)
+# full local hardening check (smoke + runtime doctor)
 bun run hardening:check
 
 # strict hardening (includes project-wide typecheck)
@@ -203,13 +203,13 @@ Notes:
 Use profile launchers to avoid repeated environment setup:
 
 ```bash
-# one-time profile bootstrap (auto-detect ollama, otherwise openai)
+# one-time profile bootstrap (best available provider)
 bun run profile:init
 
 # preview the best provider/model for your goal
 bun run profile:recommend -- --goal coding --benchmark
 
-# auto-apply the best available profile for your goal
+# auto-apply the best available provider/model for your goal
 bun run profile:auto -- --goal latency
 
 # openai bootstrap with explicit key
@@ -233,6 +233,9 @@ bun run dev:ollama
 
 `profile:recommend` ranks installed Ollama models for `latency`, `balanced`, or `coding`, and `profile:auto` can persist the recommendation directly.
 If no profile exists yet, `dev:profile` now uses the same goal-aware defaults when picking the initial model.
+
+Use `--provider ollama` when you want a local-only path. Auto mode falls back to OpenAI when no viable local chat model is installed.
+Goal-based Ollama selection only recommends among models that are already installed and reachable from Ollama.
 
 `dev:openai` and `dev:ollama` run `doctor:runtime` first and only launch the app if checks pass.
 For `dev:ollama`, make sure Ollama is running locally before launch.

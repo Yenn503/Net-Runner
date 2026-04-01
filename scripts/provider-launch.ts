@@ -3,26 +3,20 @@ import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
-  getGoalDefaultOpenAIModel,
   normalizeRecommendationGoal,
   recommendOllamaModel,
 } from '../src/utils/providerRecommendation.ts'
+import {
+  buildLaunchEnv,
+  selectAutoProfile,
+  type ProfileFile,
+  type ProviderProfile,
+} from '../src/utils/providerProfile.ts'
 import {
   getOllamaChatBaseUrl,
   hasLocalOllama,
   listOllamaModels,
 } from './provider-discovery.ts'
-
-type ProviderProfile = 'openai' | 'ollama'
-
-type ProfileFile = {
-  profile: ProviderProfile
-  env?: {
-    OPENAI_BASE_URL?: string
-    OPENAI_MODEL?: string
-    OPENAI_API_KEY?: string
-  }
-}
 
 type LaunchOptions = {
   requestedProfile: ProviderProfile | 'auto' | null
@@ -93,10 +87,10 @@ function loadPersistedProfile(): ProfileFile | null {
 
 async function resolveOllamaDefaultModel(
   goal: ReturnType<typeof normalizeRecommendationGoal>,
-): Promise<string> {
+): Promise<string | null> {
   const models = await listOllamaModels()
   const recommended = recommendOllamaModel(models, goal)
-  return recommended?.name || process.env.OPENAI_MODEL || 'llama3.1:8b'
+  return recommended?.name ?? null
 }
 
 function runCommand(command: string, env: NodeJS.ProcessEnv): Promise<number> {
@@ -111,41 +105,6 @@ function runCommand(command: string, env: NodeJS.ProcessEnv): Promise<number> {
     child.on('close', code => resolve(code ?? 1))
     child.on('error', () => resolve(1))
   })
-}
-
-async function buildEnv(
-  profile: ProviderProfile,
-  persisted: ProfileFile | null,
-  goal: ReturnType<typeof normalizeRecommendationGoal>,
-): Promise<NodeJS.ProcessEnv> {
-  const persistedEnv = persisted?.env ?? {}
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    CLAUDE_CODE_USE_OPENAI: '1',
-  }
-
-  if (profile === 'ollama') {
-    env.OPENAI_BASE_URL =
-      persistedEnv.OPENAI_BASE_URL ||
-      process.env.OPENAI_BASE_URL ||
-      getOllamaChatBaseUrl()
-    env.OPENAI_MODEL =
-      persistedEnv.OPENAI_MODEL ||
-      process.env.OPENAI_MODEL ||
-      await resolveOllamaDefaultModel(goal)
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'SUA_CHAVE') {
-      delete env.OPENAI_API_KEY
-    }
-    return env
-  }
-
-  env.OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || persistedEnv.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  env.OPENAI_MODEL =
-    process.env.OPENAI_MODEL ||
-    persistedEnv.OPENAI_MODEL ||
-    getGoalDefaultOpenAIModel(goal)
-  env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || persistedEnv.OPENAI_API_KEY
-  return env
 }
 
 function applyFastFlags(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
@@ -181,18 +140,36 @@ async function main(): Promise<void> {
 
   const persisted = loadPersistedProfile()
   let profile: ProviderProfile
+  let resolvedOllamaModel: string | null = null
 
   if (requestedProfile === 'auto') {
     if (persisted) {
       profile = persisted.profile
+    } else if (await hasLocalOllama()) {
+      resolvedOllamaModel = await resolveOllamaDefaultModel(options.goal)
+      profile = selectAutoProfile(resolvedOllamaModel)
     } else {
-      profile = (await hasLocalOllama()) ? 'ollama' : 'openai'
+      profile = 'openai'
     }
   } else {
     profile = requestedProfile
   }
 
-  const env = await buildEnv(profile, persisted, options.goal)
+  if (profile === 'ollama' && persisted?.profile !== 'ollama') {
+    resolvedOllamaModel ??= await resolveOllamaDefaultModel(options.goal)
+    if (!resolvedOllamaModel) {
+      console.error('No viable Ollama chat model was discovered. Pull a chat model first or save one with `bun run profile:init -- --provider ollama --model <model>`.')
+      process.exit(1)
+    }
+  }
+
+  const env = await buildLaunchEnv({
+    profile,
+    persisted,
+    goal: options.goal,
+    getOllamaChatBaseUrl,
+    resolveOllamaDefaultModel: async () => resolvedOllamaModel || 'llama3.1:8b',
+  })
   if (options.fast) {
     applyFastFlags(env)
   }

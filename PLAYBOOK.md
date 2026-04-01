@@ -183,10 +183,10 @@ Fix:
 bun run profile:init -- --provider ollama --model llama3.1:8b
 ```
 
-Or auto-pick a local profile:
+Or pick a local Ollama profile automatically by goal:
 
 ```powershell
-bun run profile:auto -- --goal balanced
+bun run profile:init -- --provider ollama --goal balanced
 ```
 
 ## 6.5 Placeholder key (`SUA_CHAVE`) error
@@ -220,13 +220,15 @@ bun run profile:fast   # llama3.2:3b
 bun run profile:code   # qwen2.5-coder:7b
 ```
 
-Goal-based auto-selection:
+Goal-based local auto-selection:
 
 ```powershell
-bun run profile:auto -- --goal latency
-bun run profile:auto -- --goal balanced
-bun run profile:auto -- --goal coding
+bun run profile:init -- --provider ollama --goal latency
+bun run profile:init -- --provider ollama --goal balanced
+bun run profile:init -- --provider ollama --goal coding
 ```
+
+`profile:auto` is a best-available provider picker, not a local-only command. Use `--provider ollama` when you want to stay on a local model.
 
 ## 8. Practical Prompt Playbook (Copy/Paste)
 

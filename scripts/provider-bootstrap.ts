@@ -7,22 +7,18 @@ import {
   recommendOllamaModel,
 } from '../src/utils/providerRecommendation.ts'
 import {
+  buildOllamaProfileEnv,
+  buildOpenAIProfileEnv,
+  createProfileFile,
+  selectAutoProfile,
+  type ProfileFile,
+  type ProviderProfile,
+} from '../src/utils/providerProfile.ts'
+import {
   getOllamaChatBaseUrl,
   hasLocalOllama,
   listOllamaModels,
 } from './provider-discovery.ts'
-
-type ProviderProfile = 'openai' | 'ollama'
-
-type ProfileFile = {
-  profile: ProviderProfile
-  env: {
-    OPENAI_BASE_URL?: string
-    OPENAI_MODEL?: string
-    OPENAI_API_KEY?: string
-  }
-  createdAt: string
-}
 
 function parseArg(name: string): string | null {
   const args = process.argv.slice(2)
@@ -37,25 +33,16 @@ function parseProviderArg(): ProviderProfile | 'auto' {
   return 'auto'
 }
 
-function sanitizeApiKey(key: string | null): string | undefined {
-  if (!key || key === 'SUA_CHAVE') return undefined
-  return key
-}
-
 async function resolveOllamaModel(
   argModel: string | null,
   argBaseUrl: string | null,
   goal: ReturnType<typeof normalizeRecommendationGoal>,
-): Promise<string> {
+) : Promise<string | null> {
   if (argModel) return argModel
 
   const discovered = await listOllamaModels(argBaseUrl || undefined)
   const recommended = recommendOllamaModel(discovered, goal)
-  if (recommended) {
-    return recommended.name
-  }
-
-  return process.env.OPENAI_MODEL || 'llama3.1:8b'
+  return recommended?.name ?? null
 }
 
 async function main(): Promise<void> {
@@ -68,37 +55,57 @@ async function main(): Promise<void> {
   )
 
   let selected: ProviderProfile
+  let resolvedOllamaModel: string | null = null
   if (provider === 'auto') {
-    selected = (await hasLocalOllama(argBaseUrl || undefined)) ? 'ollama' : 'openai'
+    if (await hasLocalOllama(argBaseUrl || undefined)) {
+      resolvedOllamaModel = await resolveOllamaModel(argModel, argBaseUrl, goal)
+      selected = selectAutoProfile(resolvedOllamaModel)
+    } else {
+      selected = 'openai'
+    }
   } else {
     selected = provider
   }
 
-  const env: ProfileFile['env'] = {}
+  let env: ProfileFile['env']
   if (selected === 'ollama') {
-    env.OPENAI_BASE_URL = getOllamaChatBaseUrl(argBaseUrl || undefined)
-    env.OPENAI_MODEL = await resolveOllamaModel(argModel, argBaseUrl, goal)
-    const key = sanitizeApiKey(argApiKey || process.env.OPENAI_API_KEY || null)
-    if (key) env.OPENAI_API_KEY = key
+    resolvedOllamaModel ??= await resolveOllamaModel(argModel, argBaseUrl, goal)
+    if (!resolvedOllamaModel) {
+      console.error('No viable Ollama chat model was discovered. Pull a chat model first or pass --model explicitly.')
+      process.exit(1)
+    }
+
+    env = buildOllamaProfileEnv(
+      resolvedOllamaModel,
+      {
+        baseUrl: argBaseUrl,
+        getOllamaChatBaseUrl,
+      },
+    )
   } else {
-    env.OPENAI_BASE_URL = argBaseUrl || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    env.OPENAI_MODEL =
-      argModel ||
-      process.env.OPENAI_MODEL ||
-      getGoalDefaultOpenAIModel(goal)
-    const key = sanitizeApiKey(argApiKey || process.env.OPENAI_API_KEY || null)
-    if (!key) {
+    const builtEnv = buildOpenAIProfileEnv({
+      goal,
+      model:
+        argModel ||
+        process.env.OPENAI_MODEL ||
+        getGoalDefaultOpenAIModel(goal),
+      apiKey: argApiKey || process.env.OPENAI_API_KEY || null,
+      processEnv: {
+        ...process.env,
+        OPENAI_BASE_URL:
+          argBaseUrl || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+      },
+    })
+
+    if (!builtEnv) {
       console.error('OpenAI profile requires a real API key. Use --api-key or set OPENAI_API_KEY.')
       process.exit(1)
     }
-    env.OPENAI_API_KEY = key
+
+    env = builtEnv
   }
 
-  const profile: ProfileFile = {
-    profile: selected,
-    env,
-    createdAt: new Date().toISOString(),
-  }
+  const profile = createProfileFile(selected, env)
 
   const outputPath = resolve(process.cwd(), '.openclaude-profile.json')
   writeFileSync(outputPath, JSON.stringify(profile, null, 2), 'utf8')

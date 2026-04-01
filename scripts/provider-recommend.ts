@@ -5,29 +5,27 @@ import { resolve } from 'node:path'
 import {
   applyBenchmarkLatency,
   getGoalDefaultOpenAIModel,
+  isViableOllamaChatModel,
   normalizeRecommendationGoal,
   rankOllamaModels,
+  selectRecommendedOllamaModel,
   type BenchmarkedOllamaModel,
   type RecommendationGoal,
 } from '../src/utils/providerRecommendation.ts'
+import {
+  buildOllamaProfileEnv,
+  buildOpenAIProfileEnv,
+  createProfileFile,
+  sanitizeApiKey,
+  type ProfileFile,
+  type ProviderProfile,
+} from '../src/utils/providerProfile.ts'
 import {
   benchmarkOllamaModel,
   getOllamaChatBaseUrl,
   hasLocalOllama,
   listOllamaModels,
 } from './provider-discovery.ts'
-
-type ProviderProfile = 'openai' | 'ollama'
-
-type ProfileFile = {
-  profile: ProviderProfile
-  env: {
-    OPENAI_BASE_URL?: string
-    OPENAI_MODEL?: string
-    OPENAI_API_KEY?: string
-  }
-  createdAt: string
-}
 
 type CliOptions = {
   apply: boolean
@@ -90,11 +88,6 @@ function parseOptions(argv: string[]): CliOptions {
   return options
 }
 
-function sanitizeApiKey(key: string | undefined): string | undefined {
-  if (!key || key === 'SUA_CHAVE') return undefined
-  return key
-}
-
 function printHumanSummary(payload: {
   goal: RecommendationGoal
   recommendedProfile: ProviderProfile
@@ -138,29 +131,27 @@ async function maybeApplyProfile(
   goal: RecommendationGoal,
   baseUrl: string | null,
 ): Promise<boolean> {
-  const env: ProfileFile['env'] = {}
+  let env: ProfileFile['env'] | null
   if (profile === 'ollama') {
-    env.OPENAI_BASE_URL = getOllamaChatBaseUrl(baseUrl ?? undefined)
-    env.OPENAI_MODEL = model
-    const key = sanitizeApiKey(process.env.OPENAI_API_KEY)
-    if (key) env.OPENAI_API_KEY = key
+    env = buildOllamaProfileEnv(model, {
+      baseUrl,
+      getOllamaChatBaseUrl,
+    })
   } else {
-    const key = sanitizeApiKey(process.env.OPENAI_API_KEY)
-    if (!key) {
+    env = buildOpenAIProfileEnv({
+      goal,
+      model: model || getGoalDefaultOpenAIModel(goal),
+      apiKey: process.env.OPENAI_API_KEY,
+      processEnv: process.env,
+    })
+
+    if (!env) {
       console.error('Cannot apply an OpenAI profile without OPENAI_API_KEY.')
       return false
     }
-    env.OPENAI_BASE_URL =
-      process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    env.OPENAI_MODEL = model || getGoalDefaultOpenAIModel(goal)
-    env.OPENAI_API_KEY = key
   }
 
-  const profileFile: ProfileFile = {
-    profile,
-    env,
-    createdAt: new Date().toISOString(),
-  }
+  const profileFile = createProfileFile(profile, env)
 
   writeFileSync(
     resolve(process.cwd(), '.openclaude-profile.json'),
@@ -180,7 +171,9 @@ async function main(): Promise<void> {
     : []
 
   const heuristicRanked = rankOllamaModels(ollamaModels, options.goal)
-  const benchmarkInput = options.benchmark ? heuristicRanked.slice(0, 3) : []
+  const benchmarkInput = options.benchmark
+    ? heuristicRanked.filter(isViableOllamaChatModel).slice(0, 3)
+    : []
 
   const benchmarkResults: Record<string, number | null> = {}
   for (const model of benchmarkInput) {
@@ -197,7 +190,7 @@ async function main(): Promise<void> {
         benchmarkMs: null,
       }))
 
-  const recommendedOllama = rankedModels[0] ?? null
+  const recommendedOllama = selectRecommendedOllamaModel(rankedModels)
   const openAIConfigured = Boolean(sanitizeApiKey(process.env.OPENAI_API_KEY))
 
   let recommendedProfile: ProviderProfile
