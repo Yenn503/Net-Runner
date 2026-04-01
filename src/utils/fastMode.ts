@@ -36,6 +36,9 @@ import {
 import { createSignal } from './signal.js'
 
 export function isFastModeEnabled(): boolean {
+  if (getAPIProvider() !== 'firstParty') {
+    return false
+  }
   return !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_FAST_MODE)
 }
 
@@ -70,6 +73,10 @@ function getDisabledReasonMessage(
 }
 
 export function getFastModeUnavailableReason(): string | null {
+  if (getAPIProvider() !== 'firstParty') {
+    return 'Fast mode is not available on third-party providers'
+  }
+
   if (!isFastModeEnabled()) {
     return 'Fast mode is not available'
   }
@@ -107,13 +114,6 @@ export function getFastModeUnavailableReason(): string | null {
       logForDebugging(`Fast mode unavailable: ${reason}`)
       return reason
     }
-  }
-
-  // Only available for 1P (not Bedrock/Vertex/Foundry)
-  if (getAPIProvider() !== 'firstParty') {
-    const reason = 'Fast mode is not available on Bedrock, Vertex, or Foundry'
-    logForDebugging(`Fast mode unavailable: ${reason}`)
-    return reason
   }
 
   if (orgStatus.status === 'disabled') {

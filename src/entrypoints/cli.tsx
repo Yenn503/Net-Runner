@@ -72,7 +72,7 @@ async function main(): Promise<void> {
   if (args.length === 1 && (args[0] === '--version' || args[0] === '-v' || args[0] === '-V')) {
     // MACRO.VERSION is inlined at build time
     // biome-ignore lint/suspicious/noConsole:: intentional console output
-    console.log(`${MACRO.VERSION} (Claude Code)`);
+    console.log(`${MACRO.DISPLAY_VERSION ?? MACRO.VERSION} (Open Claude)`);
     return;
   }
 
@@ -322,10 +322,12 @@ async function main(): Promise<void> {
   }
 
   // No special flags detected, load and run the full CLI
-  const {
-    startCapturingEarlyInput
-  } = await import('../utils/earlyInput.js');
-  startCapturingEarlyInput();
+  if (process.env.OPENCLAUDE_ENABLE_EARLY_INPUT === '1') {
+    const {
+      startCapturingEarlyInput
+    } = await import('../utils/earlyInput.js');
+    startCapturingEarlyInput();
+  }
   profileCheckpoint('cli_before_main_import');
   const {
     main: cliMain

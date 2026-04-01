@@ -52,8 +52,11 @@ const result = await Bun.build({
   naming: 'cli.mjs',
   define: {
     // MACRO.* build-time constants
-    // Set version high enough to pass minimum version checks
+    // Keep the internal compatibility version high enough to pass
+    // first-party minimum-version guards, but expose the real package
+    // version separately in Open Claude branding.
     'MACRO.VERSION': JSON.stringify('99.0.0'),
+    'MACRO.DISPLAY_VERSION': JSON.stringify(version),
     'MACRO.BUILD_TIME': JSON.stringify(new Date().toISOString()),
     'MACRO.ISSUES_EXPLAINER':
       JSON.stringify('report the issue at https://github.com/anthropics/claude-code/issues'),

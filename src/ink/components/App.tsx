@@ -115,6 +115,7 @@ export default class App extends PureComponent<Props, State> {
   keyParseState = INITIAL_STATE;
   // Timer for flushing incomplete escape sequences
   incompleteEscapeTimer: NodeJS.Timeout | null = null;
+  stdinMode: 'readable' | 'data' = process.env.OPENCLAUDE_USE_READABLE_STDIN === '1' ? 'readable' : 'data';
   // Timeout durations for incomplete sequences (ms)
   readonly NORMAL_TIMEOUT = 50; // Short timeout for regular esc sequences
   readonly PASTE_TIMEOUT = 500; // Longer timeout for paste operations
@@ -228,7 +229,12 @@ export default class App extends PureComponent<Props, State> {
         stopCapturingEarlyInput();
         stdin.ref();
         stdin.setRawMode(true);
-        stdin.addListener('readable', this.handleReadable);
+        stdin.resume();
+        if (this.stdinMode === 'data') {
+          stdin.addListener('data', this.handleDataChunk);
+        } else {
+          stdin.addListener('readable', this.handleReadable);
+        }
         // Enable bracketed paste mode
         this.props.stdout.write(EBP);
         // Enable terminal focus reporting (DECSET 1004)
@@ -275,6 +281,8 @@ export default class App extends PureComponent<Props, State> {
       this.props.stdout.write(DBP);
       stdin.setRawMode(false);
       stdin.removeListener('readable', this.handleReadable);
+      stdin.removeListener('data', this.handleDataChunk);
+      stdin.pause();
       stdin.unref();
     }
   };
@@ -363,6 +371,27 @@ export default class App extends PureComponent<Props, State> {
           level: 'warn'
         });
         stdin.addListener('readable', this.handleReadable);
+      }
+    }
+  };
+  handleDataChunk = (chunk: string | Buffer): void => {
+    const now = Date.now();
+    if (now - this.lastStdinTime > STDIN_RESUME_GAP_MS) {
+      this.props.onStdinResume?.();
+    }
+    this.lastStdinTime = now;
+    try {
+      this.processInput(chunk);
+    } catch (error) {
+      logError(error);
+      const {
+        stdin
+      } = this.props;
+      if (this.rawModeEnabledCount > 0 && !stdin.listeners('data').includes(this.handleDataChunk)) {
+        logForDebugging('handleDataChunk: re-attaching stdin data listener after error recovery', {
+          level: 'warn'
+        });
+        stdin.addListener('data', this.handleDataChunk);
       }
     }
   };
