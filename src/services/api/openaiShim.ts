@@ -292,6 +292,7 @@ async function* openaiStreamToAnthropic(
   let hasEmittedContentStart = false
   let lastStopReason: 'tool_use' | 'max_tokens' | 'end_turn' | null = null
   let hasEmittedFinalUsage = false
+  let hasProcessedFinishReason = false
 
   // Emit message_start
   yield {
@@ -422,8 +423,11 @@ async function* openaiStreamToAnthropic(
           }
         }
 
-        // Finish
-        if (choice.finish_reason) {
+        // Finish — guard ensures we only process finish_reason once even if
+        // multiple chunks arrive with finish_reason set (some providers do this)
+        if (choice.finish_reason && !hasProcessedFinishReason) {
+          hasProcessedFinishReason = true
+
           // Close any open content blocks
           if (hasEmittedContentStart) {
             yield {
