@@ -233,7 +233,7 @@ function _temp3(skill_0) {
   return <Box key={`${skill_0.name}-${skill_0.source}`}><Text>{getSkillListLabel(skill_0)}</Text><Text dimColor={true}>{pluginName ? ` · ${pluginName}` : ""} · {tokenDisplay} description tokens</Text></Box>;
 }
 function _temp2(a, b) {
-  return getCommandName(a).localeCompare(getCommandName(b));
+  return a.name.localeCompare(b.name);
 }
 function _temp(cmd) {
   return cmd.type === "prompt" && (cmd.loadedFrom === "skills" || cmd.loadedFrom === "commands_DEPRECATED" || cmd.loadedFrom === "plugin" || cmd.loadedFrom === "mcp");
