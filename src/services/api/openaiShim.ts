@@ -645,6 +645,8 @@ class OpenAIShimMessages {
             }
           } else if (tc.type === 'any') {
             body.tool_choice = 'required'
+          } else if (tc.type === 'none') {
+            body.tool_choice = 'none'
           }
         }
       }
