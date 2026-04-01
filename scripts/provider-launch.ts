@@ -3,40 +3,48 @@ import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
-  DEFAULT_CODEX_BASE_URL,
   resolveCodexApiCredentials,
 } from '../src/services/api/providerConfig.js'
-
-type ProviderProfile = 'openai' | 'ollama' | 'codex' | 'gemini'
-
-type ProfileFile = {
-  profile: ProviderProfile
-  env?: {
-    OPENAI_BASE_URL?: string
-    OPENAI_MODEL?: string
-    OPENAI_API_KEY?: string
-    CODEX_API_KEY?: string
-    GEMINI_API_KEY?: string
-    GEMINI_MODEL?: string
-    GEMINI_BASE_URL?: string
-  }
-}
+import {
+  normalizeRecommendationGoal,
+  recommendOllamaModel,
+} from '../src/utils/providerRecommendation.ts'
+import {
+  buildLaunchEnv,
+  selectAutoProfile,
+  type ProfileFile,
+  type ProviderProfile,
+} from '../src/utils/providerProfile.ts'
+import {
+  getOllamaChatBaseUrl,
+  hasLocalOllama,
+  listOllamaModels,
+} from './provider-discovery.ts'
 
 type LaunchOptions = {
   requestedProfile: ProviderProfile | 'auto' | null
   passthroughArgs: string[]
   fast: boolean
+  goal: ReturnType<typeof normalizeRecommendationGoal>
 }
 
 function parseLaunchOptions(argv: string[]): LaunchOptions {
   let requestedProfile: ProviderProfile | 'auto' | null = 'auto'
   const passthroughArgs: string[] = []
   let fast = false
+  let goal = normalizeRecommendationGoal(process.env.OPENCLAUDE_PROFILE_GOAL)
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!
     const lower = arg.toLowerCase()
     if (lower === '--fast') {
       fast = true
+      continue
+    }
+
+    if (lower === '--goal') {
+      goal = normalizeRecommendationGoal(argv[i + 1] ?? null)
+      i++
       continue
     }
 
@@ -62,6 +70,7 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
     requestedProfile,
     passthroughArgs,
     fast,
+    goal,
   }
 }
 
@@ -79,18 +88,12 @@ function loadPersistedProfile(): ProfileFile | null {
   }
 }
 
-async function hasLocalOllama(): Promise<boolean> {
-  const endpoint = 'http://localhost:11434/api/tags'
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 1200)
-  try {
-    const response = await fetch(endpoint, { signal: controller.signal })
-    return response.ok
-  } catch {
-    return false
-  } finally {
-    clearTimeout(timeout)
-  }
+async function resolveOllamaDefaultModel(
+  goal: ReturnType<typeof normalizeRecommendationGoal>,
+): Promise<string | null> {
+  const models = await listOllamaModels()
+  const recommended = recommendOllamaModel(models, goal)
+  return recommended?.name ?? null
 }
 
 function runCommand(command: string, env: NodeJS.ProcessEnv): Promise<number> {
@@ -105,57 +108,6 @@ function runCommand(command: string, env: NodeJS.ProcessEnv): Promise<number> {
     child.on('close', code => resolve(code ?? 1))
     child.on('error', () => resolve(1))
   })
-}
-
-function buildEnv(profile: ProviderProfile, persisted: ProfileFile | null): NodeJS.ProcessEnv {
-  const persistedEnv = persisted?.env ?? {}
-
-  if (profile === 'gemini') {
-    const env: NodeJS.ProcessEnv = {
-      ...process.env,
-      CLAUDE_CODE_USE_GEMINI: '1',
-    }
-    delete env.CLAUDE_CODE_USE_OPENAI
-    env.GEMINI_MODEL = process.env.GEMINI_MODEL || persistedEnv.GEMINI_MODEL || 'gemini-2.0-flash'
-    env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || persistedEnv.GEMINI_API_KEY
-    if (persistedEnv.GEMINI_BASE_URL || process.env.GEMINI_BASE_URL) {
-      env.GEMINI_BASE_URL = process.env.GEMINI_BASE_URL || persistedEnv.GEMINI_BASE_URL
-    }
-    return env
-  }
-
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    CLAUDE_CODE_USE_OPENAI: '1',
-  }
-
-  if (profile === 'ollama') {
-    env.OPENAI_BASE_URL = persistedEnv.OPENAI_BASE_URL || process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1'
-    env.OPENAI_MODEL = persistedEnv.OPENAI_MODEL || process.env.OPENAI_MODEL || 'llama3.1:8b'
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'SUA_CHAVE') {
-      delete env.OPENAI_API_KEY
-    }
-    return env
-  }
-
-  if (profile === 'codex') {
-    env.OPENAI_BASE_URL =
-      process.env.OPENAI_BASE_URL ||
-      persistedEnv.OPENAI_BASE_URL ||
-      DEFAULT_CODEX_BASE_URL
-    env.OPENAI_MODEL =
-      process.env.OPENAI_MODEL ||
-      persistedEnv.OPENAI_MODEL ||
-      'codexplan'
-    env.CODEX_API_KEY =
-      process.env.CODEX_API_KEY || persistedEnv.CODEX_API_KEY
-    return env
-  }
-
-  env.OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || persistedEnv.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  env.OPENAI_MODEL = process.env.OPENAI_MODEL || persistedEnv.OPENAI_MODEL || 'gpt-4o'
-  env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || persistedEnv.OPENAI_API_KEY
-  return env
 }
 
 function applyFastFlags(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
@@ -193,24 +145,45 @@ async function main(): Promise<void> {
   const options = parseLaunchOptions(process.argv.slice(2))
   const requestedProfile = options.requestedProfile
   if (!requestedProfile) {
-    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|auto] [--fast] [-- <cli args>]')
+    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
     process.exit(1)
   }
 
   const persisted = loadPersistedProfile()
   let profile: ProviderProfile
+  let resolvedOllamaModel: string | null = null
 
   if (requestedProfile === 'auto') {
     if (persisted) {
       profile = persisted.profile
+    } else if (await hasLocalOllama()) {
+      resolvedOllamaModel = await resolveOllamaDefaultModel(options.goal)
+      profile = selectAutoProfile(resolvedOllamaModel)
     } else {
-      profile = (await hasLocalOllama()) ? 'ollama' : 'openai'
+      profile = 'openai'
     }
   } else {
     profile = requestedProfile
   }
 
-  const env = buildEnv(profile, persisted)
+  if (
+    profile === 'ollama' &&
+    (persisted?.profile !== 'ollama' || !persisted?.env?.OPENAI_MODEL)
+  ) {
+    resolvedOllamaModel ??= await resolveOllamaDefaultModel(options.goal)
+    if (!resolvedOllamaModel) {
+      console.error('No viable Ollama chat model was discovered. Pull a chat model first or save one with `bun run profile:init -- --provider ollama --model <model>`.')
+      process.exit(1)
+    }
+  }
+
+  const env = await buildLaunchEnv({
+    profile,
+    persisted,
+    goal: options.goal,
+    getOllamaChatBaseUrl,
+    resolveOllamaDefaultModel: async () => resolvedOllamaModel || 'llama3.1:8b',
+  })
   if (options.fast) {
     applyFastFlags(env)
   }
@@ -232,6 +205,11 @@ async function main(): Promise<void> {
         ? ` or make sure ${credentials.authPath} exists`
         : ''
       console.error(`CODEX_API_KEY is required for codex profile${authHint}. Run: bun run profile:init -- --provider codex --model codexplan`)
+      process.exit(1)
+    }
+
+    if (!credentials.accountId) {
+      console.error('CHATGPT_ACCOUNT_ID is required for codex profile. Set CHATGPT_ACCOUNT_ID/CODEX_ACCOUNT_ID or use an auth.json that includes it.')
       process.exit(1)
     }
   }

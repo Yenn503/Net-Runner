@@ -209,7 +209,7 @@ bun run doctor:runtime:json
 # persist a diagnostics report to reports/doctor-runtime.json
 bun run doctor:report
 
-# full local hardening check (typecheck + smoke + runtime doctor)
+# full local hardening check (smoke + runtime doctor)
 bun run hardening:check
 
 # strict hardening (includes project-wide typecheck)
@@ -226,8 +226,14 @@ Notes:
 Use profile launchers to avoid repeated environment setup:
 
 ```bash
-# one-time profile bootstrap (auto-detect ollama, otherwise openai)
+# one-time profile bootstrap (prefer viable local Ollama, otherwise OpenAI)
 bun run profile:init
+
+# preview the best provider/model for your goal
+bun run profile:recommend -- --goal coding --benchmark
+
+# auto-apply the best available local/openai provider/model for your goal
+bun run profile:auto -- --goal latency
 
 # codex bootstrap (defaults to codexplan and ~/.codex/auth.json)
 bun run profile:codex
@@ -237,6 +243,9 @@ bun run profile:init -- --provider openai --api-key sk-...
 
 # ollama bootstrap with custom model
 bun run profile:init -- --provider ollama --model llama3.1:8b
+
+# ollama bootstrap with intelligent model auto-selection
+bun run profile:init -- --provider ollama --goal coding
 
 # codex bootstrap with a fast model alias
 bun run profile:init -- --provider codex --model codexspark
@@ -253,6 +262,14 @@ bun run dev:openai
 # Ollama profile (defaults: localhost:11434, llama3.1:8b)
 bun run dev:ollama
 ```
+
+`profile:recommend` ranks installed Ollama models for `latency`, `balanced`, or `coding`, and `profile:auto` can persist the recommendation directly.
+If no profile exists yet, `dev:profile` now uses the same goal-aware defaults when picking the initial model.
+
+Use `--provider ollama` when you want a local-only path. Auto mode falls back to OpenAI when no viable local chat model is installed.
+Goal-based Ollama selection only recommends among models that are already installed and reachable from Ollama.
+
+Use `profile:codex` or `--provider codex` when you want the ChatGPT Codex backend.
 
 `dev:openai`, `dev:ollama`, and `dev:codex` run `doctor:runtime` first and only launch the app if checks pass.
 For `dev:ollama`, make sure Ollama is running locally before launch.
