@@ -193,6 +193,11 @@ export function getRuntimeMainLoopModel(params: {
  * @returns The default model setting to use
  */
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
+  // OpenAI provider: always use the configured OpenAI model
+  if (getAPIProvider() === 'openai') {
+    return process.env.OPENAI_MODEL || 'gpt-4o'
+  }
+
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
   if (process.env.USER_TYPE === 'ant') {
     return (
@@ -318,6 +323,12 @@ export function renderDefaultModelSetting(
   if (setting === 'opusplan') {
     return 'Opus 4.6 in plan mode, else Sonnet 4.6'
   }
+  if (setting === 'codexplan') {
+    return 'Codex Plan (GPT-5.4 high reasoning)'
+  }
+  if (setting === 'codexspark') {
+    return 'Codex Spark (GPT-5.3 Codex Spark)'
+  }
   return renderModelName(parseUserSpecifiedModel(setting))
 }
 
@@ -352,6 +363,12 @@ export function renderModelSetting(setting: ModelName | ModelAlias): string {
   if (setting === 'opusplan') {
     return 'Opus Plan'
   }
+  if (setting === 'codexplan') {
+    return 'Codex Plan'
+  }
+  if (setting === 'codexspark') {
+    return 'Codex Spark'
+  }
   if (isModelAlias(setting)) {
     return capitalize(setting)
   }
@@ -364,7 +381,15 @@ export function renderModelSetting(setting: ModelName | ModelAlias): string {
  * if the model is not recognized as a public model.
  */
 export function getPublicModelDisplayName(model: ModelName): string | null {
+  // For OpenAI provider, show the actual model name (e.g. 'gpt-4o') not a Claude alias
+  if (getAPIProvider() === 'openai') {
+    return null
+  }
   switch (model) {
+    case 'gpt-5.4':
+      return 'GPT-5.4'
+    case 'gpt-5.3-codex-spark':
+      return 'GPT-5.3 Codex Spark'
     case getModelStrings().opus46:
       return 'Opus 4.6'
     case getModelStrings().opus46 + '[1m]':
@@ -472,6 +497,10 @@ export function parseUserSpecifiedModel(
 
   if (isModelAlias(modelString)) {
     switch (modelString) {
+      case 'codexplan':
+        return modelInputTrimmed
+      case 'codexspark':
+        return modelInputTrimmed
       case 'opusplan':
         return getDefaultSonnetModel() + (has1mTag ? '[1m]' : '') // Sonnet is default, Opus in plan mode
       case 'sonnet':

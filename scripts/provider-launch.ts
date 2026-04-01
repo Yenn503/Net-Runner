@@ -3,6 +3,9 @@ import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
+  resolveCodexApiCredentials,
+} from '../src/services/api/providerConfig.js'
+import {
   normalizeRecommendationGoal,
   recommendOllamaModel,
 } from '../src/utils/providerRecommendation.ts'
@@ -45,7 +48,7 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
       continue
     }
 
-    if ((lower === 'auto' || lower === 'openai' || lower === 'ollama') && requestedProfile === 'auto') {
+    if ((lower === 'auto' || lower === 'openai' || lower === 'ollama' || lower === 'codex') && requestedProfile === 'auto') {
       requestedProfile = lower as ProviderProfile | 'auto'
       continue
     }
@@ -76,7 +79,7 @@ function loadPersistedProfile(): ProfileFile | null {
   if (!existsSync(path)) return null
   try {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as ProfileFile
-    if (parsed.profile === 'openai' || parsed.profile === 'ollama') {
+    if (parsed.profile === 'openai' || parsed.profile === 'ollama' || parsed.profile === 'codex') {
       return parsed
     }
     return null
@@ -123,18 +126,22 @@ function quoteArg(arg: string): string {
 }
 
 function printSummary(profile: ProviderProfile, env: NodeJS.ProcessEnv): void {
-  const keySet = Boolean(env.OPENAI_API_KEY)
+  const keySet = profile === 'codex'
+    ? Boolean(resolveCodexApiCredentials(env).apiKey)
+    : Boolean(env.OPENAI_API_KEY)
   console.log(`Launching profile: ${profile}`)
   console.log(`OPENAI_BASE_URL=${env.OPENAI_BASE_URL}`)
   console.log(`OPENAI_MODEL=${env.OPENAI_MODEL}`)
-  console.log(`OPENAI_API_KEY_SET=${keySet}`)
+  console.log(
+    `${profile === 'codex' ? 'CODEX_API_KEY_SET' : 'OPENAI_API_KEY_SET'}=${keySet}`,
+  )
 }
 
 async function main(): Promise<void> {
   const options = parseLaunchOptions(process.argv.slice(2))
   const requestedProfile = options.requestedProfile
   if (!requestedProfile) {
-    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|auto] [--fast] [-- <cli args>]')
+    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
     process.exit(1)
   }
 
@@ -155,7 +162,10 @@ async function main(): Promise<void> {
     profile = requestedProfile
   }
 
-  if (profile === 'ollama' && persisted?.profile !== 'ollama') {
+  if (
+    profile === 'ollama' &&
+    (persisted?.profile !== 'ollama' || !persisted?.env?.OPENAI_MODEL)
+  ) {
     resolvedOllamaModel ??= await resolveOllamaDefaultModel(options.goal)
     if (!resolvedOllamaModel) {
       console.error('No viable Ollama chat model was discovered. Pull a chat model first or save one with `bun run profile:init -- --provider ollama --model <model>`.')
@@ -177,6 +187,22 @@ async function main(): Promise<void> {
   if (profile === 'openai' && (!env.OPENAI_API_KEY || env.OPENAI_API_KEY === 'SUA_CHAVE')) {
     console.error('OPENAI_API_KEY is required for openai profile and cannot be SUA_CHAVE. Run: bun run profile:init -- --provider openai --api-key <key>')
     process.exit(1)
+  }
+
+  if (profile === 'codex') {
+    const credentials = resolveCodexApiCredentials(env)
+    if (!credentials.apiKey) {
+      const authHint = credentials.authPath
+        ? ` or make sure ${credentials.authPath} exists`
+        : ''
+      console.error(`CODEX_API_KEY is required for codex profile${authHint}. Run: bun run profile:init -- --provider codex --model codexplan`)
+      process.exit(1)
+    }
+
+    if (!credentials.accountId) {
+      console.error('CHATGPT_ACCOUNT_ID is required for codex profile. Set CHATGPT_ACCOUNT_ID/CODEX_ACCOUNT_ID or use an auth.json that includes it.')
+      process.exit(1)
+    }
   }
 
   printSummary(profile, env)

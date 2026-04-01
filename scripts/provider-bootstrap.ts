@@ -2,11 +2,15 @@
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
+  resolveCodexApiCredentials,
+} from '../src/services/api/providerConfig.js'
+import {
   getGoalDefaultOpenAIModel,
   normalizeRecommendationGoal,
   recommendOllamaModel,
 } from '../src/utils/providerRecommendation.ts'
 import {
+  buildCodexProfileEnv,
   buildOllamaProfileEnv,
   buildOpenAIProfileEnv,
   createProfileFile,
@@ -29,7 +33,7 @@ function parseArg(name: string): string | null {
 
 function parseProviderArg(): ProviderProfile | 'auto' {
   const p = parseArg('--provider')?.toLowerCase()
-  if (p === 'openai' || p === 'ollama') return p
+  if (p === 'openai' || p === 'ollama' || p === 'codex') return p
   return 'auto'
 }
 
@@ -37,7 +41,7 @@ async function resolveOllamaModel(
   argModel: string | null,
   argBaseUrl: string | null,
   goal: ReturnType<typeof normalizeRecommendationGoal>,
-) : Promise<string | null> {
+): Promise<string | null> {
   if (argModel) return argModel
 
   const discovered = await listOllamaModels(argBaseUrl || undefined)
@@ -82,19 +86,39 @@ async function main(): Promise<void> {
         getOllamaChatBaseUrl,
       },
     )
+  } else if (selected === 'codex') {
+    const builtEnv = buildCodexProfileEnv({
+      model: argModel,
+      baseUrl: argBaseUrl,
+      apiKey: argApiKey || process.env.CODEX_API_KEY || null,
+      processEnv: process.env,
+    })
+
+    if (!builtEnv) {
+      const credentials = resolveCodexApiCredentials(
+        argApiKey
+          ? { ...process.env, CODEX_API_KEY: argApiKey }
+          : process.env,
+      )
+      const authHint = credentials.authPath
+        ? ` or make sure ${credentials.authPath} exists`
+        : ''
+      if (!credentials.apiKey) {
+        console.error(`Codex profile requires CODEX_API_KEY${authHint}.`)
+      } else {
+        console.error('Codex profile requires CHATGPT_ACCOUNT_ID or an auth.json that includes it.')
+      }
+      process.exit(1)
+    }
+
+    env = builtEnv
   } else {
     const builtEnv = buildOpenAIProfileEnv({
       goal,
-      model:
-        argModel ||
-        process.env.OPENAI_MODEL ||
-        getGoalDefaultOpenAIModel(goal),
+      model: argModel || null,
+      baseUrl: argBaseUrl || null,
       apiKey: argApiKey || process.env.OPENAI_API_KEY || null,
-      processEnv: {
-        ...process.env,
-        OPENAI_BASE_URL:
-          argBaseUrl || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-      },
+      processEnv: process.env,
     })
 
     if (!builtEnv) {
