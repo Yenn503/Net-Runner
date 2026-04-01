@@ -44,6 +44,10 @@ function getSourceSubtitle(source: SkillSource, skills: SkillCommand[]): string 
   const hasCommandsSkills = skills.some(s => s.loadedFrom === 'commands_DEPRECATED');
   return hasCommandsSkills ? `${skillsPath}, ${getDisplayPath(getSkillsPath(source, 'commands'))}` : skillsPath;
 }
+function getSkillListLabel(skill: SkillCommand): string {
+  const leafName = skill.name.split(':').pop() ?? skill.name;
+  return leafName === skill.name ? skill.name : `${skill.name} - ${leafName}`;
+}
 export function SkillsMenu(t0) {
   const $ = _c(35);
   const {
@@ -226,7 +230,7 @@ function _temp3(skill_0) {
   const estimatedTokens = estimateSkillFrontmatterTokens(skill_0);
   const tokenDisplay = `~${formatTokens(estimatedTokens)}`;
   const pluginName = skill_0.source === "plugin" ? skill_0.pluginInfo?.pluginManifest.name : undefined;
-  return <Box key={`${skill_0.name}-${skill_0.source}`}><Text>{getCommandName(skill_0)}</Text><Text dimColor={true}>{pluginName ? ` · ${pluginName}` : ""} · {tokenDisplay} description tokens</Text></Box>;
+  return <Box key={`${skill_0.name}-${skill_0.source}`}><Text>{getSkillListLabel(skill_0)}</Text><Text dimColor={true}>{pluginName ? ` · ${pluginName}` : ""} · {tokenDisplay} description tokens</Text></Box>;
 }
 function _temp2(a, b) {
   return getCommandName(a).localeCompare(getCommandName(b));
