@@ -311,6 +311,11 @@ function enforceStrictSchema(schema: unknown): Record<string, unknown> {
   // Codex API strict schemas reject these JSON schema keywords
   delete record.$schema
   delete record.propertyNames
+  // Codex Responses rejects JSON Schema's standard `uri` string format.
+  // Keep URL validation in the tool layer and send a plain string here.
+  if (record.format === 'uri') {
+    delete record.format
+  }
 
   if (record.type === 'object') {
     // OpenAI structured outputs completely forbid dynamic additionalProperties.
