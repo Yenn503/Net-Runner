@@ -376,6 +376,9 @@ interface OpenAIStreamChunk {
     prompt_tokens?: number
     completion_tokens?: number
     total_tokens?: number
+    prompt_tokens_details?: {
+      cached_tokens?: number
+    }
   }
 }
 
@@ -392,7 +395,7 @@ function convertChunkUsage(
     input_tokens: usage.prompt_tokens ?? 0,
     output_tokens: usage.completion_tokens ?? 0,
     cache_creation_input_tokens: 0,
-    cache_read_input_tokens: 0,
+    cache_read_input_tokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
   }
 }
 
@@ -920,6 +923,9 @@ class OpenAIShimMessages {
       usage?: {
         prompt_tokens?: number
         completion_tokens?: number
+        prompt_tokens_details?: {
+          cached_tokens?: number
+        }
       }
     },
     model: string,
@@ -985,7 +991,7 @@ class OpenAIShimMessages {
         input_tokens: data.usage?.prompt_tokens ?? 0,
         output_tokens: data.usage?.completion_tokens ?? 0,
         cache_creation_input_tokens: 0,
-        cache_read_input_tokens: 0,
+        cache_read_input_tokens: data.usage?.prompt_tokens_details?.cached_tokens ?? 0,
       },
     }
   }
