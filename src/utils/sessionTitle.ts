@@ -124,6 +124,10 @@ export async function generateSessionTitle(
       level: 'error',
     })
     logEvent('tengu_session_title_generated', { success: false })
-    return null
+
+    // Fallback: When using 3P providers without a compatible schema,
+    // default to the application name.
+    return 'Open Claude'
   }
 }
+
