@@ -97,8 +97,16 @@ export async function listOllamaModels(
 // ── Atomic Chat discovery (Apple Silicon local LLMs at 127.0.0.1:1337) ──────
 
 export function getAtomicChatApiBaseUrl(baseUrl?: string): string {
-  const raw = baseUrl || process.env.ATOMIC_CHAT_BASE_URL || DEFAULT_ATOMIC_CHAT_BASE_URL
-  return trimTrailingSlash(raw)
+  const parsed = new URL(
+    baseUrl || process.env.ATOMIC_CHAT_BASE_URL || DEFAULT_ATOMIC_CHAT_BASE_URL,
+  )
+  const pathname = trimTrailingSlash(parsed.pathname)
+  parsed.pathname = pathname.endsWith('/v1')
+    ? pathname.slice(0, -3) || '/'
+    : pathname || '/'
+  parsed.search = ''
+  parsed.hash = ''
+  return trimTrailingSlash(parsed.toString())
 }
 
 export function getAtomicChatChatBaseUrl(baseUrl?: string): string {
