@@ -3,7 +3,7 @@ import { z } from 'zod/v4'
 import { getEmptyToolPermissionContext, type Tool, type Tools } from '../Tool.js'
 import { toolToAPISchema } from './api.js'
 
-test('toolToAPISchema strips incompatible schema keywords from input_schema', async () => {
+test('toolToAPISchema preserves provider-specific schema keywords in input_schema', async () => {
   const schema = await toolToAPISchema(
     {
       name: 'WebFetch',
@@ -18,6 +18,9 @@ test('toolToAPISchema strips incompatible schema keywords from input_schema', as
           },
           metadata: {
             type: 'object',
+            propertyNames: {
+              pattern: '^[a-z]+$',
+            },
             properties: {
               callback: {
                 type: 'string',
@@ -42,26 +45,22 @@ test('toolToAPISchema strips incompatible schema keywords from input_schema', as
       properties: {
         url: {
           type: 'string',
+          format: 'uri',
           description: 'Public HTTP or HTTPS URL',
         },
         metadata: {
           type: 'object',
+          propertyNames: {
+            pattern: '^[a-z]+$',
+          },
           properties: {
             callback: {
               type: 'string',
+              format: 'uri-reference',
             },
           },
         },
       },
     },
   })
-
-  const inputSchema = (schema as { input_schema: Record<string, unknown> }).input_schema
-  const properties = inputSchema.properties as Record<string, Record<string, unknown>>
-  expect(properties.url?.format).toBeUndefined()
-  expect(
-    (
-      properties.metadata?.properties as Record<string, Record<string, unknown>>
-    )?.callback?.format,
-  ).toBeUndefined()
 })
