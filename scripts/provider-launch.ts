@@ -1,7 +1,5 @@
 // @ts-nocheck
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import {
   resolveCodexApiCredentials,
 } from '../src/services/api/providerConfig.js'
@@ -11,6 +9,7 @@ import {
 } from '../src/utils/providerRecommendation.ts'
 import {
   buildLaunchEnv,
+  loadProfileFile,
   selectAutoProfile,
   type ProfileFile,
   type ProviderProfile,
@@ -75,17 +74,7 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
 }
 
 function loadPersistedProfile(): ProfileFile | null {
-  const path = resolve(process.cwd(), '.openclaude-profile.json')
-  if (!existsSync(path)) return null
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8')) as ProfileFile
-    if (parsed.profile === 'openai' || parsed.profile === 'ollama' || parsed.profile === 'codex' || parsed.profile === 'gemini') {
-      return parsed
-    }
-    return null
-  } catch {
-    return null
-  }
+  return loadProfileFile()
 }
 
 async function resolveOllamaDefaultModel(

@@ -1,6 +1,4 @@
 // @ts-nocheck
-import { writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import {
   resolveCodexApiCredentials,
 } from '../src/services/api/providerConfig.js'
@@ -15,6 +13,7 @@ import {
   buildOllamaProfileEnv,
   buildOpenAIProfileEnv,
   createProfileFile,
+  saveProfileFile,
   selectAutoProfile,
   type ProfileFile,
   type ProviderProfile,
@@ -147,8 +146,7 @@ async function main(): Promise<void> {
 
   const profile = createProfileFile(selected, env)
 
-  const outputPath = resolve(process.cwd(), '.openclaude-profile.json')
-  writeFileSync(outputPath, JSON.stringify(profile, null, 2), { encoding: 'utf8', mode: 0o600 })
+  const outputPath = saveProfileFile(profile)
 
   console.log(`Saved profile: ${selected}`)
   console.log(`Goal: ${goal}`)

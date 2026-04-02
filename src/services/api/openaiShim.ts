@@ -29,6 +29,7 @@ import {
   resolveCodexApiCredentials,
   resolveProviderRequest,
 } from './providerConfig.js'
+import { redactSecretValueForDisplay } from '../../utils/providerProfile.js'
 
 // ---------------------------------------------------------------------------
 // Types — minimal subset of Anthropic SDK types we need to produce
@@ -612,8 +613,11 @@ class OpenAIShimMessages {
         const authHint = credentials.authPath
           ? ` or place a Codex auth.json at ${credentials.authPath}`
           : ''
+        const safeModel =
+          redactSecretValueForDisplay(request.requestedModel, process.env) ??
+          'the requested model'
         throw new Error(
-          `Codex auth is required for ${request.requestedModel}. Set CODEX_API_KEY${authHint}.`,
+          `Codex auth is required for ${safeModel}. Set CODEX_API_KEY${authHint}.`,
         )
       }
       if (!credentials.accountId) {
