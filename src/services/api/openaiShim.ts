@@ -655,9 +655,11 @@ class OpenAIShimStream {
 
 class OpenAIShimMessages {
   private defaultHeaders: Record<string, string>
+  private reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh'
 
-  constructor(defaultHeaders: Record<string, string>) {
+  constructor(defaultHeaders: Record<string, string>, reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh') {
     this.defaultHeaders = defaultHeaders
+    this.reasoningEffort = reasoningEffort
   }
 
   create(
@@ -667,7 +669,7 @@ class OpenAIShimMessages {
     const self = this
 
     const promise = (async () => {
-      const request = resolveProviderRequest({ model: params.model })
+      const request = resolveProviderRequest({ model: params.model, reasoningEffortOverride: self.reasoningEffort })
       const response = await self._doRequest(request, params, options)
 
       if (params.stream) {
@@ -993,9 +995,11 @@ class OpenAIShimMessages {
 
 class OpenAIShimBeta {
   messages: OpenAIShimMessages
+  reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh'
 
-  constructor(defaultHeaders: Record<string, string>) {
-    this.messages = new OpenAIShimMessages(defaultHeaders)
+  constructor(defaultHeaders: Record<string, string>, reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh') {
+    this.messages = new OpenAIShimMessages(defaultHeaders, reasoningEffort)
+    this.reasoningEffort = reasoningEffort
   }
 }
 
@@ -1003,6 +1007,7 @@ export function createOpenAIShimClient(options: {
   defaultHeaders?: Record<string, string>
   maxRetries?: number
   timeout?: number
+  reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh'
 }): unknown {
   hydrateGithubModelsTokenFromSecureStorage()
 
@@ -1025,7 +1030,7 @@ export function createOpenAIShimClient(options: {
 
   const beta = new OpenAIShimBeta({
     ...(options.defaultHeaders ?? {}),
-  })
+  }, options.reasoningEffort)
 
   return {
     beta,

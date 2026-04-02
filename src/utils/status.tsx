@@ -12,6 +12,7 @@ import { formatNumber } from './format.js';
 import { getIdeClientName, type IDEExtensionInstallationStatus, isJetBrainsIde, toIDEDisplayName } from './ide.js';
 import { getClaudeAiUserDefaultModelDescription, modelDisplayString } from './model/model.js';
 import { getAPIProvider } from './model/providers.js';
+import { resolveProviderRequest } from '../services/api/providerConfig.js';
 import { getMTLSConfig } from './mtls.js';
 import { checkInstall } from './nativeInstaller/index.js';
 import { getProxyUrl } from './proxy.js';
@@ -246,6 +247,7 @@ export function buildAPIProviderProperties(): Property[] {
       vertex: 'Google Vertex AI',
       foundry: 'Microsoft Foundry',
       openai: 'OpenAI-compatible',
+      codex: 'Codex',
       gemini: 'Google Gemini',
     }[apiProvider];
     properties.push({
@@ -332,9 +334,46 @@ export function buildAPIProviderProperties(): Property[] {
     }
     const openaiModel = process.env.OPENAI_MODEL;
     if (openaiModel) {
+      // Build display model string with resolved model + reasoning effort
+      let modelDisplay = openaiModel;
+      const resolvedModel = resolveProviderRequest({ model: openaiModel }).resolvedModel;
+      const reasoningEffort = resolveProviderRequest({ model: openaiModel }).reasoning?.effort;
+      if (resolvedModel && resolvedModel !== openaiModel.toLowerCase()) {
+        // Show resolved model name
+        modelDisplay = resolvedModel;
+      }
+      if (reasoningEffort) {
+        modelDisplay = `${modelDisplay} (${reasoningEffort})`;
+      }
       properties.push({
         label: 'Model',
-        value: openaiModel
+        value: modelDisplay
+      });
+    }
+  } else if (apiProvider === 'codex') {
+    const codexBaseUrl = process.env.OPENAI_BASE_URL;
+    if (codexBaseUrl) {
+      properties.push({
+        label: 'Codex base URL',
+        value: codexBaseUrl
+      });
+    }
+    const openaiModel = process.env.OPENAI_MODEL;
+    if (openaiModel) {
+      // Build display model string with resolved model + reasoning effort
+      let modelDisplay = openaiModel;
+      const resolvedModel = resolveProviderRequest({ model: openaiModel }).resolvedModel;
+      const reasoningEffort = resolveProviderRequest({ model: openaiModel }).reasoning?.effort;
+      if (resolvedModel && resolvedModel !== openaiModel.toLowerCase()) {
+        // Show resolved model name
+        modelDisplay = resolvedModel;
+      }
+      if (reasoningEffort) {
+        modelDisplay = `${modelDisplay} (${reasoningEffort})`;
+      }
+      properties.push({
+        label: 'Model',
+        value: modelDisplay
       });
     }
   } else if (apiProvider === 'gemini') {

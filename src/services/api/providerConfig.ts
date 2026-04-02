@@ -20,13 +20,43 @@ const CODEX_ALIAS_MODELS: Record<
     model: 'gpt-5.4',
     reasoningEffort: 'high',
   },
+  'gpt-5.4': {
+    model: 'gpt-5.4',
+    reasoningEffort: 'high',
+  },
+  'gpt-5.3-codex': {
+    model: 'gpt-5.3-codex',
+    reasoningEffort: 'high',
+  },
+  'gpt-5.3-codex-spark': {
+    model: 'gpt-5.3-codex-spark',
+  },
   codexspark: {
     model: 'gpt-5.3-codex-spark',
+  },
+  'gpt-5.2-codex': {
+    model: 'gpt-5.2-codex',
+    reasoningEffort: 'high',
+  },
+  'gpt-5.1-codex-max': {
+    model: 'gpt-5.1-codex-max',
+    reasoningEffort: 'high',
+  },
+  'gpt-5.1-codex-mini': {
+    model: 'gpt-5.1-codex-mini',
+  },
+  'gpt-5.4-mini': {
+    model: 'gpt-5.4-mini',
+    reasoningEffort: 'medium',
+  },
+  'gpt-5.2': {
+    model: 'gpt-5.2',
+    reasoningEffort: 'medium',
   },
 } as const
 
 type CodexAlias = keyof typeof CODEX_ALIAS_MODELS
-type ReasoningEffort = 'low' | 'medium' | 'high'
+type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh'
 
 export type ProviderTransport = 'chat_completions' | 'codex_responses'
 
@@ -102,7 +132,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | undefined {
 function parseReasoningEffort(value: string | undefined): ReasoningEffort | undefined {
   if (!value) return undefined
   const normalized = value.trim().toLowerCase()
-  if (normalized === 'low' || normalized === 'medium' || normalized === 'high') {
+  if (normalized === 'low' || normalized === 'medium' || normalized === 'high' || normalized === 'xhigh') {
     return normalized
   }
   return undefined
@@ -193,6 +223,7 @@ export function resolveProviderRequest(options?: {
   model?: string
   baseUrl?: string
   fallbackModel?: string
+  reasoningEffortOverride?: ReasoningEffort
 }): ResolvedProviderRequest {
   const isGithubMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const requestedModel =
@@ -217,6 +248,11 @@ export function resolveProviderRequest(options?: {
       ? normalizeGithubModelsApiModel(requestedModel)
       : descriptor.baseModel
 
+  const reasoning = options?.reasoningEffortOverride
+    ? { effort: options.reasoningEffortOverride }
+    : descriptor.reasoning
+
+
   return {
     transport,
     requestedModel,
@@ -227,7 +263,7 @@ export function resolveProviderRequest(options?: {
           ? DEFAULT_CODEX_BASE_URL
           : DEFAULT_OPENAI_BASE_URL)
       ).replace(/\/+$/, ''),
-    reasoning: descriptor.reasoning,
+    reasoning,
   }
 }
 
@@ -335,4 +371,12 @@ export function resolveCodexApiCredentials(
     authPath,
     source: 'auth.json',
   }
+}
+
+export function getReasoningEffortForModel(model: string): ReasoningEffort | undefined {
+  const normalized = model.trim().toLowerCase()
+  const base = normalized.split('?', 1)[0] ?? normalized
+  const alias = base as CodexAlias
+  const aliasConfig = CODEX_ALIAS_MODELS[alias]
+  return aliasConfig?.reasoningEffort
 }
