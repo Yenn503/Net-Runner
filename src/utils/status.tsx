@@ -244,7 +244,9 @@ export function buildAPIProviderProperties(): Property[] {
     const providerLabel = {
       bedrock: 'AWS Bedrock',
       vertex: 'Google Vertex AI',
-      foundry: 'Microsoft Foundry'
+      foundry: 'Microsoft Foundry',
+      openai: 'OpenAI-compatible',
+      gemini: 'Google Gemini',
     }[apiProvider];
     properties.push({
       label: 'API provider',
@@ -318,6 +320,36 @@ export function buildAPIProviderProperties(): Property[] {
     if (isEnvTruthy(process.env.CLAUDE_CODE_SKIP_FOUNDRY_AUTH)) {
       properties.push({
         value: 'Microsoft Foundry auth skipped'
+      });
+    }
+  } else if (apiProvider === 'openai') {
+    const openaiBaseUrl = process.env.OPENAI_BASE_URL;
+    if (openaiBaseUrl) {
+      properties.push({
+        label: 'OpenAI base URL',
+        value: openaiBaseUrl
+      });
+    }
+    const openaiModel = process.env.OPENAI_MODEL;
+    if (openaiModel) {
+      properties.push({
+        label: 'Model',
+        value: openaiModel
+      });
+    }
+  } else if (apiProvider === 'gemini') {
+    const geminiBaseUrl = process.env.GEMINI_BASE_URL;
+    if (geminiBaseUrl) {
+      properties.push({
+        label: 'Gemini base URL',
+        value: geminiBaseUrl
+      });
+    }
+    const geminiModel = process.env.GEMINI_MODEL;
+    if (geminiModel) {
+      properties.push({
+        label: 'Model',
+        value: geminiModel
       });
     }
   }
