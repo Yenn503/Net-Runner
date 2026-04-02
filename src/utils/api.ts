@@ -60,6 +60,7 @@ import {
 import { getPlatform } from './platform.js'
 import { countFilesRoundedRg } from './ripgrep.js'
 import { jsonStringify } from './slowOperations.js'
+import { stripIncompatibleSchemaKeywords } from './schemaSanitizer.js'
 import type { SystemPrompt } from './systemPromptType.js'
 import { getToolSchemaCache } from './toolSchemaCache.js'
 import { windowsPathToPosixPath } from './windowsPaths.js'
@@ -165,6 +166,7 @@ export async function toolToAPISchema(
     if (!isAgentSwarmsEnabled()) {
       input_schema = filterSwarmFieldsFromSchema(tool.name, input_schema)
     }
+    input_schema = stripIncompatibleSchemaKeywords(input_schema)
 
     base = {
       name: tool.name,

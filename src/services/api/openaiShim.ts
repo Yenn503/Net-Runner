@@ -29,6 +29,7 @@ import {
   resolveCodexApiCredentials,
   resolveProviderRequest,
 } from './providerConfig.js'
+import { stripIncompatibleSchemaKeywords } from '../../utils/schemaSanitizer.js'
 
 // ---------------------------------------------------------------------------
 // Types — minimal subset of Anthropic SDK types we need to produce
@@ -235,11 +236,12 @@ function normalizeSchemaForOpenAI(
   schema: Record<string, unknown>,
   strict = true,
 ): Record<string, unknown> {
-  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
-    return (schema ?? {}) as Record<string, unknown>
+  const sanitizedSchema = stripIncompatibleSchemaKeywords(schema)
+  if (!sanitizedSchema || typeof sanitizedSchema !== 'object' || Array.isArray(sanitizedSchema)) {
+    return (sanitizedSchema ?? {}) as Record<string, unknown>
   }
 
-  const record = { ...schema }
+  const record = { ...sanitizedSchema }
 
   if (record.type === 'object' && record.properties) {
     const properties = record.properties as Record<string, Record<string, unknown>>
