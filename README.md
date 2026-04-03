@@ -2,7 +2,7 @@
 
 # Net-Runner 🥷
 
-### LLM-Assisted Red-Team Assessment Framework
+### Red-Team Assessment Framework
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
@@ -10,7 +10,7 @@
 
 **12 Specialist Agents · 153 Red-Team Tools · 18 Capability Packs · 10 Pentest Skills · 7 Workflows**
 
-*Workflow-aware red-team runtime with evidence, memory, and specialist agents in one flow.*
+*Red-team runtime with workflow control, evidence, memory, and specialist agents.*
 
 **English** · [Español](README.es.md) · [Français](README.fr.md) · [中文](README.zh.md) · [العربية](README.ar.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [हिन्दी](README.hi.md) · [Deutsch](README.de.md)
 
@@ -18,7 +18,7 @@
 
 </div>
 
-Net-Runner is a final-year university project and research prototype for LLM-assisted red-team assessments. It is built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) fork and adapted into a framework with workflow-aware execution, specialist agents, evidence capture, and project-scoped runtime state.
+Net-Runner is a final-year university project and research prototype for red-team assessments with language-model support. It builds on the public [OpenClaude](https://github.com/Gitlawb/openclaude) fork and turns that base into a workflow-driven assessment framework with specialist agents, evidence capture, and project-scoped runtime state.
 
 > ⚠️ **Warning**
 > Use this framework only on targets you are explicitly authorized to test. Net-Runner is for legal security testing, lab work, and research use.
@@ -29,23 +29,23 @@ Net-Runner is a final-year university project and research prototype for LLM-ass
 
 Give Net-Runner a target and goal in plain language. It creates a project-scoped `.netrunner/` runtime, selects the right workflow, routes tasks to specialist agents, and captures evidence throughout the assessment.
 
-- Workflow-aware execution with evidence, memory, and reports in one runtime
-- Retrieval-backed memory and research through relevant-memory recall, project memory, agent memory, and session summarization
-- Specialist-agent routing through the core engine, with scoped delegation when a task boundary is clear
-- Guardrails that enforce scope, impact boundaries, and review points before higher-risk actions
-- Provider-portable local runtime with optional remote-session support and selective hosted integrations
-- Supports web, API, mobile, lab, Active Directory, WiFi, and CTF assessments
+- Keeps workflow state, evidence, memory, and reports in one runtime
+- Pulls useful context back in through relevant-memory recall, project memory, agent memory, and session summaries
+- Uses specialist agents when a task has a clear boundary
+- Applies guardrails before higher-risk or out-of-scope actions
+- Runs locally by default and keeps optional remote-session support from the upstream base
+- Supports web, API, mobile, lab, Active Directory, WiFi, and CTF work
 
 ---
 
 ## 🧠 Core Engine Features
 
-- **Retrieval-backed context** — Net-Runner can pull useful context back into later runs through relevant-memory retrieval, agent memory, and session-memory summaries instead of treating every prompt as stateless
-- **Evidence-first workflow** — findings, artifacts, notes, and reports stay tied to the same `.netrunner/` engagement instead of being scattered across chats and files
-- **Scoped delegation** — the main runtime keeps control of the assessment loop and hands bounded work to specialist agents when that improves accuracy or speed
-- **Guardrail enforcement** — bash, fetch, and delegated actions all run through engagement-aware guardrails so intrusive steps are blocked or pushed to review when needed
-- **Skills-first execution** — assessment method lives in reusable skills and runtime structure, while MCP stays available for the integrations that actually need it
-- **Remote and local modes** — the local runtime is the default path, but the engine still retains optional remote-session capability from the upstream base
+- **Retrieval-backed context** — Net-Runner can bring useful context back into later runs through relevant-memory retrieval, agent memory, and session-memory summaries
+- **Evidence-first workflow** — findings, artifacts, notes, and reports stay tied to the same `.netrunner/` engagement
+- **Scoped delegation** — the main runtime keeps control of the assessment loop and hands bounded work to specialist agents when that helps
+- **Guardrail enforcement** — bash, fetch, and delegated actions all run through engagement-aware guardrails
+- **Skills-first execution** — assessment method lives in reusable skills and runtime structure, while MCP stays for the integrations that actually need it
+- **Remote and local modes** — local execution is the default path, but the engine still keeps optional remote-session support from the upstream base
 
 ---
 
@@ -208,7 +208,7 @@ Use the full grouped list here: [Pentest Tool Catalog](docs/capabilities/tool-ca
 
 ## 🔗 Provenance
 
-The public upstream base for this repository is [OpenClaude](https://github.com/Gitlawb/openclaude). Net-Runner adapts that base into a red-team assessment framework. Research and provenance notes are under `docs/project/`.
+The public upstream base for this repository is [OpenClaude](https://github.com/Gitlawb/openclaude). Net-Runner changes that base into a red-team assessment framework. Research and provenance notes are under `docs/project/`.
 
 ---
 
