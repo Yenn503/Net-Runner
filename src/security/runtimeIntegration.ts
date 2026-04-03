@@ -1,0 +1,84 @@
+import { appendEvidenceEntry } from './evidence.js'
+import { assessPlannedAction, readEngagementManifest } from './engagement.js'
+import type { GuardrailDecision } from './guardrails.js'
+import { NET_RUNNER_AGENT_TYPES, type NetRunnerAgentType } from './agentTypes.js'
+
+const SECURITY_AGENT_TYPES = new Set<string>(NET_RUNNER_AGENT_TYPES)
+
+export function isNetRunnerSecurityAgent(agentType: string): agentType is NetRunnerAgentType {
+  return SECURITY_AGENT_TYPES.has(agentType)
+}
+
+export async function evaluateSubagentGuardrail(
+  cwd: string,
+  plannedAction: string,
+): Promise<GuardrailDecision | null> {
+  try {
+    const manifest = await readEngagementManifest(cwd)
+    if (!manifest) {
+      return null
+    }
+
+    const decision = assessPlannedAction(manifest, plannedAction)
+    await appendEvidenceEntry(cwd, {
+      type: 'guardrail',
+      plannedAction,
+      decision,
+    })
+    return decision
+  } catch {
+    return null
+  }
+}
+
+type RecordSubagentExecutionOptions = {
+  cwd: string
+  agentType: string
+  status: 'completed' | 'failed' | 'killed'
+  description: string
+  prompt: string
+  summary?: string
+  totalToolUseCount?: number
+  totalDurationMs?: number
+  model?: string
+}
+
+function trimSummary(value: string, max = 400): string {
+  const trimmed = value.replace(/\s+/g, ' ').trim()
+  if (trimmed.length <= max) {
+    return trimmed
+  }
+  return `${trimmed.slice(0, max)}...`
+}
+
+export async function recordSubagentExecution(
+  options: RecordSubagentExecutionOptions,
+): Promise<void> {
+  try {
+    const manifest = await readEngagementManifest(options.cwd)
+    if (!manifest) {
+      return
+    }
+
+    const lines = [
+      `subagent=${options.agentType}`,
+      `status=${options.status}`,
+      `description=${trimSummary(options.description, 160)}`,
+      `model=${options.model ?? 'inherit'}`,
+      `tool_uses=${options.totalToolUseCount ?? 0}`,
+      `duration_ms=${options.totalDurationMs ?? 0}`,
+      `prompt=${trimSummary(options.prompt, 220)}`,
+    ]
+
+    if (options.summary && options.summary.trim().length > 0) {
+      lines.push(`summary=${trimSummary(options.summary)}`)
+    }
+
+    await appendEvidenceEntry(options.cwd, {
+      type: 'note',
+      note: lines.join(' | '),
+    })
+  } catch {
+    return
+  }
+}

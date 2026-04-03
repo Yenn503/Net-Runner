@@ -1,0 +1,252 @@
+import { mkdir, readFile, writeFile } from 'fs/promises'
+import { basename, dirname } from 'path'
+import { findWorkflow, type SecurityWorkflow } from './workflows.js'
+import type { NetRunnerSkillName } from './skillDefinitions.js'
+import { assessActionAgainstImpact, type GuardrailDecision, type ImpactLevel } from './guardrails.js'
+import {
+  getArtifactsDir,
+  getEngagementInstructionsDir,
+  getEngagementManifestPath,
+  getEngagementMemoryDir,
+  getEngagementSecretsPath,
+  getEngagementVariablesPath,
+  getEvidenceLedgerPath,
+  getFindingsDir,
+  getNetRunnerProjectDir,
+  getReportsDir,
+} from './paths.js'
+
+export type EngagementStatus = 'draft' | 'active' | 'paused' | 'closed'
+
+export type EngagementManifest = {
+  schemaVersion: 1
+  name: string
+  workflowId: SecurityWorkflow['id']
+  status: EngagementStatus
+  targets: string[]
+  objectives: string[]
+  createdAt: string
+  updatedAt: string
+  authorization: {
+    status: 'confirmed' | 'unconfirmed'
+    authorizedBy: string
+    scopeSummary: string
+    maxImpact: ImpactLevel
+    restrictions: string[]
+  }
+  execution: {
+    preferredMode: 'skills-and-tools'
+    allowMcpForIntegrations: boolean
+    defaultSkills: NetRunnerSkillName[]
+  }
+}
+
+export type InitializeEngagementOptions = {
+  cwd: string
+  name?: string
+  workflowId?: SecurityWorkflow['id']
+  targets?: string[]
+  objectives?: string[]
+  scopeSummary?: string
+  authorizedBy?: string
+  maxImpact?: ImpactLevel
+  restrictions?: string[]
+}
+
+function getDefaultEngagementName(cwd: string): string {
+  const baseName = basename(cwd).trim()
+  const normalizedBaseName = baseName.toLowerCase()
+  if (
+    normalizedBaseName.length === 0 ||
+    normalizedBaseName.includes('net-runner') ||
+    normalizedBaseName.includes('net_runner') ||
+    normalizedBaseName.includes('netrunner') ||
+    normalizedBaseName.includes('claude')
+  ) {
+    return 'net-runner-workspace'
+  }
+  return baseName
+}
+
+function buildInstructionsReadme(manifest: EngagementManifest): string {
+  return `# Net-Runner Engagement Envelope
+
+This directory is the project-scoped security testing envelope for this workspace.
+
+- Workflow: ${manifest.workflowId}
+- Scope: ${manifest.authorization.scopeSummary}
+- Authorization: ${manifest.authorization.status} by ${manifest.authorization.authorizedBy}
+- Max impact: ${manifest.authorization.maxImpact}
+
+Files:
+- engagement.json: engagement manifest and execution defaults
+- variables.env: non-secret engagement variables
+- secrets.env: secret values that should stay out of transcripts and reports
+- memory/private.md: operator-only notes
+- memory/team.md: reusable team-safe notes
+- evidence/ledger.jsonl: append-only evidence log
+- reports/: generated markdown reports
+`
+}
+
+const DEFAULT_VARIABLES_FILE = `# Non-secret engagement variables
+# Example:
+# TARGET_BASE_URL=https://target.lab
+`
+
+const DEFAULT_SECRETS_FILE = `# Secret engagement values
+# Example:
+# SESSION_COOKIE=
+# API_TOKEN=
+`
+
+const DEFAULT_PRIVATE_MEMORY = `# Private Memory
+
+Store operator-only working notes here.
+`
+
+const DEFAULT_TEAM_MEMORY = `# Team Memory
+
+Store reusable, non-sensitive findings and workflow notes here.
+`
+
+export function createDefaultEngagementManifest(
+  options: InitializeEngagementOptions,
+): EngagementManifest {
+  const workflow = findWorkflow(options.workflowId ?? 'web-app-testing')
+  if (!workflow) {
+    throw new Error(`Unknown Net-Runner workflow: ${options.workflowId}`)
+  }
+
+  const now = new Date().toISOString()
+  return {
+    schemaVersion: 1,
+    name: options.name ?? getDefaultEngagementName(options.cwd),
+    workflowId: workflow.id,
+    status: 'active',
+    targets: options.targets ?? [],
+    objectives:
+      options.objectives && options.objectives.length > 0
+        ? options.objectives
+        : [`Execute the ${workflow.label.toLowerCase()} workflow safely and keep evidence.`],
+    createdAt: now,
+    updatedAt: now,
+    authorization: {
+      status: 'confirmed',
+      authorizedBy: options.authorizedBy ?? 'operator',
+      scopeSummary:
+        options.scopeSummary ??
+        'Operator-initialized authorized security testing engagement.',
+      maxImpact: options.maxImpact ?? 'limited',
+      restrictions:
+        options.restrictions && options.restrictions.length > 0
+          ? options.restrictions
+          : ['Do not exceed the declared scope or persistence boundary.'],
+    },
+    execution: {
+      preferredMode: 'skills-and-tools',
+      allowMcpForIntegrations: true,
+      defaultSkills: workflow.defaultSkills,
+    },
+  }
+}
+
+async function writeIfMissing(path: string, content: string): Promise<void> {
+  try {
+    await readFile(path, 'utf8')
+  } catch {
+    await mkdir(dirname(path), { recursive: true })
+    await writeFile(path, content, 'utf8')
+  }
+}
+
+export async function initializeNetRunnerProject(
+  options: InitializeEngagementOptions,
+): Promise<EngagementManifest> {
+  const manifest = createDefaultEngagementManifest(options)
+  const projectDir = getNetRunnerProjectDir(options.cwd)
+
+  await Promise.all([
+    mkdir(projectDir, { recursive: true }),
+    mkdir(getEngagementInstructionsDir(options.cwd), { recursive: true }),
+    mkdir(getEngagementMemoryDir(options.cwd), { recursive: true }),
+    mkdir(dirname(getEvidenceLedgerPath(options.cwd)), { recursive: true }),
+    mkdir(getArtifactsDir(options.cwd), { recursive: true }),
+    mkdir(getFindingsDir(options.cwd), { recursive: true }),
+    mkdir(getReportsDir(options.cwd), { recursive: true }),
+  ])
+
+  await writeEngagementManifest(options.cwd, manifest)
+  await Promise.all([
+    writeIfMissing(
+      `${getEngagementInstructionsDir(options.cwd)}/README.md`,
+      buildInstructionsReadme(manifest),
+    ),
+    writeIfMissing(getEngagementVariablesPath(options.cwd), DEFAULT_VARIABLES_FILE),
+    writeIfMissing(getEngagementSecretsPath(options.cwd), DEFAULT_SECRETS_FILE),
+    writeIfMissing(
+      `${getEngagementMemoryDir(options.cwd)}/private.md`,
+      DEFAULT_PRIVATE_MEMORY,
+    ),
+    writeIfMissing(
+      `${getEngagementMemoryDir(options.cwd)}/team.md`,
+      DEFAULT_TEAM_MEMORY,
+    ),
+    writeIfMissing(getEvidenceLedgerPath(options.cwd), ''),
+  ])
+
+  return manifest
+}
+
+export async function readEngagementManifest(
+  cwd: string,
+): Promise<EngagementManifest | null> {
+  try {
+    const raw = await readFile(getEngagementManifestPath(cwd), 'utf8')
+    return JSON.parse(raw) as EngagementManifest
+  } catch {
+    return null
+  }
+}
+
+export async function writeEngagementManifest(
+  cwd: string,
+  manifest: EngagementManifest,
+): Promise<void> {
+  const nextManifest = {
+    ...manifest,
+    updatedAt: new Date().toISOString(),
+  }
+  await mkdir(dirname(getEngagementManifestPath(cwd)), { recursive: true })
+  await writeFile(
+    getEngagementManifestPath(cwd),
+    JSON.stringify(nextManifest, null, 2),
+    'utf8',
+  )
+}
+
+export function summarizeEngagement(manifest: EngagementManifest): string {
+  const targets =
+    manifest.targets.length > 0 ? manifest.targets.join(', ') : 'no explicit targets yet'
+  return [
+    `name: ${manifest.name}`,
+    `workflow: ${manifest.workflowId}`,
+    `status: ${manifest.status}`,
+    `targets: ${targets}`,
+    `authorization: ${manifest.authorization.status} by ${manifest.authorization.authorizedBy}`,
+    `max impact: ${manifest.authorization.maxImpact}`,
+    `scope: ${manifest.authorization.scopeSummary}`,
+    `skills: ${manifest.execution.defaultSkills.join(', ')}`,
+  ].join('\n')
+}
+
+export function assessPlannedAction(
+  manifest: EngagementManifest,
+  plannedAction: string,
+): GuardrailDecision {
+  return assessActionAgainstImpact(
+    plannedAction,
+    manifest.authorization.maxImpact,
+    manifest.authorization.status,
+  )
+}
