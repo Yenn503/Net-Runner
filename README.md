@@ -21,16 +21,13 @@
 > ⚠️ **Warning**
 > Use **only** on targets you are explicitly authorized to test. Net-Runner is designed for legal, authorized penetration testing and educational purposes.
 
-> **Final-year project note**
-> This repository is the current implementation of my final-year project. It comes from the same core idea as the original proposal, but the build changed as the agent space changed. This version stays closer to the original aim by leaning on skills, direct tool execution, better agent routing, and selective MCP use where it actually helps.
-
 ## 🔍 What Is Net-Runner?
 
 Net-Runner is a multi-agent security testing framework built for natural-language operation.
 
-It is also the current research build for my final-year project. The aim is simple: build a red-team framework that stays modular, avoids unnecessary MCP dependence, and keeps solid support for tool calling, evidence capture, and specialist execution.
+It keeps the operator flow simple while keeping the runtime state, evidence, memory, and specialist execution in the same system.
 
-The implementation is built on top of the public [OpenClaude](https://github.com/Gitlawb/openclaude) fork. The project work is in what changed on top of that base: the red-team focus, the workflow design, the skills-first direction, the specialist roles, and the evidence model.
+The current build is adapted from the public [OpenClaude](https://github.com/Gitlawb/openclaude) fork and reshaped for red-team assessment workflows.
 
 You connect an LLM, describe the target and goal in plain English, and Net-Runner brings the full engine into play:
 
@@ -57,31 +54,6 @@ Net-Runner plans, delegates, executes, remembers, and reports.
 - **Persistent memory** — useful context can be pulled back in across sessions
 - **Evidence-first operation** — findings, execution steps, approvals, and reports stay tied to the same engagement
 - **Skills-first direction** — core workflow logic stays in skills and runtime structure instead of being pushed into MCP by default
-
-## Research Alignment
-
-This version is not a departure from the original project idea. It lines up with it better than the earlier versions.
-
-The original goal was to build a modular AI-driven red-team framework that avoided tool bloat, reduced reasoning drift, and gave the runtime a cleaner way to run offensive-security workflows. After more research and implementation work, the version that made the most sense turned out to be:
-
-- skills-first orchestration for reusable methodology
-- direct shell, file, web, and code execution for most of the real work
-- specialist agents for scoped tasks
-- MCP kept as a selective integration layer instead of the default architecture
-
-So the core idea stayed the same, but the implementation got better and fit the actual runtime behavior more cleanly.
-
-## Upstream Base
-
-Net-Runner is built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) fork as its upstream runtime base.
-
-That is the right way to describe the project:
-
-- the upstream runtime gave a strong agentic CLI foundation
-- this project reworked that base into a red-team framework
-- the research contribution is in the architecture direction, workflow design, specialist security roles, evidence model, and the move toward skills-first execution
-
-In other words, the value of this project is not "I took a coding CLI and renamed it". The value is that the runtime has been pushed into a more focused security-testing system that matches the original aim far better.
 
 ---
 
@@ -187,20 +159,6 @@ In the normal path, you can:
 - tell it what kind of assessment to run
 - ask it to continue, deepen, retest, summarize, or report
 - let it use the environment, tools, memory, and agents already available to it
-
----
-
-## Why MCP Is Selective Here
-
-Net-Runner is not anti-MCP. It just does not treat MCP as the default answer for everything.
-
-For this project, the better pattern is:
-
-1. keep core assessment logic in skills
-2. use built-in tools and direct execution for most of the workflow
-3. bring in MCP where typed external integrations, remote systems, or service boundaries make it worth it
-
-That keeps the framework closer to the original project aim: modular, easier to reason about, and less bloated.
 
 ---
 
