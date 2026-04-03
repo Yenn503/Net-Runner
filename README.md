@@ -1,10 +1,24 @@
-# Net-Runner
+<div align="center">
 
-Net-Runner is a final-year university project and research prototype for LLM-assisted red-team assessments. It is built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) fork and adapted into a framework with workflow-aware execution, specialist agents, evidence capture, and project-scoped runtime state.
+# Net-Runner 🥷
 
-Current build: `12` specialist agents, `153` imported pentest tools, `18` capability packs, `10` pentest skills, and `7` workflows.
+### LLM-Assisted Red-Team Assessment Framework
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
+[![License](https://img.shields.io/badge/License-Educational%20Use-red?style=for-the-badge)](#license)
+
+**12 Specialist Agents · 153 Red-Team Tools · 18 Capability Packs · 10 Pentest Skills · 7 Workflows**
+
+*Workflow-aware red-team runtime with evidence, memory, and specialist agents in one flow.*
 
 **English** · [Español](README.es.md) · [Français](README.fr.md) · [中文](README.zh.md) · [العربية](README.ar.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [हिन्दी](README.hi.md) · [Deutsch](README.de.md)
+
+---
+
+</div>
+
+Net-Runner is a final-year university project and research prototype for LLM-assisted red-team assessments. It is built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) fork and adapted into a framework with workflow-aware execution, specialist agents, evidence capture, and project-scoped runtime state.
 
 > Warning
 > Use this framework only on targets you are explicitly authorized to test. Net-Runner is for legal security testing, lab work, and research use.
