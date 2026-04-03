@@ -1,6 +1,6 @@
 <div align="center">
 
-# Net-Runner
+# Net-Runner 🥷
 
 ### Agentic Red-Team Assessment Framework
 
@@ -18,10 +18,10 @@
 
 </div>
 
-> **Warning**
+> ⚠️ **Warning**
 > Use **only** on targets you are explicitly authorized to test. Net-Runner is designed for legal, authorized penetration testing and educational purposes.
 
-## What Is Net-Runner?
+## 🔍 What Is Net-Runner?
 
 Net-Runner is a multi-agent red-team framework that turns natural-language instructions into structured security assessments. You talk to the **Engagement Lead** — it delegates reconnaissance, exploitation, reporting, and everything in between to purpose-built specialist agents.
 
@@ -39,7 +39,7 @@ Net-Runner is a multi-agent red-team framework that turns natural-language instr
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 # Install dependencies
@@ -62,7 +62,78 @@ Net-Runner auto-detects your intent, bootstraps a safe engagement, and starts wo
 
 ---
 
-## How It Works
+## 🤖 Connect an LLM Provider
+
+Net-Runner works with multiple LLM providers. Set the right environment variables before launching.
+
+### Anthropic (Claude) — Default
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+node dist/cli.mjs
+```
+
+Claude is the default provider. No additional configuration needed — just set your API key and go.
+
+### OpenAI
+
+```bash
+export OPENAI_API_KEY="sk-..."
+export OPENAI_MODEL="gpt-4o"          # optional, defaults to gpt-4o
+node dist/cli.mjs
+```
+
+### Google Gemini
+
+```bash
+export GEMINI_API_KEY="AIza..."
+export GEMINI_MODEL="gemini-2.5-pro"   # optional, defaults to gemini-2.0-flash
+node dist/cli.mjs
+```
+
+### Ollama (Local / Self-Hosted)
+
+Run any model locally with zero API costs:
+
+```bash
+# Start Ollama first
+ollama serve
+
+# Pull a model
+ollama pull llama3.1:8b
+
+# Launch Net-Runner pointing to Ollama
+export OPENAI_BASE_URL="http://localhost:11434/v1"
+export OPENAI_MODEL="llama3.1:8b"
+node dist/cli.mjs
+```
+
+### Any OpenAI-Compatible API
+
+Works with LM Studio, vLLM, Together AI, Groq, Fireworks, or any endpoint that speaks the OpenAI chat completions format:
+
+```bash
+export OPENAI_API_KEY="your-key"
+export OPENAI_BASE_URL="https://your-provider.com/v1"
+export OPENAI_MODEL="your-model-name"
+node dist/cli.mjs
+```
+
+<details>
+<summary><strong>💡 Provider Tips</strong></summary>
+
+- **Best results** come from Claude Sonnet 4 / Opus — they handle multi-step tool use and agent orchestration the best
+- **GPT-4o** works well for most workflows
+- **Gemini 2.5 Pro** is a strong alternative with large context windows
+- **Local models** (Ollama) work for basic recon and evidence tasks but may struggle with complex multi-agent orchestration
+- You can switch providers between sessions — memory persists regardless of which model you use
+- API keys are never stored in the engagement envelope; use shell environment or `.env` files
+
+</details>
+
+---
+
+## ⚙️ How It Works
 
 ```
 You ──► Engagement Lead ──► Specialist Agents ──► Tools (Bash/MCP/Skills)
@@ -104,7 +175,7 @@ I confirm authorization for this engagement. Max impact: limited.
 
 ---
 
-## Specialist Agents
+## 🕵️ Specialist Agents
 
 <table>
 <tr>
@@ -139,7 +210,7 @@ All 12 agents share evidence through the engagement envelope, communicate via th
 
 ---
 
-## Skills
+## 🧠 Skills
 
 Nine pentest-specific skills structure execution flow — agents invoke them automatically based on workflow phase.
 
@@ -157,7 +228,7 @@ Nine pentest-specific skills structure execution flow — agents invoke them aut
 
 ---
 
-## Workflows
+## 📋 Workflows
 
 Choose a workflow that matches your engagement. Each bundles the right capability packs, specialists, and default skills.
 
@@ -172,7 +243,7 @@ Choose a workflow that matches your engagement. Each bundles the right capabilit
 
 ---
 
-## Tool Coverage
+## 🛠️ Tool Coverage
 
 <div align="center">
 
@@ -261,7 +332,7 @@ Choose a workflow that matches your engagement. Each bundles the right capabilit
 
 ---
 
-## Evidence & Memory
+## 📁 Evidence & Memory
 
 Net-Runner maintains full assessment continuity across sessions.
 
@@ -306,7 +377,7 @@ Net-Runner maintains full assessment continuity across sessions.
 
 ---
 
-## Operator Commands
+## 🎮 Operator Commands
 
 Optional manual controls — most work happens through natural language.
 
@@ -325,7 +396,7 @@ Optional manual controls — most work happens through natural language.
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 src/
@@ -351,7 +422,7 @@ src/
 
 ---
 
-## Validation
+## ✅ Validation
 
 ```bash
 # Full red-team pipeline
@@ -373,7 +444,7 @@ bun run build
 
 ---
 
-## Documentation
+## 📚 Documentation
 
 | Document | Description |
 |:---------|:------------|
@@ -385,7 +456,7 @@ bun run build
 
 ---
 
-## License
+## 📜 License
 
 This repository is for **educational use** and **authorized security testing** only.
 
