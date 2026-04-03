@@ -150,7 +150,7 @@ You ──► Engagement Lead ──► Specialist Agents ──► Tools (Bash/
 | Step | What Happens |
 |------|-------------|
 | **1. Detect** | Parse assessment intent, identify targets |
-| **2. Bootstrap** | Create `.netrunner/` envelope with safe defaults (`unconfirmed` auth, `read-only` impact) |
+| **2. Bootstrap** | Create `.netrunner/` envelope with operator-directed defaults (`confirmed` auth state, inferred impact boundary) |
 | **3. Inject** | Attach scope, authorization, and restrictions to every model turn |
 | **4. Delegate** | Route work to specialist agents based on workflow and findings |
 | **5. Guard** | Scope-guard checkpoint before any high-impact action |
@@ -160,17 +160,17 @@ You ──► Engagement Lead ──► Specialist Agents ──► Tools (Bash/
 
 ### Safe Defaults
 
-Every auto-initialized engagement starts locked down:
+Every auto-initialized engagement starts operator-directed:
 
 | Setting | Default |
 |---------|---------|
-| Authorization | `unconfirmed` |
-| Max Impact | `read-only` |
+| Authorization | `confirmed` |
+| Max Impact | inferred from the prompt (`limited` by default) |
 
-Confirm scope in plain language:
+Adjust impact in plain language when needed:
 
 ```
-I confirm authorization for this engagement. Max impact: limited.
+Escalate to intrusive validation and try controlled exploitation.
 ```
 
 ---

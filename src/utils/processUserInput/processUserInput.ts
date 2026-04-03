@@ -9,7 +9,7 @@ import type { QuerySource } from 'src/constants/querySource.js'
 import { logEvent } from 'src/services/analytics/index.js'
 import {
   maybeAutoBootstrapEngagement,
-  maybeAutoConfirmEngagementAuthorization,
+  maybeAutoSyncEngagementContext,
 } from 'src/security/autoEngagement.js'
 import {
   formatEngagementContextForPrompt,
@@ -598,7 +598,7 @@ async function processUserInputBase(
     )
     if (autoBootstrap.initialized && autoBootstrap.manifest) {
       imageMetadataTexts.push(
-        `[Net-Runner auto-engagement initialized in safe mode: workflow=${autoBootstrap.manifest.workflowId}, target=${autoBootstrap.target ?? 'unknown'}, authorization=unconfirmed, max_impact=read-only]`,
+        `[Net-Runner auto-engagement initialized: workflow=${autoBootstrap.manifest.workflowId}, target=${autoBootstrap.target ?? 'unknown'}, authorization=confirmed, max_impact=${autoBootstrap.manifest.authorization.maxImpact}]`,
       )
       manifestForContext = autoBootstrap.manifest
     }
@@ -608,16 +608,16 @@ async function processUserInputBase(
     }
 
     if (manifestForContext) {
-      const confirmation = await maybeAutoConfirmEngagementAuthorization(
+      const contextSync = await maybeAutoSyncEngagementContext(
         engagementCwd,
         inputString,
       )
-      if (confirmation.manifest) {
-        manifestForContext = confirmation.manifest
+      if (contextSync.manifest) {
+        manifestForContext = contextSync.manifest
       }
-      if (confirmation.updated) {
+      if (contextSync.updated) {
         imageMetadataTexts.push(
-          `[Net-Runner authorization confirmed from operator prompt: max_impact=${manifestForContext.authorization.maxImpact}]`,
+          `[Net-Runner engagement impact updated from operator prompt: max_impact=${manifestForContext.authorization.maxImpact}]`,
         )
       }
 

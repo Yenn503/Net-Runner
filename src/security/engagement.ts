@@ -305,9 +305,11 @@ export function formatEngagementContextForPrompt(
       ? manifest.authorization.restrictions.join(' | ')
       : 'none'
   const defaultBehavior =
-    manifest.authorization.status === 'confirmed'
-      ? 'Proceed inside scope and enforce guardrails before higher-impact actions.'
-      : 'Operate in read-only mode until the operator explicitly confirms authorization.'
+    manifest.authorization.maxImpact === 'read-only'
+      ? 'Operate in read-only mode unless the operator explicitly requests a higher-impact action.'
+      : manifest.authorization.maxImpact === 'limited'
+        ? 'Proceed inside scope with controlled validation; require guardrail review before high-impact or persistence actions.'
+        : 'Proceed inside scope, but require guardrail review before destructive or persistence-heavy actions.'
 
   return [
     '[Net-Runner engagement context]',

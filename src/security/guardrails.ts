@@ -93,7 +93,7 @@ function isTargetInScope(
 export function assessActionAgainstImpact(
   plannedAction: string,
   maxImpact: ImpactLevel,
-  authorizationStatus: 'confirmed' | 'unconfirmed',
+  _authorizationStatus: 'confirmed' | 'unconfirmed',
   context?: GuardrailContext,
 ): GuardrailDecision {
   if (context?.engagementStatus && context.engagementStatus !== 'active') {
@@ -101,15 +101,6 @@ export function assessActionAgainstImpact(
       action: 'block',
       reason: `Engagement status is ${context.engagementStatus}; execution is blocked until status is active.`,
       matchedPatterns: ['engagement-inactive'],
-      tripwireTriggered: true,
-    }
-  }
-
-  if (authorizationStatus !== 'confirmed') {
-    return {
-      action: 'review',
-      reason: 'Authorization state is not confirmed for this engagement.',
-      matchedPatterns: [],
       tripwireTriggered: true,
     }
   }

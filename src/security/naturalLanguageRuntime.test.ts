@@ -71,15 +71,16 @@ test('plain-language assessment prompts auto-bootstrap engagement context into t
   const allUserText = collectUserMessageText(result).join('\n')
   assert.match(
     allUserText,
-    /\[Net-Runner auto-engagement initialized in safe mode:/,
+    /\[Net-Runner auto-engagement initialized:/,
   )
   assert.match(allUserText, /\[Net-Runner engagement context\]/)
   assert.match(allUserText, /workflow=web-app-testing/)
-  assert.match(allUserText, /authorization_status=unconfirmed/)
+  assert.match(allUserText, /authorization_status=confirmed/)
+  assert.match(allUserText, /max_impact=limited/)
   assert.match(allUserText, /default_skills=engagement-setup, scope-guard/)
 })
 
-test('plain-language authorization confirmation updates the injected engagement context', async () => {
+test('plain-language impact escalation updates the injected engagement context', async () => {
   const cwd = await mkdtemp(
     join(tmpdir(), 'net-runner-natural-language-confirm-'),
   )
@@ -98,7 +99,7 @@ test('plain-language authorization confirmation updates the injected engagement 
 
   const confirmation = await runWithCwdOverride(cwd, () =>
     processUserInput({
-      input: 'I confirm authorization for this engagement. Keep impact limited.',
+      input: 'Escalate to intrusive validation and try controlled exploitation.',
       mode: 'prompt',
       setToolJSX: () => {},
       context,
@@ -110,12 +111,12 @@ test('plain-language authorization confirmation updates the injected engagement 
   const allUserText = collectUserMessageText(confirmation).join('\n')
   assert.match(
     allUserText,
-    /\[Net-Runner authorization confirmed from operator prompt: max_impact=limited\]/,
+    /\[Net-Runner engagement impact updated from operator prompt: max_impact=intrusive\]/,
   )
   assert.match(allUserText, /authorization_status=confirmed/)
-  assert.match(allUserText, /max_impact=limited/)
+  assert.match(allUserText, /max_impact=intrusive/)
   assert.match(
     allUserText,
-    /default_behavior=Proceed inside scope and enforce guardrails before higher-impact actions\./,
+    /default_behavior=Proceed inside scope, but require guardrail review before destructive or persistence-heavy actions\./,
   )
 })

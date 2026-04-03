@@ -17,10 +17,6 @@ const IPV4_TARGET_PATTERN =
   /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/
 const DOMAIN_TARGET_PATTERN =
   /\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{2,5})?(?:\/[^\s)]*)?\b/
-const AUTH_CONFIRM_VERB_PATTERN =
-  /\b(confirm|confirmed|approve|approved|authorize|authorized|authorised|acknowledge|acknowledged)\b/i
-const AUTH_CONFIRM_SUBJECT_PATTERN =
-  /\b(authori[sz]ation|scope|engagement|assessment|target|proceed)\b/i
 
 export type AutoEngagementBootstrapResult = {
   initialized: boolean
@@ -34,13 +30,13 @@ export type AutoEngagementBootstrapResult = {
   target?: string
 }
 
-export type AutoEngagementAuthorizationSyncResult = {
+export type AutoEngagementContextSyncResult = {
   updated: boolean
   reason:
     | 'updated'
     | 'no-engagement'
-    | 'already-confirmed'
-    | 'no-confirmation-signal'
+    | 'no-impact-signal'
+    | 'unchanged'
   manifest?: EngagementManifest
 }
 
@@ -102,14 +98,7 @@ function inferMaxImpact(prompt: string): 'read-only' | 'limited' | 'intrusive' {
   return 'limited'
 }
 
-function hasAuthorizationConfirmationSignal(prompt: string): boolean {
-  return (
-    AUTH_CONFIRM_VERB_PATTERN.test(prompt) &&
-    AUTH_CONFIRM_SUBJECT_PATTERN.test(prompt)
-  )
-}
-
-function inferImpactOverrideFromConfirmation(prompt: string): ImpactLevel | null {
+function inferExplicitImpactSignal(prompt: string): ImpactLevel | null {
   if (/\b(read[ -]?only|passive|recon only|non-invasive)\b/i.test(prompt)) {
     return 'read-only'
   }
@@ -159,14 +148,14 @@ export async function maybeAutoBootstrapEngagement(
   const manifest = await initializeNetRunnerProject({
     cwd,
     workflowId,
-    authorizationStatus: 'unconfirmed',
+    authorizationStatus: 'confirmed',
     targets: [target],
-    maxImpact: 'read-only',
+    maxImpact: requestedMaxImpact,
     scopeSummary: `Auto-initialized from operator prompt: ${summary}`,
-    authorizedBy: 'operator (auto-bootstrap, pending confirmation)',
+    authorizedBy: 'operator (natural-language session)',
     restrictions: [
-      'Remain in read-only mode until operator authorization is explicitly confirmed.',
       'Do not exceed the declared target scope.',
+      'Require guardrail review before destructive or persistence-heavy actions.',
     ],
   })
 
@@ -176,7 +165,7 @@ export async function maybeAutoBootstrapEngagement(
   })
   await appendEvidenceEntry(cwd, {
     type: 'note',
-    note: `auto_bootstrap=true | workflow=${workflowId} | target=${target} | authorization=unconfirmed | max_impact=read-only | requested_max_impact=${requestedMaxImpact}`,
+    note: `auto_bootstrap=true | workflow=${workflowId} | target=${target} | authorization=confirmed | max_impact=${requestedMaxImpact} | operator_mode=natural-language`,
   })
 
   return {
@@ -187,46 +176,46 @@ export async function maybeAutoBootstrapEngagement(
   }
 }
 
-export async function maybeAutoConfirmEngagementAuthorization(
+export async function maybeAutoSyncEngagementContext(
   cwd: string,
   prompt: string,
-): Promise<AutoEngagementAuthorizationSyncResult> {
+): Promise<AutoEngagementContextSyncResult> {
   const manifest = await readEngagementManifest(cwd)
   if (!manifest) {
     return { updated: false, reason: 'no-engagement' }
   }
 
-  if (manifest.authorization.status === 'confirmed') {
+  const impactOverride = inferExplicitImpactSignal(prompt)
+  if (!impactOverride) {
     return {
       updated: false,
-      reason: 'already-confirmed',
+      reason: 'no-impact-signal',
       manifest,
     }
   }
 
-  if (!hasAuthorizationConfirmationSignal(prompt)) {
+  if (manifest.authorization.maxImpact === impactOverride) {
     return {
       updated: false,
-      reason: 'no-confirmation-signal',
+      reason: 'unchanged',
       manifest,
     }
   }
 
-  const impactOverride = inferImpactOverrideFromConfirmation(prompt)
   const nextManifest: EngagementManifest = {
     ...manifest,
     authorization: {
       ...manifest.authorization,
       status: 'confirmed',
-      authorizedBy: 'operator (chat-confirmed)',
-      maxImpact: impactOverride ?? manifest.authorization.maxImpact,
+      authorizedBy: 'operator (natural-language session)',
+      maxImpact: impactOverride,
     },
   }
 
   await writeEngagementManifest(cwd, nextManifest)
   await appendEvidenceEntry(cwd, {
     type: 'note',
-    note: `authorization_confirmed=true | source=chat | max_impact=${nextManifest.authorization.maxImpact}`,
+    note: `operator_intent_sync=true | source=chat | max_impact=${nextManifest.authorization.maxImpact}`,
   })
 
   return {

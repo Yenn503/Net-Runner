@@ -66,13 +66,16 @@ test('runtime prompt context includes authorization and impact defaults', async 
     cwd,
     workflowId: 'api-testing',
     targets: ['api.target.lab'],
-    authorizationStatus: 'unconfirmed',
-    maxImpact: 'read-only',
+    authorizationStatus: 'confirmed',
+    maxImpact: 'limited',
   })
 
   const contextBlock = formatEngagementContextForPrompt(manifest)
   assert.match(contextBlock, /\[Net-Runner engagement context\]/)
-  assert.match(contextBlock, /authorization_status=unconfirmed/)
-  assert.match(contextBlock, /max_impact=read-only/)
-  assert.match(contextBlock, /default_behavior=Operate in read-only mode/)
+  assert.match(contextBlock, /authorization_status=confirmed/)
+  assert.match(contextBlock, /max_impact=limited/)
+  assert.match(
+    contextBlock,
+    /default_behavior=Proceed inside scope with controlled validation; require guardrail review before high-impact or persistence actions\./,
+  )
 })

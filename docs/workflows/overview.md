@@ -21,8 +21,8 @@
 
 1. Start with a plain-language assessment instruction that includes a target.
 2. If the prompt is non-slash, has assessment intent, and includes a detectable URL, IP, or domain, Net-Runner auto-initializes `.netrunner/engagement.json` if needed.
-3. Auto-init starts in safe mode (`authorization=unconfirmed`, `maxImpact=read-only`).
-4. Confirm authorization in normal chat to unlock the intended impact boundary, or initialize manually with `/engagement init [workflow] [target]` if the heuristic did not fire.
+3. Auto-init starts operator-directed (`authorization=confirmed`) and infers an initial `maxImpact` from the prompt (`limited` by default, `read-only` or `intrusive` when explicitly requested).
+4. The operator can raise or lower `maxImpact` later in normal chat without leaving the main flow, or initialize manually with `/engagement init [workflow] [target]` if the heuristic did not fire.
 5. The runtime injects engagement context into model turns (scope, status, restrictions, impact).
 6. The main agent executes tools directly and can delegate scoped tasks to specialists through `AgentTool` when needed.
 7. Guardrails evaluate higher-impact actions before execution.
