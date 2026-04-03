@@ -21,6 +21,9 @@
 > ⚠️ **Advertencia**
 > Úsalo solo contra objetivos para los que tengas autorización explícita. Net-Runner está diseñado para pruebas de seguridad legales, autorizadas y con fines educativos.
 
+> **Nota de traducción**
+> La versión en inglés (`README.md`) es la referencia principal del proyecto y de su dirección de investigación actual. Esta traducción es de apoyo y puede quedarse atrás respecto a la documentación principal.
+
 ## 🔍 Qué es Net-Runner
 
 Net-Runner es un framework multiagente de pruebas de seguridad diseñado para trabajar en lenguaje natural.

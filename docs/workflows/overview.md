@@ -2,6 +2,8 @@
 
 `Net-Runner` runs assessments as one inline runtime loop: engagement state, orchestration, guardrails, evidence, and memory.
 
+This is the current implementation shape of the project and the one that best fits the skills-first direction of the final-year research.
+
 ## Current workflow registry
 
 - `web-app-testing`

@@ -21,6 +21,9 @@
 > ⚠️ **Aviso**
 > Use apenas em alvos para os quais você tenha autorização explícita. O Net-Runner foi feito para testes de segurança legais, autorizados e educacionais.
 
+> **Nota de tradução**
+> A versão em inglês (`README.md`) é a referência principal para a descrição do projeto e a direção atual da pesquisa. Esta tradução é apenas de apoio e pode ficar atrás da documentação principal.
+
 ## 🔍 O que é o Net-Runner?
 
 O Net-Runner é um framework multiagente de testes de segurança feito para operar em linguagem natural.
