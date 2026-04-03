@@ -7,7 +7,15 @@ import type {
 import { randomUUID } from 'crypto'
 import type { QuerySource } from 'src/constants/querySource.js'
 import { logEvent } from 'src/services/analytics/index.js'
-import { maybeAutoBootstrapEngagement } from 'src/security/autoEngagement.js'
+import {
+  maybeAutoBootstrapEngagement,
+  maybeAutoConfirmEngagementAuthorization,
+} from 'src/security/autoEngagement.js'
+import {
+  formatEngagementContextForPrompt,
+  readEngagementManifest,
+  type EngagementManifest,
+} from 'src/security/engagement.js'
 import { getContentText } from 'src/utils/messages.js'
 import {
   findCommand,
@@ -581,13 +589,40 @@ async function processUserInputBase(
     !isMeta &&
     !inputString.startsWith('/')
   ) {
+    const engagementCwd = getCwd()
+    let manifestForContext: EngagementManifest | null = null
+
     const autoBootstrap = await maybeAutoBootstrapEngagement(
-      getCwd(),
+      engagementCwd,
       inputString,
     )
     if (autoBootstrap.initialized && autoBootstrap.manifest) {
       imageMetadataTexts.push(
-        `[Net-Runner auto-engagement initialized: workflow=${autoBootstrap.manifest.workflowId}, target=${autoBootstrap.target ?? 'unknown'}]`,
+        `[Net-Runner auto-engagement initialized in safe mode: workflow=${autoBootstrap.manifest.workflowId}, target=${autoBootstrap.target ?? 'unknown'}, authorization=unconfirmed, max_impact=read-only]`,
+      )
+      manifestForContext = autoBootstrap.manifest
+    }
+
+    if (!manifestForContext) {
+      manifestForContext = await readEngagementManifest(engagementCwd)
+    }
+
+    if (manifestForContext) {
+      const confirmation = await maybeAutoConfirmEngagementAuthorization(
+        engagementCwd,
+        inputString,
+      )
+      if (confirmation.manifest) {
+        manifestForContext = confirmation.manifest
+      }
+      if (confirmation.updated) {
+        imageMetadataTexts.push(
+          `[Net-Runner authorization confirmed from operator prompt: max_impact=${manifestForContext.authorization.maxImpact}]`,
+        )
+      }
+
+      imageMetadataTexts.push(
+        formatEngagementContextForPrompt(manifestForContext),
       )
     }
   }

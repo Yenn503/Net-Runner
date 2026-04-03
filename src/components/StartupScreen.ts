@@ -79,8 +79,8 @@ const LOGO_RUNNER = [
 // ─── Provider detection ───────────────────────────────────────────────────────
 
 function detectProvider(): { name: string; model: string; baseUrl: string; isLocal: boolean } {
-  const useGemini = process.env.CLAUDE_CODE_USE_GEMINI === '1' || process.env.CLAUDE_CODE_USE_GEMINI === 'true'
-  const useOpenAI = process.env.CLAUDE_CODE_USE_OPENAI === '1' || process.env.CLAUDE_CODE_USE_OPENAI === 'true'
+  const useGemini = process.env.NETRUNNER_USE_GEMINI === '1' || process.env.NETRUNNER_USE_GEMINI === 'true'
+  const useOpenAI = process.env.NETRUNNER_USE_OPENAI === '1' || process.env.NETRUNNER_USE_OPENAI === 'true'
 
   if (useGemini) {
     const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash'

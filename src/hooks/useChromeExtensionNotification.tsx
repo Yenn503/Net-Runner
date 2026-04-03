@@ -24,7 +24,7 @@ async function _temp() {
   if (true && !isClaudeAISubscriber()) {
     return {
       key: "chrome-requires-subscription",
-      jsx: <Text color="error">Claude in Chrome requires a claude.ai subscription</Text>,
+      jsx: <Text color="error">Browser bridge requires a supported hosted subscription</Text>,
       priority: "immediate",
       timeoutMs: 5000
     };
@@ -40,8 +40,8 @@ async function _temp() {
   }
   if (chromeFlag === undefined) {
     return {
-      key: "claude-in-chrome-default-enabled",
-      text: "Claude in Chrome enabled \xB7 /chrome",
+      key: "browser-bridge-default-enabled",
+      text: "Browser bridge enabled \xB7 /chrome",
       priority: "low"
     };
   }

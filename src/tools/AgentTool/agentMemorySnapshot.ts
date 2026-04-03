@@ -1,13 +1,13 @@
 import { mkdir, readdir, readFile, unlink, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { z } from 'zod/v4'
+import { getEngagementMemoryDir } from '../../security/paths.js'
 import { getCwd } from '../../utils/cwd.js'
 import { logForDebugging } from '../../utils/debug.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { jsonParse, jsonStringify } from '../../utils/slowOperations.js'
 import { type AgentMemoryScope, getAgentMemoryDir } from './agentMemory.js'
 
-const SNAPSHOT_BASE = 'agent-memory-snapshots'
 const SNAPSHOT_JSON = 'snapshot.json'
 const SYNCED_JSON = '.snapshot-synced.json'
 
@@ -26,10 +26,10 @@ type SyncedMeta = z.infer<ReturnType<typeof syncedMetaSchema>>
 
 /**
  * Returns the path to the snapshot directory for an agent in the current project.
- * e.g., <cwd>/.claude/agent-memory-snapshots/<agentType>/
+ * Project snapshots live inside .netrunner/memory/snapshots/<agentType>/.
  */
 export function getSnapshotDirForAgent(agentType: string): string {
-  return join(getCwd(), '.claude', SNAPSHOT_BASE, agentType)
+  return join(getEngagementMemoryDir(getCwd()), 'snapshots', agentType)
 }
 
 function getSnapshotJsonPath(agentType: string): string {

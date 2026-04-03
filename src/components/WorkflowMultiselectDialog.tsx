@@ -2,7 +2,7 @@ import { c as _c } from "react-compiler-runtime";
 import React, { useCallback, useState } from 'react';
 import type { Workflow } from '../commands/install-github-app/types.js';
 import type { ExitState } from '../hooks/useExitOnCtrlCDWithKeybindings.js';
-import { Box, Link, Text } from '../ink.js';
+import { Box, Text } from '../ink.js';
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js';
 import { SelectMulti } from './CustomSelect/SelectMulti.js';
 import { Byline } from './design-system/Byline.js';
@@ -17,11 +17,11 @@ type Props = {
   defaultSelections: Workflow[];
 };
 const WORKFLOWS: WorkflowOption[] = [{
-  value: 'claude' as const,
-  label: '@Claude Code - Tag @claude in issues and PR comments'
+  value: 'netrunner' as const,
+  label: '@Net-Runner - Tag @netrunner in issues and PR comments'
 }, {
-  value: 'claude-review' as const,
-  label: 'Claude Code Review - Automated code review on new PRs'
+  value: 'netrunner-review' as const,
+  label: 'Net-Runner Review - Automated code review on new PRs'
 }];
 function renderInputGuide(exitState: ExitState): React.ReactNode {
   if (exitState.pending) {
@@ -79,7 +79,7 @@ export function WorkflowMultiselectDialog(t0) {
   const handleCancel = t3;
   let t4;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
-    t4 = <Box><Text dimColor={true}>More workflow examples (issue triage, CI fixes, etc.) at:{" "}<Link url="https://github.com/anthropics/claude-code-action/blob/main/examples/">https://github.com/anthropics/claude-code-action/blob/main/examples/</Link></Text></Box>;
+    t4 = <Box><Text dimColor={true}>More workflow examples (issue triage, CI fixes, etc.) are documented in the configured GitHub Action repository.</Text></Box>;
     $[4] = t4;
   } else {
     t4 = $[4];

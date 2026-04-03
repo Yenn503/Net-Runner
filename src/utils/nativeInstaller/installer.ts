@@ -334,7 +334,7 @@ async function installVersionFromPackage(
     const nodeModulesDir = join(stagingPath, 'node_modules', '@anthropic-ai')
     const entries = await readdir(nodeModulesDir)
     const nativePackage = entries.find((entry: string) =>
-      entry.startsWith('claude-cli-native-'),
+      entry.startsWith('net-runner-native-'),
     )
 
     if (!nativePackage) {
@@ -1688,8 +1688,8 @@ export async function cleanupNpmInstallations(): Promise<{
     }
   }
 
-  // Check for local installation at ~/.claude/local
-  const localInstallDir = join(homedir(), '.claude', 'local')
+  // Check for local installation at ~/.netrunner/local
+  const localInstallDir = join(homedir(), '.netrunner', 'local')
 
   try {
     await rm(localInstallDir, { recursive: true })

@@ -43,7 +43,7 @@ When adding a new `Net-Runner` capability:
 3. If no, check whether direct code execution is the right extension point.
 4. Only then introduce MCP as an integration layer.
 
-That keeps the framework portable, operator-friendly, and aligned with the way the underlying Claude Code runtime already succeeds in practice.
+That keeps the framework portable, operator-friendly, and aligned with the way the underlying agentic runtime succeeds in practice.
 
 Use `/engagement capabilities` to audit runtime readiness for each workflow and identify missing binaries, API keys, or MCP integrations before execution.
 Use `/engagement alignment` to audit specialist-agent capability ownership and workflow coverage before production engagement runs.

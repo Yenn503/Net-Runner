@@ -1,7 +1,7 @@
 /**
- * Claude Code hints protocol.
+ * Net-Runner hints protocol.
  *
- * CLIs and SDKs running under Claude Code can emit a self-closing
+ * CLIs and SDKs running under Net-Runner can emit a self-closing
  * `<claude-code-hint />` tag to stderr (merged into stdout by the shell
  * tools). The harness scans tool output for these tags, strips them before
  * the output reaches the model, and surfaces an install prompt to the
@@ -69,7 +69,7 @@ const ATTR_RE = /(\w+)=(?:"([^"]*)"|([^\s/>]+))/g
  * @param command - The command that produced the output; its first
  *   whitespace-separated token is recorded as `sourceCommand`.
  */
-export function extractClaudeCodeHints(
+export function extractNetRunnerHints(
   output: string,
   command: string,
 ): { hints: ClaudeCodeHint[]; stripped: string } {
@@ -89,18 +89,18 @@ export function extractClaudeCodeHints(
 
     if (!SUPPORTED_VERSIONS.has(v)) {
       logForDebugging(
-        `[claudeCodeHints] dropped hint with unsupported v=${attrs.v}`,
+        `[netRunnerHints] dropped hint with unsupported v=${attrs.v}`,
       )
       return ''
     }
     if (!type || !SUPPORTED_TYPES.has(type)) {
       logForDebugging(
-        `[claudeCodeHints] dropped hint with unsupported type=${type}`,
+        `[netRunnerHints] dropped hint with unsupported type=${type}`,
       )
       return ''
     }
     if (!value) {
-      logForDebugging('[claudeCodeHints] dropped hint with empty value')
+      logForDebugging('[netRunnerHints] dropped hint with empty value')
       return ''
     }
 

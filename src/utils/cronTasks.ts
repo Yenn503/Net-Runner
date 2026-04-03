@@ -1,4 +1,4 @@
-// Scheduled prompts, stored in <project>/.claude/scheduled_tasks.json.
+// Scheduled prompts, stored in <project>/.netrunner/scheduled_tasks.json.
 //
 // Tasks come in two flavors:
 //   - One-shot (recurring: false/undefined) — fire once, then auto-delete.
@@ -25,6 +25,10 @@ import { isFsInaccessible } from './errors.js'
 import { getFsImplementation } from './fsOperations.js'
 import { safeParseJSON } from './json.js'
 import { logError } from './log.js'
+import {
+  getScheduledTasksFilePath,
+  PRIMARY_SCHEDULED_TASKS_DIR,
+} from './scheduledTasksPaths.js'
 import { jsonStringify } from './slowOperations.js'
 
 export type CronTask = {
@@ -71,19 +75,17 @@ export type CronTask = {
 
 type CronFile = { tasks: CronTask[] }
 
-const CRON_FILE_REL = join('.claude', 'scheduled_tasks.json')
-
 /**
  * Path to the cron file. `dir` defaults to getProjectRoot() — pass it
  * explicitly from contexts that don't run through main.tsx (e.g. the Agent
  * SDK daemon, which has no bootstrap state).
  */
 export function getCronFilePath(dir?: string): string {
-  return join(dir ?? getProjectRoot(), CRON_FILE_REL)
+  return getScheduledTasksFilePath(dir ?? getProjectRoot())
 }
 
 /**
- * Read and parse .claude/scheduled_tasks.json. Returns an empty task list if the file
+ * Read and parse .netrunner/scheduled_tasks.json. Returns an empty task list if the file
  * is missing, empty, or malformed. Tasks with invalid cron strings are
  * silently dropped (logged at debug level) so a single bad entry never
  * blocks the whole file.
@@ -158,7 +160,7 @@ export function hasCronTasksSync(dir?: string): boolean {
 }
 
 /**
- * Overwrite .claude/scheduled_tasks.json with the given tasks. Creates .claude/ if
+ * Overwrite .netrunner/scheduled_tasks.json with the given tasks. Creates .netrunner/ if
  * missing. Empty task list writes an empty file (rather than deleting) so
  * the file watcher sees a change event on last-task-removed.
  */
@@ -167,7 +169,7 @@ export async function writeCronTasks(
   dir?: string,
 ): Promise<void> {
   const root = dir ?? getProjectRoot()
-  await mkdir(join(root, '.claude'), { recursive: true })
+  await mkdir(join(root, PRIMARY_SCHEDULED_TASKS_DIR), { recursive: true })
   // Strip the runtime-only `durable` flag — everything on disk is durable
   // by definition, and keeping the flag out means readCronTasks() naturally
   // yields durable: undefined without having to set it explicitly.
@@ -187,7 +189,7 @@ export async function writeCronTasks(
  *
  * When `durable` is false the task is held in process memory only
  * (bootstrap/state.ts) — it fires on schedule this session but is never
- * written to .claude/scheduled_tasks.json and dies with the process. The
+ * written to .netrunner/scheduled_tasks.json and dies with the process. The
  * scheduler merges session tasks into its tick loop directly, so no file
  * change event is needed.
  */

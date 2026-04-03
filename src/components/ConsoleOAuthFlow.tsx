@@ -226,7 +226,7 @@ export function ConsoleOAuthFlow({
       });
       if (mode === 'setup-token') {
         // For setup-token mode, return the OAuth access token directly (it can be used as an API key)
-        // Don't save to keychain - the token is displayed for manual use with CLAUDE_CODE_OAUTH_TOKEN
+        // Don't save to keychain - the token is displayed for manual use with NETRUNNER_OAUTH_TOKEN
         setOAuthStatus({
           state: 'success',
           token: result.accessToken
@@ -241,7 +241,7 @@ export function ConsoleOAuthFlow({
           state: 'success'
         });
         void sendNotification({
-          message: 'Claude Code login successful',
+          message: 'Net-Runner login successful',
           notificationType: 'auth_success'
         }, terminal);
       }
@@ -320,7 +320,7 @@ export function ConsoleOAuthFlow({
               </Text>
               <Text dimColor>
                 Use this token by setting: export
-                CLAUDE_CODE_OAUTH_TOKEN=&lt;token&gt;
+                NETRUNNER_OAUTH_TOKEN=&lt;token&gt;
               </Text>
             </Box>
           </Box>}
@@ -364,7 +364,7 @@ function OAuthStatusMessage(t0) {
   switch (oauthStatus.state) {
     case "idle":
       {
-        const t1 = startingMessage ? startingMessage : "Claude Code can be used with your Claude subscription or billed based on API usage through your Console account.";
+        const t1 = startingMessage ? startingMessage : "Net-Runner can be used with a supported subscription plan or billed based on API usage through your Console account.";
         let t2;
         if ($[0] !== t1) {
           t2 = <Text bold={true}>{t1}</Text>;
@@ -383,7 +383,7 @@ function OAuthStatusMessage(t0) {
         let t4;
         if ($[3] === Symbol.for("react.memo_cache_sentinel")) {
           t4 = {
-            label: <Text>Claude account with subscription ·{" "}<Text dimColor={true}>Pro, Max, Team, or Enterprise</Text>{false && <Text>{"\n"}<Text color="warning">[ANT-ONLY]</Text>{" "}<Text dimColor={true}>Please use this option unless you need to login to a special org for accessing sensitive data (e.g. customer data, HIPI data) with the Console option</Text></Text>}{"\n"}</Text>,
+            label: <Text>Subscription account ·{" "}<Text dimColor={true}>Pro, Max, Team, or Enterprise</Text>{false && <Text>{"\n"}<Text color="warning">[ANT-ONLY]</Text>{" "}<Text dimColor={true}>Please use this option unless you need to login to a special org for accessing sensitive data (e.g. customer data, HIPI data) with the Console option</Text></Text>}{"\n"}</Text>,
             value: "claudeai"
           };
           $[3] = t4;
@@ -477,14 +477,14 @@ function OAuthStatusMessage(t0) {
         }
         let t5;
         if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-          t5 = <Text>· Amazon Bedrock:{" "}<Link url="https://code.claude.com/docs/en/amazon-bedrock">https://code.claude.com/docs/en/amazon-bedrock</Link></Text>;
+          t5 = <Text>· Amazon Bedrock:{" "}<Link url="https://code.netrunner.com/docs/en/amazon-bedrock">https://code.netrunner.com/docs/en/amazon-bedrock</Link></Text>;
           $[16] = t5;
         } else {
           t5 = $[16];
         }
         let t6;
         if ($[17] === Symbol.for("react.memo_cache_sentinel")) {
-          t6 = <Text>· Microsoft Foundry:{" "}<Link url="https://code.claude.com/docs/en/microsoft-foundry">https://code.claude.com/docs/en/microsoft-foundry</Link></Text>;
+          t6 = <Text>· Microsoft Foundry:{" "}<Link url="https://code.netrunner.com/docs/en/microsoft-foundry">https://code.netrunner.com/docs/en/microsoft-foundry</Link></Text>;
           $[17] = t6;
         } else {
           t6 = $[17];
@@ -492,9 +492,9 @@ function OAuthStatusMessage(t0) {
         let t7;
         if ($[18] === Symbol.for("react.memo_cache_sentinel")) {
           t7 = <Box flexDirection="column" marginTop={1}>{t4}
-            <Text>· OpenAI / any OpenAI-compatible provider (GPT-4o, DeepSeek, Ollama, Groq):{"\n"}{"  "}CLAUDE_CODE_USE_OPENAI=1  OPENAI_API_KEY=sk-...  OPENAI_MODEL=gpt-4o</Text>
-            <Text>· Google Gemini (free key at https://aistudio.google.com/apikey):{"\n"}{"  "}CLAUDE_CODE_USE_GEMINI=1  GEMINI_API_KEY=your-key</Text>
-            {t5}{t6}<Text>· Vertex AI:{" "}<Link url="https://code.claude.com/docs/en/google-vertex-ai">https://code.claude.com/docs/en/google-vertex-ai</Link></Text></Box>;
+            <Text>· OpenAI / any OpenAI-compatible provider (GPT-4o, DeepSeek, Ollama, Groq):{"\n"}{"  "}NETRUNNER_USE_OPENAI=1  OPENAI_API_KEY=sk-...  OPENAI_MODEL=gpt-4o</Text>
+            <Text>· Google Gemini (free key at https://aistudio.google.com/apikey):{"\n"}{"  "}NETRUNNER_USE_GEMINI=1  GEMINI_API_KEY=your-key</Text>
+            {t5}{t6}<Text>· Vertex AI:{" "}<Link url="https://code.netrunner.com/docs/en/google-vertex-ai">https://code.netrunner.com/docs/en/google-vertex-ai</Link></Text></Box>;
           $[18] = t7;
         } else {
           t7 = $[18];
@@ -557,7 +557,7 @@ function OAuthStatusMessage(t0) {
       {
         let t1;
         if ($[37] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Box flexDirection="column" gap={1}><Box><Spinner /><Text>Creating API key for Claude Code…</Text></Box></Box>;
+          t1 = <Box flexDirection="column" gap={1}><Box><Spinner /><Text>Creating API key for Net-Runner…</Text></Box></Box>;
           $[37] = t1;
         } else {
           t1 = $[37];

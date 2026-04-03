@@ -1060,13 +1060,13 @@ export function getMcpConfigByName(name: string): ScopedMcpServerConfig | null {
 }
 
 /**
- * Get Claude Code MCP configurations (excludes claude.ai servers from the
+ * Get Net-Runner MCP configurations (excludes claude.ai servers from the
  * returned set — they're fetched separately and merged by callers).
  * This is fast: only local file reads; no awaited network calls on the
  * critical path. The optional extraDedupTargets promise (e.g. the in-flight
  * claude.ai connector fetch) is awaited only after loadAllPluginsCacheOnly() completes,
  * so the two overlap rather than serialize.
- * @returns Claude Code server configurations with appropriate scopes
+ * @returns Net-Runner server configurations with appropriate scopes
  */
 export async function getClaudeCodeMcpConfigs(
   dynamicServers: Record<string, ScopedMcpServerConfig> = {},
@@ -1267,7 +1267,7 @@ export async function getAllMcpConfigs(): Promise<{
   // Kick off the claude.ai fetch before getClaudeCodeMcpConfigs so it overlaps
   // with loadAllPluginsCacheOnly() inside. Memoized — the awaited call below is a cache hit.
   const claudeaiPromise = fetchClaudeAIMcpConfigsIfEligible()
-  const { servers: claudeCodeServers, errors } = await getClaudeCodeMcpConfigs(
+  const { servers: netRunnerServers, errors } = await getClaudeCodeMcpConfigs(
     {},
     claudeaiPromise,
   )
@@ -1280,11 +1280,11 @@ export async function getAllMcpConfigs(): Promise<{
   // won't catch this — need content-based dedup by URL signature.
   const { servers: dedupedClaudeAi } = dedupClaudeAiMcpServers(
     claudeaiMcpServers,
-    claudeCodeServers,
+    netRunnerServers,
   )
 
   // Merge with claude.ai having lowest precedence
-  const servers = Object.assign({}, dedupedClaudeAi, claudeCodeServers)
+  const servers = Object.assign({}, dedupedClaudeAi, netRunnerServers)
 
   return { servers, errors }
 }
@@ -1359,7 +1359,7 @@ export function parseMcpConfig(params: {
         ...(filePath && { file: filePath }),
         path: `mcpServers.${name}`,
         message: `Windows requires 'cmd /c' wrapper to execute npx`,
-        suggestion: `Change command to "cmd" with args ["/c", "npx", ...]. See: https://code.claude.com/docs/en/mcp#configure-mcp-servers`,
+        suggestion: `Change command to "cmd" with args ["/c", "npx", ...]. See: https://code.netrunner.com/docs/en/mcp#configure-mcp-servers`,
         mcpErrorMetadata: {
           scope,
           serverName: name,

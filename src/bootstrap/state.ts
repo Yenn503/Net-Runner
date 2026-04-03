@@ -113,14 +113,14 @@ type State = {
   // Last API request for bug reports
   lastAPIRequest: Omit<BetaMessageStreamParams, 'messages'> | null
   // Messages from the last API request (ant-only; reference, not clone).
-  // Captures the exact post-compaction, CLAUDE.md-injected message set sent
+  // Captures the exact post-compaction, NETRUNNER.md-injected message set sent
   // to the API so /share's serialized_conversation.json reflects reality.
   lastAPIRequestMessages: BetaMessageStreamParams['messages'] | null
   // Last auto-mode classifier request(s) for /share transcript
   lastClassifierRequests: unknown[] | null
-  // CLAUDE.md content cached by context.ts for the auto-mode classifier.
-  // Breaks the yoloClassifier → claudemd → filesystem → permissions cycle.
-  cachedClaudeMdContent: string | null
+  // NETRUNNER.md content cached by context.ts for the auto-mode classifier.
+  // Breaks the yoloClassifier → netRunnerMd → filesystem → permissions cycle.
+  cachedNetRunnerMdContent: string | null
   // In-memory error log for recent errors
   inMemoryErrorLog: Array<{ error: string; timestamp: string }>
   // Session-only plugins from --plugin-dir flag
@@ -131,13 +131,13 @@ type State = {
   useCoworkPlugins: boolean
   // Session-only bypass permissions mode flag (not persisted)
   sessionBypassPermissionsMode: boolean
-  // Session-only flag gating the .claude/scheduled_tasks.json watcher
+  // Session-only flag gating the .netrunner/scheduled_tasks.json watcher
   // (useScheduledTasks). Set by cronScheduler.start() when the JSON has
   // entries, or by CronCreateTool. Not persisted.
   scheduledTasksEnabled: boolean
   // Session-only cron tasks created via CronCreate with durable: false.
   // Fire on schedule like file-backed tasks but are never written to
-  // .claude/scheduled_tasks.json — they die with the process. Typed via
+  // .netrunner/scheduled_tasks.json — they die with the process. Typed via
   // SessionCronTask below (not importing from cronTasks.ts keeps
   // bootstrap a leaf of the import DAG).
   sessionCronTasks: SessionCronTask[]
@@ -203,8 +203,8 @@ type State = {
   systemPromptSectionCache: Map<string, string | null>
   // Last date emitted to the model (for detecting midnight date changes)
   lastEmittedDate: string | null
-  // Additional directories from --add-dir flag (for CLAUDE.md loading)
-  additionalDirectoriesForClaudeMd: string[]
+  // Additional directories from --add-dir flag (for NETRUNNER.md loading)
+  additionalDirectoriesForNetRunnerMd: string[]
   // Channel server allowlist from --channels flag (servers whose channel
   // notifications should register this session). Parsed once in main.tsx —
   // the tag decides trust model: 'plugin' → marketplace verification +
@@ -344,7 +344,7 @@ function getInitialState(): State {
     lastAPIRequestMessages: null,
     // Last auto-mode classifier request(s) for /share transcript
     lastClassifierRequests: null,
-    cachedClaudeMdContent: null,
+    cachedNetRunnerMdContent: null,
     // In-memory error log for recent errors
     inMemoryErrorLog: [],
     // Session-only plugins from --plugin-dir flag
@@ -399,8 +399,8 @@ function getInitialState(): State {
     systemPromptSectionCache: new Map(),
     // Last date emitted to the model
     lastEmittedDate: null,
-    // Additional directories from --add-dir flag (for CLAUDE.md loading)
-    additionalDirectoriesForClaudeMd: [],
+    // Additional directories from --add-dir flag (for NETRUNNER.md loading)
+    additionalDirectoriesForNetRunnerMd: [],
     // Channel server allowlist from --channels flag
     allowedChannels: [],
     hasDevChannels: false,
@@ -966,7 +966,7 @@ export function setMeter(
     description: 'Number of git commits created',
   })
   STATE.costCounter = createCounter('claude_code.cost.usage', {
-    description: 'Cost of the Claude Code session',
+    description: 'Cost of the Net-Runner session',
     unit: 'USD',
   })
   STATE.tokenCounter = createCounter('claude_code.token.usage', {
@@ -1204,12 +1204,12 @@ export function getLastClassifierRequests(): unknown[] | null {
   return STATE.lastClassifierRequests
 }
 
-export function setCachedClaudeMdContent(content: string | null): void {
-  STATE.cachedClaudeMdContent = content
+export function setCachedNetRunnerMdContent(content: string | null): void {
+  STATE.cachedNetRunnerMdContent = content
 }
 
-export function getCachedClaudeMdContent(): string | null {
-  return STATE.cachedClaudeMdContent
+export function getCachedNetRunnerMdContent(): string | null {
+  return STATE.cachedNetRunnerMdContent
 }
 
 export function addToInMemoryErrorLog(errorInfo: {
@@ -1663,14 +1663,14 @@ export function setLastEmittedDate(date: string | null): void {
   STATE.lastEmittedDate = date
 }
 
-export function getAdditionalDirectoriesForClaudeMd(): string[] {
-  return STATE.additionalDirectoriesForClaudeMd
+export function getAdditionalDirectoriesForNetRunnerMd(): string[] {
+  return STATE.additionalDirectoriesForNetRunnerMd
 }
 
-export function setAdditionalDirectoriesForClaudeMd(
+export function setAdditionalDirectoriesForNetRunnerMd(
   directories: string[],
 ): void {
-  STATE.additionalDirectoriesForClaudeMd = directories
+  STATE.additionalDirectoriesForNetRunnerMd = directories
 }
 
 export function getAllowedChannels(): ChannelEntry[] {

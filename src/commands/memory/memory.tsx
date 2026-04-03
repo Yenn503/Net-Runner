@@ -4,10 +4,10 @@ import type { CommandResultDisplay } from '../../commands.js';
 import { Dialog } from '../../components/design-system/Dialog.js';
 import { MemoryFileSelector } from '../../components/memory/MemoryFileSelector.js';
 import { getRelativeMemoryPath } from '../../components/memory/MemoryUpdateNotification.js';
-import { Box, Link, Text } from '../../ink.js';
+import { Box, Text } from '../../ink.js';
 import type { LocalJSXCommandCall } from '../../types/command.js';
-import { clearMemoryFileCaches, getMemoryFiles } from '../../utils/claudemd.js';
-import { getClaudeConfigHomeDir } from '../../utils/envUtils.js';
+import { clearMemoryFileCaches, getMemoryFiles } from '../../utils/netRunnerMd.js';
+import { getNetRunnerConfigHomeDir } from '../../utils/envUtils.js';
 import { getErrnoCode } from '../../utils/errors.js';
 import { logError } from '../../utils/log.js';
 import { editFileInEditor } from '../../utils/promptEditor.js';
@@ -21,8 +21,8 @@ function MemoryCommand({
   const handleSelectMemoryFile = async (memoryPath: string) => {
     try {
       // Create claude directory if it doesn't exist (idempotent with recursive)
-      if (memoryPath.includes(getClaudeConfigHomeDir())) {
-        await mkdir(getClaudeConfigHomeDir(), {
+      if (memoryPath.includes(getNetRunnerConfigHomeDir())) {
+        await mkdir(getNetRunnerConfigHomeDir(), {
           recursive: true
         });
       }
@@ -74,7 +74,7 @@ function MemoryCommand({
 
         <Box marginTop={1}>
           <Text dimColor>
-            Learn more: <Link url="https://code.claude.com/docs/en/memory" />
+            Net-Runner assessment memory lives under `.netrunner/memory/`.
           </Text>
         </Box>
       </Box>

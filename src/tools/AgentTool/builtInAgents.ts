@@ -1,10 +1,9 @@
 import { feature } from 'bun:bundle'
 import { getIsNonInteractiveSession } from '../../bootstrap/state.js'
 import { isAutoMemoryEnabled } from '../../memdir/paths.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
 import { isEnvTruthy } from '../../utils/envUtils.js'
 import { loadAgentMemoryPrompt } from './agentMemory.js'
-import { CLAUDE_CODE_GUIDE_AGENT } from './built-in/claudeCodeGuideAgent.js'
+import { NET_RUNNER_GUIDE_AGENT } from './built-in/netRunnerGuideAgent.js'
 import { ENGAGEMENT_LEAD_AGENT } from './built-in/engagementLeadAgent.js'
 import { EXPLORE_AGENT } from './built-in/exploreAgent.js'
 import { API_TESTING_SPECIALIST_AGENT } from './built-in/apiTestingSpecialistAgent.js'
@@ -24,16 +23,15 @@ import { WEB_TESTING_SPECIALIST_AGENT } from './built-in/webTestingSpecialistAge
 import type { AgentDefinition, BuiltInAgentDefinition } from './loadAgentsDir.js'
 
 export function areExplorePlanAgentsEnabled(): boolean {
-  if (feature('BUILTIN_EXPLORE_PLAN_AGENTS')) {
-    // 3P default: true — Bedrock/Vertex keep agents enabled (matches pre-experiment
-    // external behavior). A/B test treatment sets false to measure impact of removal.
-    return getFeatureValue_CACHED_MAY_BE_STALE('tengu_amber_stoat', true)
-  }
-  return false
+  return true
+}
+
+export function isVerificationAgentEnabled(): boolean {
+  return true
 }
 
 export function areNetRunnerSecurityAgentsEnabled(): boolean {
-  return !isEnvTruthy(process.env.NET_RUNNER_DISABLE_SECURITY_AGENTS)
+  return true
 }
 
 const NET_RUNNER_SECURITY_AGENT_TYPES = new Set([
@@ -85,7 +83,7 @@ export function getBuiltInAgents(): AgentDefinition[] {
   // issues at module init time. The coordinatorMode module depends on tools
   // which depend on AgentTool which imports this file.
   if (feature('COORDINATOR_MODE')) {
-    if (isEnvTruthy(process.env.CLAUDE_CODE_COORDINATOR_MODE)) {
+    if (isEnvTruthy(process.env.NETRUNNER_COORDINATOR_MODE)) {
       /* eslint-disable @typescript-eslint/no-require-imports */
       const { getCoordinatorAgents } =
         require('../../coordinator/workerAgent.js') as typeof import('../../coordinator/workerAgent.js')
@@ -121,18 +119,15 @@ export function getBuiltInAgents(): AgentDefinition[] {
 
   // Include Code Guide agent for non-SDK entrypoints
   const isNonSdkEntrypoint =
-    process.env.CLAUDE_CODE_ENTRYPOINT !== 'sdk-ts' &&
-    process.env.CLAUDE_CODE_ENTRYPOINT !== 'sdk-py' &&
-    process.env.CLAUDE_CODE_ENTRYPOINT !== 'sdk-cli'
+    process.env.NETRUNNER_ENTRYPOINT !== 'sdk-ts' &&
+    process.env.NETRUNNER_ENTRYPOINT !== 'sdk-py' &&
+    process.env.NETRUNNER_ENTRYPOINT !== 'sdk-cli'
 
   if (isNonSdkEntrypoint) {
-    agents.push(CLAUDE_CODE_GUIDE_AGENT)
+    agents.push(NET_RUNNER_GUIDE_AGENT)
   }
 
-  if (
-    feature('VERIFICATION_AGENT') &&
-    getFeatureValue_CACHED_MAY_BE_STALE('tengu_hive_evidence', false)
-  ) {
+  if (isVerificationAgentEnabled()) {
     agents.push(VERIFICATION_AGENT)
   }
 

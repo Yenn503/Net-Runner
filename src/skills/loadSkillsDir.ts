@@ -10,7 +10,7 @@ import {
   relative,
 } from 'path'
 import {
-  getAdditionalDirectoriesForClaudeMd,
+  getAdditionalDirectoriesForNetRunnerMd,
   getSessionId,
 } from '../bootstrap/state.js'
 import {
@@ -30,7 +30,7 @@ import {
   parseEffortValue,
 } from '../utils/effort.js'
 import {
-  getClaudeConfigHomeDir,
+  getNetRunnerConfigHomeDir,
   isBareMode,
   isEnvTruthy,
 } from '../utils/envUtils.js'
@@ -55,6 +55,11 @@ import {
   parseSlashCommandToolsFromFrontmatter,
 } from '../utils/markdownConfigLoader.js'
 import { parseUserSpecifiedModel } from '../utils/model/model.js'
+import {
+  getExistingProjectConfigSubdirs,
+  getPrimaryProjectConfigSubdir,
+  getProjectConfigSubdirCandidates,
+} from '../utils/projectConfigPaths.js'
 import { executeShellCommandsInPrompt } from '../utils/promptShellExecution.js'
 import type { SettingSource } from '../utils/settings/constants.js'
 import { isSettingSourceEnabled } from '../utils/settings/constants.js'
@@ -73,7 +78,7 @@ export type LoadedFrom =
   | 'mcp'
 
 /**
- * Returns a claude config directory path for a given source.
+ * Returns a runtime config directory path for a given source.
  */
 export function getSkillsPath(
   source: SettingSource | 'plugin',
@@ -81,11 +86,11 @@ export function getSkillsPath(
 ): string {
   switch (source) {
     case 'policySettings':
-      return join(getManagedFilePath(), '.claude', dir)
+      return join(getManagedFilePath(), '.netrunner', dir)
     case 'userSettings':
-      return join(getClaudeConfigHomeDir(), dir)
+      return join(getNetRunnerConfigHomeDir(), dir)
     case 'projectSettings':
-      return `.claude/${dir}`
+      return `${getPrimaryProjectConfigSubdir('.', dir)}`
     case 'plugin':
       return 'plugin'
     default:
@@ -153,7 +158,7 @@ function parseHooksFromFrontmatter(
 }
 
 /**
- * Parse paths frontmatter from a skill, using the same format as CLAUDE.md rules.
+ * Parse paths frontmatter from a skill, using the same format as NETRUNNER.md rules.
  * Returns undefined if no paths are specified or if all patterns are match-all.
  */
 function parseSkillPaths(frontmatter: FrontmatterData): string[] | undefined {
@@ -722,8 +727,8 @@ async function loadSkillsFromCommandsDir(
  */
 export const getSkillDirCommands = memoize(
   async (cwd: string): Promise<Command[]> => {
-    const userSkillsDir = join(getClaudeConfigHomeDir(), 'skills')
-    const managedSkillsDir = join(getManagedFilePath(), '.claude', 'skills')
+    const userSkillsDir = join(getNetRunnerConfigHomeDir(), 'skills')
+    const managedSkillsDir = join(getManagedFilePath(), '.netrunner', 'skills')
     const projectSkillsDirs = getProjectDirsUpToHome('skills', cwd)
 
     logForDebugging(
@@ -731,7 +736,7 @@ export const getSkillDirCommands = memoize(
     )
 
     // Load from additional directories (--add-dir)
-    const additionalDirs = getAdditionalDirectoriesForClaudeMd()
+    const additionalDirs = getAdditionalDirectoriesForNetRunnerMd()
     const skillsLocked = isRestrictedToPluginOnly('skills')
     const projectSettingsEnabled =
       isSettingSourceEnabled('projectSettings') && !skillsLocked
@@ -748,10 +753,9 @@ export const getSkillDirCommands = memoize(
         return []
       }
       const additionalSkillsNested = await Promise.all(
-        additionalDirs.map(dir =>
-          loadSkillsFromSkillsDir(
-            join(dir, '.claude', 'skills'),
-            'projectSettings',
+        additionalDirs.flatMap(dir =>
+          getExistingProjectConfigSubdirs(dir, 'skills').map(skillDir =>
+            loadSkillsFromSkillsDir(skillDir, 'projectSettings'),
           ),
         ),
       )
@@ -768,7 +772,7 @@ export const getSkillDirCommands = memoize(
       additionalSkillsNested,
       legacyCommands,
     ] = await Promise.all([
-      isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_POLICY_SKILLS)
+      isEnvTruthy(process.env.NETRUNNER_DISABLE_POLICY_SKILLS)
         ? Promise.resolve([])
         : loadSkillsFromSkillsDir(managedSkillsDir, 'policySettings'),
       isSettingSourceEnabled('userSettings') && !skillsLocked
@@ -783,10 +787,9 @@ export const getSkillDirCommands = memoize(
         : Promise.resolve([]),
       projectSettingsEnabled
         ? Promise.all(
-            additionalDirs.map(dir =>
-              loadSkillsFromSkillsDir(
-                join(dir, '.claude', 'skills'),
-                'projectSettings',
+            additionalDirs.flatMap(dir =>
+              getExistingProjectConfigSubdirs(dir, 'skills').map(skillDir =>
+                loadSkillsFromSkillsDir(skillDir, 'projectSettings'),
               ),
             ),
           )
@@ -959,30 +962,33 @@ export async function discoverSkillDirsForPaths(
     // CWD-level skills are already loaded at startup, so we only discover nested ones
     // Use prefix+separator check to avoid matching /project-backup when cwd is /project
     while (currentDir.startsWith(resolvedCwd + pathSep)) {
-      const skillDir = join(currentDir, '.claude', 'skills')
-
-      // Skip if we've already checked this path (hit or miss) — avoids
-      // repeating the same failed stat on every Read/Write/Edit call when
-      // the directory doesn't exist (the common case).
-      if (!dynamicSkillDirs.has(skillDir)) {
-        dynamicSkillDirs.add(skillDir)
-        try {
-          await fs.stat(skillDir)
-          // Skills dir exists. Before loading, check if the containing dir
-          // is gitignored — blocks e.g. node_modules/pkg/.claude/skills from
-          // loading silently. `git check-ignore` handles nested .gitignore,
-          // .git/info/exclude, and global gitignore. Fails open outside a
-          // git repo (exit 128 → false); the invocation-time trust dialog
-          // is the actual security boundary.
-          if (await isPathGitignored(currentDir, resolvedCwd)) {
-            logForDebugging(
-              `[skills] Skipped gitignored skills dir: ${skillDir}`,
-            )
-            continue
+      for (const skillDir of getProjectConfigSubdirCandidates(
+        currentDir,
+        'skills',
+      )) {
+        // Skip if we've already checked this path (hit or miss) — avoids
+        // repeating the same failed stat on every Read/Write/Edit call when
+        // the directory doesn't exist (the common case).
+        if (!dynamicSkillDirs.has(skillDir)) {
+          dynamicSkillDirs.add(skillDir)
+          try {
+            await fs.stat(skillDir)
+            // Skills dir exists. Before loading, check if the containing dir
+            // is gitignored — blocks e.g. node_modules/pkg/.netrunner/skills
+            // from loading silently. `git check-ignore` handles nested
+            // .gitignore, .git/info/exclude, and global gitignore. Fails
+            // open outside a git repo (exit 128 → false); the invocation-time
+            // trust dialog is the actual security boundary.
+            if (await isPathGitignored(currentDir, resolvedCwd)) {
+              logForDebugging(
+                `[skills] Skipped gitignored skills dir: ${skillDir}`,
+              )
+              continue
+            }
+            newDirs.push(skillDir)
+          } catch {
+            // Directory doesn't exist — already recorded above, continue
           }
-          newDirs.push(skillDir)
-        } catch {
-          // Directory doesn't exist — already recorded above, continue
         }
       }
 
@@ -1073,7 +1079,7 @@ export function getDynamicSkills(): Command[] {
  * dynamic skills map, making them available to the model.
  *
  * Uses the `ignore` library (gitignore-style matching), matching the behavior
- * of CLAUDE.md conditional rules.
+ * of NETRUNNER.md conditional rules.
  *
  * @param filePaths Array of file paths being operated on
  * @param cwd Current working directory (paths are matched relative to cwd)

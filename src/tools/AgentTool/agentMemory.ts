@@ -5,11 +5,14 @@ import {
   ensureMemoryDirExists,
 } from '../../memdir/memdir.js'
 import { getMemoryBaseDir } from '../../memdir/paths.js'
+import { getEngagementAgentMemoryDir } from '../../security/paths.js'
 import { getCwd } from '../../utils/cwd.js'
 import { findCanonicalGitRoot } from '../../utils/git.js'
 import { sanitizePath } from '../../utils/path.js'
 
-// Persistent agent memory scope: 'user' (~/.claude/agent-memory/), 'project' (.claude/agent-memory/), or 'local' (.claude/agent-memory-local/)
+// Persistent agent memory scope: 'user' (~/.netrunner/agent-memory/ via config home),
+// 'project' (workspace-scoped under .netrunner/memory/agents/), or
+// 'local' (workspace-scoped under .netrunner/memory-local/)
 export type AgentMemoryScope = 'user' | 'project' | 'local'
 
 /**
@@ -23,30 +26,30 @@ function sanitizeAgentTypeForPath(agentType: string): string {
 
 /**
  * Returns the local agent memory directory, which is project-specific and not checked into VCS.
- * When CLAUDE_CODE_REMOTE_MEMORY_DIR is set, persists to the mount with project namespacing.
- * Otherwise, uses <cwd>/.claude/agent-memory-local/<agentType>/.
+ * When NETRUNNER_REMOTE_MEMORY_DIR is set, persists to the mount with project namespacing.
+ * Otherwise, uses <cwd>/.netrunner/memory-local/<agentType>/.
  */
 function getLocalAgentMemoryDir(dirName: string): string {
-  if (process.env.CLAUDE_CODE_REMOTE_MEMORY_DIR) {
+  if (process.env.NETRUNNER_REMOTE_MEMORY_DIR) {
     return (
       join(
-        process.env.CLAUDE_CODE_REMOTE_MEMORY_DIR,
+        process.env.NETRUNNER_REMOTE_MEMORY_DIR,
         'projects',
         sanitizePath(
           findCanonicalGitRoot(getProjectRoot()) ?? getProjectRoot(),
         ),
-        'agent-memory-local',
+        'memory-local',
         dirName,
       ) + sep
     )
   }
-  return join(getCwd(), '.claude', 'agent-memory-local', dirName) + sep
+  return join(getCwd(), '.netrunner', 'memory-local', dirName) + sep
 }
 
 /**
  * Returns the agent memory directory for a given agent type and scope.
  * - 'user' scope: <memoryBase>/agent-memory/<agentType>/
- * - 'project' scope: <cwd>/.claude/agent-memory/<agentType>/
+ * - 'project' scope: <cwd>/.netrunner/memory/agents/<agentType>/
  * - 'local' scope: see getLocalAgentMemoryDir()
  */
 export function getAgentMemoryDir(
@@ -56,7 +59,7 @@ export function getAgentMemoryDir(
   const dirName = sanitizeAgentTypeForPath(agentType)
   switch (scope) {
     case 'project':
-      return join(getCwd(), '.claude', 'agent-memory', dirName) + sep
+      return getEngagementAgentMemoryDir(getCwd(), dirName) + sep
     case 'local':
       return getLocalAgentMemoryDir(dirName)
     case 'user':
@@ -77,24 +80,47 @@ export function isAgentMemoryPath(absolutePath: string): boolean {
 
   // Project scope: always cwd-based (not redirected)
   if (
-    normalizedPath.startsWith(join(getCwd(), '.claude', 'agent-memory') + sep)
+    normalizedPath.startsWith(
+      getEngagementAgentMemoryDir(getCwd(), '') + sep,
+    )
   ) {
     return true
   }
 
-  // Local scope: persisted to mount when CLAUDE_CODE_REMOTE_MEMORY_DIR is set, otherwise cwd-based
-  if (process.env.CLAUDE_CODE_REMOTE_MEMORY_DIR) {
+  // Legacy project scope fallback: keep detection so older workspaces remain readable.
+  if (
+    normalizedPath.startsWith(join(getCwd(), '.netrunner', 'agent-memory') + sep)
+  ) {
+    return true
+  }
+
+  // Local scope: persisted to mount when NETRUNNER_REMOTE_MEMORY_DIR is set, otherwise cwd-based
+  if (process.env.NETRUNNER_REMOTE_MEMORY_DIR) {
+    if (
+      normalizedPath.includes(sep + 'memory-local' + sep) &&
+      normalizedPath.startsWith(
+        join(process.env.NETRUNNER_REMOTE_MEMORY_DIR, 'projects') + sep,
+      )
+    ) {
+      return true
+    }
     if (
       normalizedPath.includes(sep + 'agent-memory-local' + sep) &&
       normalizedPath.startsWith(
-        join(process.env.CLAUDE_CODE_REMOTE_MEMORY_DIR, 'projects') + sep,
+        join(process.env.NETRUNNER_REMOTE_MEMORY_DIR, 'projects') + sep,
       )
     ) {
       return true
     }
   } else if (
     normalizedPath.startsWith(
-      join(getCwd(), '.claude', 'agent-memory-local') + sep,
+      join(getCwd(), '.netrunner', 'memory-local') + sep,
+    )
+  ) {
+    return true
+  } else if (
+    normalizedPath.startsWith(
+      join(getCwd(), '.netrunner', 'agent-memory-local') + sep,
     )
   ) {
     return true
@@ -120,9 +146,9 @@ export function getMemoryScopeDisplay(
     case 'user':
       return `User (${join(getMemoryBaseDir(), 'agent-memory')}/)`
     case 'project':
-      return 'Project (.claude/agent-memory/)'
+      return 'Project (.netrunner/memory/agents/)'
     case 'local':
-      return `Local (${getLocalAgentMemoryDir('...')})`
+      return 'Local (.netrunner/memory-local/)'
     default:
       return 'None'
   }
@@ -133,7 +159,7 @@ export function getMemoryScopeDisplay(
  * Creates the memory directory if needed and returns a prompt with memory contents.
  *
  * @param agentType The agent's type name (used as directory name)
- * @param scope 'user' for ~/.claude/agent-memory/ or 'project' for .claude/agent-memory/
+ * @param scope 'user' for ~/.netrunner/agent-memory/ or 'project' for workspace-scoped agent memory
  */
 export function loadAgentMemoryPrompt(
   agentType: string,
@@ -147,7 +173,7 @@ export function loadAgentMemoryPrompt(
       break
     case 'project':
       scopeNote =
-        '- Since this memory is project-scope and shared with your team via version control, tailor your memories to this project'
+        '- Since this memory is project-scope inside the .netrunner engagement envelope, keep it aligned to the active assessment and reusable follow-up work.'
       break
     case 'local':
       scopeNote =

@@ -9,6 +9,12 @@ export type GuardrailDecision = {
   tripwireTriggered: boolean
 }
 
+export type GuardrailContext = {
+  engagementStatus?: 'draft' | 'active' | 'paused' | 'closed'
+  targets?: string[]
+  restrictions?: string[]
+}
+
 type PatternMatcher = {
   name: string
   pattern: RegExp
@@ -46,17 +52,82 @@ function matchPatterns(
     .map(candidate => candidate.name)
 }
 
+function normalizeTarget(value: string): string {
+  const trimmed = value.trim().replace(/[),.;:!?]+$/, '').toLowerCase()
+  if (trimmed.length === 0) {
+    return ''
+  }
+
+  try {
+    const parsed = new URL(trimmed.includes('://') ? trimmed : `https://${trimmed}`)
+    return parsed.hostname.toLowerCase()
+  } catch {
+    return trimmed.replace(/\/.*$/, '').replace(/:\d{2,5}$/, '')
+  }
+}
+
+function extractReferencedTargets(plannedAction: string): string[] {
+  const matches =
+    plannedAction.match(
+      /\bhttps?:\/\/[^\s)]+|\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b|\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{2,5})?(?:\/[^\s)]*)?\b/g,
+    ) ?? []
+  return matches
+    .map(normalizeTarget)
+    .filter(candidate => candidate.length > 0)
+}
+
+function isTargetInScope(
+  referencedTarget: string,
+  allowedTargets: string[],
+): boolean {
+  return allowedTargets.some(allowedTarget => {
+    if (allowedTarget === referencedTarget) {
+      return true
+    }
+    // Allow subdomains when a parent domain is declared in scope.
+    return referencedTarget.endsWith(`.${allowedTarget}`)
+  })
+}
+
 export function assessActionAgainstImpact(
   plannedAction: string,
   maxImpact: ImpactLevel,
   authorizationStatus: 'confirmed' | 'unconfirmed',
+  context?: GuardrailContext,
 ): GuardrailDecision {
+  if (context?.engagementStatus && context.engagementStatus !== 'active') {
+    return {
+      action: 'block',
+      reason: `Engagement status is ${context.engagementStatus}; execution is blocked until status is active.`,
+      matchedPatterns: ['engagement-inactive'],
+      tripwireTriggered: true,
+    }
+  }
+
   if (authorizationStatus !== 'confirmed') {
     return {
       action: 'review',
       reason: 'Authorization state is not confirmed for this engagement.',
       matchedPatterns: [],
       tripwireTriggered: true,
+    }
+  }
+
+  const normalizedTargets = (context?.targets ?? [])
+    .map(normalizeTarget)
+    .filter(target => target.length > 0)
+  if (normalizedTargets.length > 0) {
+    const referencedTargets = extractReferencedTargets(plannedAction)
+    const outOfScopeTargets = referencedTargets.filter(
+      target => !isTargetInScope(target, normalizedTargets),
+    )
+    if (outOfScopeTargets.length > 0) {
+      return {
+        action: 'review',
+        reason: `Planned action references targets outside the declared scope: ${outOfScopeTargets.join(', ')}.`,
+        matchedPatterns: ['scope-mismatch'],
+        tripwireTriggered: true,
+      }
     }
   }
 
@@ -74,12 +145,22 @@ export function assessActionAgainstImpact(
   }
 
   const persistenceMatches = matchPatterns(plannedAction, PERSISTENCE_PATTERNS)
+  const restrictionsText = (context?.restrictions ?? []).join(' ').toLowerCase()
+  const restrictionsBlockPersistence =
+    /\b(no|do not|never|forbid|forbidden)\b[\s\S]{0,80}\b(persist|persistence|cron|authorized_keys|useradd|adduser)\b/.test(
+      restrictionsText,
+    )
   if (persistenceMatches.length > 0) {
     return {
-      action: maxImpact === 'read-only' ? 'block' : 'review',
+      action:
+        maxImpact === 'read-only' || restrictionsBlockPersistence
+          ? 'block'
+          : 'review',
       reason:
         maxImpact === 'read-only'
           ? 'Persistence changes are blocked in read-only engagements.'
+          : restrictionsBlockPersistence
+            ? 'Persistence changes are blocked by declared engagement restrictions.'
           : 'Persistence-related changes require a guardrail review before execution.',
       matchedPatterns: persistenceMatches,
       tripwireTriggered: true,

@@ -7,7 +7,7 @@ import {
 } from '../bootstrap/state.js'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
 import {
-  getClaudeConfigHomeDir,
+  getNetRunnerConfigHomeDir,
   isEnvDefinedFalsy,
   isEnvTruthy,
 } from '../utils/envUtils.js'
@@ -21,16 +21,16 @@ import {
 /**
  * Whether auto-memory features are enabled (memdir, agent memory, past session search).
  * Enabled by default. Priority chain (first defined wins):
- *   1. NET_RUNNER_DISABLE_AUTO_MEMORY (or CLAUDE_CODE_DISABLE_AUTO_MEMORY for compatibility) env var (1/true → OFF, 0/false → ON)
- *   2. CLAUDE_CODE_SIMPLE (--bare) → OFF
- *   3. CCR without persistent storage → OFF (no CLAUDE_CODE_REMOTE_MEMORY_DIR)
+ *   1. NET_RUNNER_DISABLE_AUTO_MEMORY (or NETRUNNER_DISABLE_AUTO_MEMORY for compatibility) env var (1/true → OFF, 0/false → ON)
+ *   2. NETRUNNER_SIMPLE (--bare) → OFF
+ *   3. CCR without persistent storage → OFF (no NETRUNNER_REMOTE_MEMORY_DIR)
  *   4. autoMemoryEnabled in settings.json (supports project-level opt-out)
  *   5. Default: enabled
  */
 export function isAutoMemoryEnabled(): boolean {
   const envVal =
     process.env.NET_RUNNER_DISABLE_AUTO_MEMORY ??
-    process.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY
+    process.env.NETRUNNER_DISABLE_AUTO_MEMORY
   if (isEnvTruthy(envVal)) {
     return false
   }
@@ -40,12 +40,12 @@ export function isAutoMemoryEnabled(): boolean {
   // --bare / SIMPLE: prompts.ts already drops the memory section from the
   // system prompt via its SIMPLE early-return; this gate stops the other half
   // (extractMemories turn-end fork, autoDream, /remember, /dream, team sync).
-  if (isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE)) {
+  if (isEnvTruthy(process.env.NETRUNNER_SIMPLE)) {
     return false
   }
   if (
-    isEnvTruthy(process.env.CLAUDE_CODE_REMOTE) &&
-    !process.env.CLAUDE_CODE_REMOTE_MEMORY_DIR
+    isEnvTruthy(process.env.NETRUNNER_REMOTE) &&
+    !process.env.NETRUNNER_REMOTE_MEMORY_DIR
   ) {
     return false
   }
@@ -81,14 +81,14 @@ export function isExtractModeActive(): boolean {
 /**
  * Returns the base directory for persistent memory storage.
  * Resolution order:
- *   1. CLAUDE_CODE_REMOTE_MEMORY_DIR env var (explicit override, set in CCR)
- *   2. ~/.claude (default config home)
+ *   1. NETRUNNER_REMOTE_MEMORY_DIR env var (explicit override, set in CCR)
+ *   2. ~/.netrunner (default config home)
  */
 export function getMemoryBaseDir(): string {
-  if (process.env.CLAUDE_CODE_REMOTE_MEMORY_DIR) {
-    return process.env.CLAUDE_CODE_REMOTE_MEMORY_DIR
+  if (process.env.NETRUNNER_REMOTE_MEMORY_DIR) {
+    return process.env.NETRUNNER_REMOTE_MEMORY_DIR
   }
-  return getClaudeConfigHomeDir()
+  return getNetRunnerConfigHomeDir()
 }
 
 const AUTO_MEM_DIRNAME = 'memory'
@@ -171,7 +171,7 @@ function getAutoMemPathOverride(): string | undefined {
  * Settings.json override for the full auto-memory directory path.
  * Supports ~/ expansion for user convenience.
  *
- * SECURITY: projectSettings (.claude/settings.json committed to the repo) is
+ * SECURITY: projectSettings (.netrunner/settings.json committed to the repo) is
  * intentionally excluded — a malicious repo could otherwise set
  * autoMemoryDirectory: "~/.ssh" and gain silent write access to sensitive
  * directories via the filesystem.ts write carve-out (which fires when
@@ -219,7 +219,7 @@ function getAutoMemBase(): string {
  * fire per tool-use message per Messages re-render; each miss costs
  * getSettingsForSource × 4 → parseSettingsFile (realpathSync + readFileSync).
  * Keyed on projectRoot so tests that change its mock mid-block recompute;
- * env vars / settings.json / CLAUDE_CONFIG_DIR are session-stable in
+ * env vars / settings.json / NETRUNNER_CONFIG_DIR are session-stable in
  * production and covered by per-test cache.clear.
  */
 export const getAutoMemPath = memoize(

@@ -28,8 +28,8 @@ import { sequential } from './sequential.js'
  * Only add repos here that are confirmed PRIVATE.
  */
 const INTERNAL_MODEL_REPOS = [
-  'github.com:anthropics/claude-cli-internal',
-  'github.com/anthropics/claude-cli-internal',
+  'github.com:anthropics/net-runner-internal',
+  'github.com/anthropics/net-runner-internal',
   'github.com:anthropics/anthropic',
   'github.com/anthropics/anthropic',
   'github.com:anthropics/apps',
@@ -227,7 +227,7 @@ export type AttributionData = {
  * Get the current client surface from environment.
  */
 export function getClientSurface(): string {
-  return process.env.CLAUDE_CODE_ENTRYPOINT ?? 'cli'
+  return process.env.NETRUNNER_ENTRYPOINT ?? 'cli'
 }
 
 /**

@@ -1,15 +1,15 @@
 import { feature } from 'bun:bundle'
 import memoize from 'lodash-es/memoize.js'
 import {
-  getAdditionalDirectoriesForClaudeMd,
-  setCachedClaudeMdContent,
+  getAdditionalDirectoriesForNetRunnerMd,
+  setCachedNetRunnerMdContent,
 } from './bootstrap/state.js'
 import { getLocalISODate } from './constants/common.js'
 import {
   filterInjectedMemoryFiles,
-  getClaudeMds,
+  getNetRunnerMds,
   getMemoryFiles,
-} from './utils/claudemd.js'
+} from './utils/netRunnerMd.js'
 import { logForDiagnosticsNoPII } from './utils/diagLogs.js'
 import { isBareMode, isEnvTruthy } from './utils/envUtils.js'
 import { execFileNoThrow } from './utils/execFileNoThrow.js'
@@ -122,7 +122,7 @@ export const getSystemContext = memoize(
 
     // Skip git status in CCR (unnecessary overhead on resume) or when git instructions are disabled
     const gitStatus =
-      isEnvTruthy(process.env.CLAUDE_CODE_REMOTE) ||
+      isEnvTruthy(process.env.NETRUNNER_REMOTE) ||
       !shouldIncludeGitInstructions()
         ? null
         : await getGitStatus()
@@ -159,30 +159,30 @@ export const getUserContext = memoize(
     const startTime = Date.now()
     logForDiagnosticsNoPII('info', 'user_context_started')
 
-    // CLAUDE_CODE_DISABLE_CLAUDE_MDS: hard off, always.
+    // NETRUNNER_DISABLE_NETRUNNER_INSTRUCTION_FILES: hard off, always.
     // --bare: skip auto-discovery (cwd walk), BUT honor explicit --add-dir.
     // --bare means "skip what I didn't ask for", not "ignore what I asked for".
-    const shouldDisableClaudeMd =
-      isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_CLAUDE_MDS) ||
-      (isBareMode() && getAdditionalDirectoriesForClaudeMd().length === 0)
+    const shouldDisableNetRunnerMd =
+      isEnvTruthy(process.env.NETRUNNER_DISABLE_NETRUNNER_INSTRUCTION_FILES) ||
+      (isBareMode() && getAdditionalDirectoriesForNetRunnerMd().length === 0)
     // Await the async I/O (readFile/readdir directory walk) so the event
     // loop yields naturally at the first fs.readFile.
-    const claudeMd = shouldDisableClaudeMd
+    const netRunnerMd = shouldDisableNetRunnerMd
       ? null
-      : getClaudeMds(filterInjectedMemoryFiles(await getMemoryFiles()))
+      : getNetRunnerMds(filterInjectedMemoryFiles(await getMemoryFiles()))
     // Cache for the auto-mode classifier (yoloClassifier.ts reads this
-    // instead of importing claudemd.ts directly, which would create a
+    // instead of importing netRunnerMd.ts directly, which would create a
     // cycle through permissions/filesystem → permissions → yoloClassifier).
-    setCachedClaudeMdContent(claudeMd || null)
+    setCachedNetRunnerMdContent(netRunnerMd || null)
 
     logForDiagnosticsNoPII('info', 'user_context_completed', {
       duration_ms: Date.now() - startTime,
-      claudemd_length: claudeMd?.length ?? 0,
-      claudemd_disabled: Boolean(shouldDisableClaudeMd),
+      netRunnerMd_length: netRunnerMd?.length ?? 0,
+      netRunnerMd_disabled: Boolean(shouldDisableNetRunnerMd),
     })
 
     return {
-      ...(claudeMd && { claudeMd }),
+      ...(netRunnerMd && { netRunnerMd }),
       currentDate: `Today's date is ${getLocalISODate()}.`,
     }
   },

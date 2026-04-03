@@ -6,6 +6,7 @@ import test from 'node:test'
 
 import {
   assessPlannedAction,
+  formatEngagementContextForPrompt,
   initializeNetRunnerProject,
   readEngagementManifest,
 } from './engagement.ts'
@@ -46,11 +47,28 @@ test('engagement guardrail decisions respect the manifest impact boundary', asyn
 })
 
 test('default engagement naming avoids legacy workspace labels', async () => {
-  const cwd = await mkdtemp(join(tmpdir(), 'claude-workspace-'))
+  const cwd = await mkdtemp(join(tmpdir(), 'netrunner-workspace-'))
   const manifest = await initializeNetRunnerProject({
     cwd,
     workflowId: 'web-app-testing',
   })
 
   assert.equal(manifest.name, 'net-runner-workspace')
+})
+
+test('runtime prompt context includes authorization and impact defaults', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'net-runner-context-'))
+  const manifest = await initializeNetRunnerProject({
+    cwd,
+    workflowId: 'api-testing',
+    targets: ['api.target.lab'],
+    authorizationStatus: 'unconfirmed',
+    maxImpact: 'read-only',
+  })
+
+  const contextBlock = formatEngagementContextForPrompt(manifest)
+  assert.match(contextBlock, /\[Net-Runner engagement context\]/)
+  assert.match(contextBlock, /authorization_status=unconfirmed/)
+  assert.match(contextBlock, /max_impact=read-only/)
+  assert.match(contextBlock, /default_behavior=Operate in read-only mode/)
 })

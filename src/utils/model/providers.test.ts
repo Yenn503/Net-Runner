@@ -6,27 +6,27 @@ import {
 } from './providers.js'
 
 const originalEnv = {
-  CLAUDE_CODE_USE_GEMINI: process.env.CLAUDE_CODE_USE_GEMINI,
-  CLAUDE_CODE_USE_OPENAI: process.env.CLAUDE_CODE_USE_OPENAI,
-  CLAUDE_CODE_USE_BEDROCK: process.env.CLAUDE_CODE_USE_BEDROCK,
-  CLAUDE_CODE_USE_VERTEX: process.env.CLAUDE_CODE_USE_VERTEX,
-  CLAUDE_CODE_USE_FOUNDRY: process.env.CLAUDE_CODE_USE_FOUNDRY,
+  NETRUNNER_USE_GEMINI: process.env.NETRUNNER_USE_GEMINI,
+  NETRUNNER_USE_OPENAI: process.env.NETRUNNER_USE_OPENAI,
+  NETRUNNER_USE_BEDROCK: process.env.NETRUNNER_USE_BEDROCK,
+  NETRUNNER_USE_VERTEX: process.env.NETRUNNER_USE_VERTEX,
+  NETRUNNER_USE_FOUNDRY: process.env.NETRUNNER_USE_FOUNDRY,
 }
 
 afterEach(() => {
-  process.env.CLAUDE_CODE_USE_GEMINI = originalEnv.CLAUDE_CODE_USE_GEMINI
-  process.env.CLAUDE_CODE_USE_OPENAI = originalEnv.CLAUDE_CODE_USE_OPENAI
-  process.env.CLAUDE_CODE_USE_BEDROCK = originalEnv.CLAUDE_CODE_USE_BEDROCK
-  process.env.CLAUDE_CODE_USE_VERTEX = originalEnv.CLAUDE_CODE_USE_VERTEX
-  process.env.CLAUDE_CODE_USE_FOUNDRY = originalEnv.CLAUDE_CODE_USE_FOUNDRY
+  process.env.NETRUNNER_USE_GEMINI = originalEnv.NETRUNNER_USE_GEMINI
+  process.env.NETRUNNER_USE_OPENAI = originalEnv.NETRUNNER_USE_OPENAI
+  process.env.NETRUNNER_USE_BEDROCK = originalEnv.NETRUNNER_USE_BEDROCK
+  process.env.NETRUNNER_USE_VERTEX = originalEnv.NETRUNNER_USE_VERTEX
+  process.env.NETRUNNER_USE_FOUNDRY = originalEnv.NETRUNNER_USE_FOUNDRY
 })
 
 function clearProviderEnv(): void {
-  delete process.env.CLAUDE_CODE_USE_GEMINI
-  delete process.env.CLAUDE_CODE_USE_OPENAI
-  delete process.env.CLAUDE_CODE_USE_BEDROCK
-  delete process.env.CLAUDE_CODE_USE_VERTEX
-  delete process.env.CLAUDE_CODE_USE_FOUNDRY
+  delete process.env.NETRUNNER_USE_GEMINI
+  delete process.env.NETRUNNER_USE_OPENAI
+  delete process.env.NETRUNNER_USE_BEDROCK
+  delete process.env.NETRUNNER_USE_VERTEX
+  delete process.env.NETRUNNER_USE_FOUNDRY
 }
 
 test('first-party provider keeps Anthropic account setup flow enabled', () => {
@@ -37,11 +37,11 @@ test('first-party provider keeps Anthropic account setup flow enabled', () => {
 })
 
 test.each([
-  ['CLAUDE_CODE_USE_OPENAI', 'openai'],
-  ['CLAUDE_CODE_USE_GEMINI', 'gemini'],
-  ['CLAUDE_CODE_USE_BEDROCK', 'bedrock'],
-  ['CLAUDE_CODE_USE_VERTEX', 'vertex'],
-  ['CLAUDE_CODE_USE_FOUNDRY', 'foundry'],
+  ['NETRUNNER_USE_OPENAI', 'openai'],
+  ['NETRUNNER_USE_GEMINI', 'gemini'],
+  ['NETRUNNER_USE_BEDROCK', 'bedrock'],
+  ['NETRUNNER_USE_VERTEX', 'vertex'],
+  ['NETRUNNER_USE_FOUNDRY', 'foundry'],
 ] as const)(
   '%s disables Anthropic account setup flow',
   (envKey, provider) => {

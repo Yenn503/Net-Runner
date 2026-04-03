@@ -18,7 +18,7 @@ import { handleMcpjsonServerApprovals } from './services/mcpServerApproval.js';
 import { AppStateProvider } from './state/AppState.js';
 import { onChangeAppState } from './state/onChangeAppState.js';
 import { normalizeApiKeyForConfig } from './utils/authPortable.js';
-import { getExternalClaudeMdIncludes, getMemoryFiles, shouldShowClaudeMdExternalIncludesWarning } from './utils/claudemd.js';
+import { getExternalNetRunnerMdIncludes, getMemoryFiles, shouldShowNetRunnerMdExternalIncludesWarning } from './utils/netRunnerMd.js';
 import { checkHasTrustDialogAccepted, getCustomApiKeyStatus, getGlobalConfig, saveGlobalConfig } from './utils/config.js';
 import { updateDeepLinkTerminalPreference } from './utils/deepLink/terminalPreference.js';
 import { isEnvTruthy, isRunningOnHomespace } from './utils/envUtils.js';
@@ -129,7 +129,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
 
   // Always show the trust dialog in interactive sessions, regardless of permission mode.
   // The trust dialog is the workspace trust boundary — it warns about untrusted repos
-  // and checks CLAUDE.md external includes. bypassPermissions mode
+  // and checks NETRUNNER.md external includes. bypassPermissions mode
   // only affects tool execution permissions, not workspace trust.
   // Note: non-interactive sessions (CI/CD with -p) never reach showSetupScreens at all.
   // Skip permission checks in claubbit
@@ -169,12 +169,12 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
       }
 
       // Check for claude.md includes that need approval
-      if (await shouldShowClaudeMdExternalIncludesWarning()) {
-        const externalIncludes = getExternalClaudeMdIncludes(await getMemoryFiles(true));
+      if (await shouldShowNetRunnerMdExternalIncludesWarning()) {
+        const externalIncludes = getExternalNetRunnerMdIncludes(await getMemoryFiles(true));
         const {
-          ClaudeMdExternalIncludesDialog
-        } = await import('./components/ClaudeMdExternalIncludesDialog.js');
-        await showSetupDialog(root, done => <ClaudeMdExternalIncludesDialog onDone={done} isStandaloneDialog externalIncludes={externalIncludes} />);
+          NetRunnerMdExternalIncludesDialog
+        } = await import('./components/NetRunnerMdExternalIncludesDialog.js');
+        await showSetupDialog(root, done => <NetRunnerMdExternalIncludesDialog onDone={done} isStandaloneDialog externalIncludes={externalIncludes} />);
       }
     }
   }
@@ -211,7 +211,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
 
   // Check for custom API key
   // On homespace, ANTHROPIC_API_KEY is preserved in process.env for child
-  // processes but ignored by Claude Code itself (see auth.ts).
+  // processes but ignored by Net-Runner itself (see auth.ts).
   if (process.env.ANTHROPIC_API_KEY && !isRunningOnHomespace()) {
     const customApiKeyTruncated = normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY);
     const keyStatus = getCustomApiKeyStatus(customApiKeyTruncated);
@@ -325,7 +325,7 @@ export function getRenderContext(exitOnCtrlC: boolean): {
   // offline analysis by bench/repl-scroll.ts. Captures the full TUI
   // render pipeline (yoga → screen buffer → diff → optimize → stdout)
   // so perf work on any phase can be validated against real user flows.
-  const frameTimingLogPath = process.env.CLAUDE_CODE_FRAME_TIMING_LOG;
+  const frameTimingLogPath = process.env.NETRUNNER_FRAME_TIMING_LOG;
   return {
     getFpsMetrics: () => fpsTracker.getMetrics(),
     stats,

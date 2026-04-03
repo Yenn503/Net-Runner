@@ -1,6 +1,8 @@
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
+import { evaluateEngagementGuardrail } from '../../security/runtimeIntegration.js'
 import type { PermissionUpdate } from '../../types/permissions.js'
+import { getCwd } from '../../utils/cwd.js'
 import { formatFileSize } from '../../utils/format.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import type { PermissionDecision } from '../../utils/permissions/PermissionResult.js'
@@ -104,6 +106,31 @@ export const WebFetchTool = buildTool({
   async checkPermissions(input, context): Promise<PermissionDecision> {
     const appState = context.getAppState()
     const permissionContext = appState.toolPermissionContext
+    const guardrailDecision = await evaluateEngagementGuardrail(
+      getCwd(),
+      String((input as { url?: string }).url ?? ''),
+    )
+    if (guardrailDecision?.action === 'block') {
+      return {
+        behavior: 'deny',
+        message: `Net-Runner guardrail blocked this fetch: ${guardrailDecision.reason}`,
+        decisionReason: {
+          type: 'other',
+          reason: `Net-Runner guardrail block: ${guardrailDecision.reason}`,
+        },
+      }
+    }
+    if (guardrailDecision?.action === 'review') {
+      return {
+        behavior: 'ask',
+        message: `Net-Runner guardrail review required before fetching this target: ${guardrailDecision.reason}`,
+        decisionReason: {
+          type: 'other',
+          reason: `Net-Runner guardrail review: ${guardrailDecision.reason}`,
+        },
+        suggestions: [],
+      }
+    }
 
     // Check if the hostname is in the preapproved list
     try {

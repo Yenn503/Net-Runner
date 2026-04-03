@@ -1,6 +1,6 @@
 # Net-Runner Workflow Overview
 
-`Net-Runner` is organized around explicit security testing workflows instead of a generic assistant shell.
+`Net-Runner` runs assessments as one inline runtime loop: engagement state, orchestration, guardrails, evidence, and memory.
 
 ## Current workflow registry
 
@@ -13,18 +13,18 @@
 - `ctf-mode`
   - For challenge-oriented workflows where speed, evidence, and iteration matter more than polished reporting.
 
-## Common execution shape
+## Runtime flow
 
-1. Use bundled skills like `engagement-setup` to collect scope, targets, goals, and constraints.
-2. Use a plain-language assessment prompt (auto-bootstrap) or `/engagement init` to create the workspace-local `.netrunner/` envelope and baseline engagement manifest.
-3. Run `scope-guard` as a skills layer before any higher-impact step.
-4. Use `recon-plan` to build the phased recon and validation sequence.
-5. Delegate to specialist agents only when a self-contained task is clear.
-   All Net-Runner specialists support delegation and follow-up messaging (`Agent` + `SendMessage`) for multi-hop orchestration.
-6. Use `evidence-capture` to preserve artifacts and report-ready findings.
-7. Use `/evidence` to append findings, artifacts, and notes to the ledger during execution.
-8. Use `/report` to export the current evidence ledger into markdown.
-9. Use `/memory` to review or refine project memory so successful assessment patterns persist across sessions.
+1. Start with a plain-language assessment instruction that includes a target.
+2. Net-Runner auto-initializes `.netrunner/engagement.json` if needed.
+3. Auto-init starts in safe mode (`authorization=unconfirmed`, `maxImpact=read-only`).
+4. Confirm authorization in normal chat (no slash command required) to unlock the intended impact boundary.
+5. The runtime injects engagement context into model turns (scope, status, restrictions, impact).
+6. Specialist agents execute scoped tasks and return outputs to the main thread.
+7. Guardrails evaluate higher-impact actions before execution.
+8. Evidence entries and artifacts are appended during execution.
+9. Reports are generated from the evidence chain.
+10. Specialist memory persists under `.netrunner/memory/agents/` for later sessions.
 
 ## Specialist agents
 

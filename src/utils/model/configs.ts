@@ -30,7 +30,7 @@ export const GEMINI_MODEL_DEFAULTS = {
 
 export const CLAUDE_3_7_SONNET_CONFIG = {
   firstParty: 'claude-3-7-sonnet-20250219',
-  bedrock: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
+  bedrock: 'us.anthropic.netrunner-3-7-sonnet-20250219-v1:0',
   vertex: 'claude-3-7-sonnet@20250219',
   foundry: 'claude-3-7-sonnet',
   openai: 'gpt-4o-mini',
@@ -39,7 +39,7 @@ export const CLAUDE_3_7_SONNET_CONFIG = {
 
 export const CLAUDE_3_5_V2_SONNET_CONFIG = {
   firstParty: 'claude-3-5-sonnet-20241022',
-  bedrock: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+  bedrock: 'anthropic.netrunner-3-5-sonnet-20241022-v2:0',
   vertex: 'claude-3-5-sonnet-v2@20241022',
   foundry: 'claude-3-5-sonnet',
   openai: 'gpt-4o-mini',
@@ -48,7 +48,7 @@ export const CLAUDE_3_5_V2_SONNET_CONFIG = {
 
 export const CLAUDE_3_5_HAIKU_CONFIG = {
   firstParty: 'claude-3-5-haiku-20241022',
-  bedrock: 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
+  bedrock: 'us.anthropic.netrunner-3-5-haiku-20241022-v1:0',
   vertex: 'claude-3-5-haiku@20241022',
   foundry: 'claude-3-5-haiku',
   openai: 'gpt-4o-mini',
@@ -57,7 +57,7 @@ export const CLAUDE_3_5_HAIKU_CONFIG = {
 
 export const CLAUDE_HAIKU_4_5_CONFIG = {
   firstParty: 'claude-haiku-4-5-20251001',
-  bedrock: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+  bedrock: 'us.anthropic.netrunner-haiku-4-5-20251001-v1:0',
   vertex: 'claude-haiku-4-5@20251001',
   foundry: 'claude-haiku-4-5',
   openai: 'gpt-4o-mini',
@@ -66,7 +66,7 @@ export const CLAUDE_HAIKU_4_5_CONFIG = {
 
 export const CLAUDE_SONNET_4_CONFIG = {
   firstParty: 'claude-sonnet-4-20250514',
-  bedrock: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+  bedrock: 'us.anthropic.netrunner-sonnet-4-20250514-v1:0',
   vertex: 'claude-sonnet-4@20250514',
   foundry: 'claude-sonnet-4',
   openai: 'gpt-4o-mini',
@@ -75,7 +75,7 @@ export const CLAUDE_SONNET_4_CONFIG = {
 
 export const CLAUDE_SONNET_4_5_CONFIG = {
   firstParty: 'claude-sonnet-4-5-20250929',
-  bedrock: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
+  bedrock: 'us.anthropic.netrunner-sonnet-4-5-20250929-v1:0',
   vertex: 'claude-sonnet-4-5@20250929',
   foundry: 'claude-sonnet-4-5',
   openai: 'gpt-4o',
@@ -84,7 +84,7 @@ export const CLAUDE_SONNET_4_5_CONFIG = {
 
 export const CLAUDE_OPUS_4_CONFIG = {
   firstParty: 'claude-opus-4-20250514',
-  bedrock: 'us.anthropic.claude-opus-4-20250514-v1:0',
+  bedrock: 'us.anthropic.netrunner-opus-4-20250514-v1:0',
   vertex: 'claude-opus-4@20250514',
   foundry: 'claude-opus-4',
   openai: 'gpt-4o',
@@ -93,7 +93,7 @@ export const CLAUDE_OPUS_4_CONFIG = {
 
 export const CLAUDE_OPUS_4_1_CONFIG = {
   firstParty: 'claude-opus-4-1-20250805',
-  bedrock: 'us.anthropic.claude-opus-4-1-20250805-v1:0',
+  bedrock: 'us.anthropic.netrunner-opus-4-1-20250805-v1:0',
   vertex: 'claude-opus-4-1@20250805',
   foundry: 'claude-opus-4-1',
   openai: 'gpt-4o',
@@ -102,7 +102,7 @@ export const CLAUDE_OPUS_4_1_CONFIG = {
 
 export const CLAUDE_OPUS_4_5_CONFIG = {
   firstParty: 'claude-opus-4-5-20251101',
-  bedrock: 'us.anthropic.claude-opus-4-5-20251101-v1:0',
+  bedrock: 'us.anthropic.netrunner-opus-4-5-20251101-v1:0',
   vertex: 'claude-opus-4-5@20251101',
   foundry: 'claude-opus-4-5',
   openai: 'gpt-4o',
@@ -111,7 +111,7 @@ export const CLAUDE_OPUS_4_5_CONFIG = {
 
 export const CLAUDE_OPUS_4_6_CONFIG = {
   firstParty: 'claude-opus-4-6',
-  bedrock: 'us.anthropic.claude-opus-4-6-v1',
+  bedrock: 'us.anthropic.netrunner-opus-4-6-v1',
   vertex: 'claude-opus-4-6',
   foundry: 'claude-opus-4-6',
   openai: 'gpt-4o',
@@ -120,7 +120,7 @@ export const CLAUDE_OPUS_4_6_CONFIG = {
 
 export const CLAUDE_SONNET_4_6_CONFIG = {
   firstParty: 'claude-sonnet-4-6',
-  bedrock: 'us.anthropic.claude-sonnet-4-6',
+  bedrock: 'us.anthropic.netrunner-sonnet-4-6',
   vertex: 'claude-sonnet-4-6',
   foundry: 'claude-sonnet-4-6',
   openai: 'gpt-4o',

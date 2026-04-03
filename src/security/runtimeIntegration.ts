@@ -9,23 +9,38 @@ export function isNetRunnerSecurityAgent(agentType: string): agentType is NetRun
   return SECURITY_AGENT_TYPES.has(agentType)
 }
 
-export async function evaluateSubagentGuardrail(
+export async function evaluateEngagementGuardrail(
   cwd: string,
   plannedAction: string,
+  options?: {
+    recordAllow?: boolean
+  },
 ): Promise<GuardrailDecision | null> {
-  try {
-    const manifest = await readEngagementManifest(cwd)
-    if (!manifest) {
-      return null
-    }
+  const manifest = await readEngagementManifest(cwd)
+  if (!manifest) {
+    return null
+  }
 
-    const decision = assessPlannedAction(manifest, plannedAction)
+  const decision = assessPlannedAction(manifest, plannedAction)
+  if (decision.action !== 'allow' || options?.recordAllow) {
     await appendEvidenceEntry(cwd, {
       type: 'guardrail',
       plannedAction,
       decision,
     })
-    return decision
+  }
+
+  return decision
+}
+
+export async function evaluateSubagentGuardrail(
+  cwd: string,
+  plannedAction: string,
+): Promise<GuardrailDecision | null> {
+  try {
+    return await evaluateEngagementGuardrail(cwd, plannedAction, {
+      recordAllow: true,
+    })
   } catch {
     return null
   }

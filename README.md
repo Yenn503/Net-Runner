@@ -1,455 +1,122 @@
 # Net-Runner
 
-`Net-Runner` is a skill-first, security-first testing framework built from an upstream agentic CLI runtime and reoriented around operator workflows.
+Net-Runner is an agentic red-team assessment framework.
 
-It keeps the strong parts of the underlying agentic stack:
+It gives you one inline system:
+- natural-language operator control
+- specialist agents for each assessment phase
+- tool execution (skills, shell, files, web, MCP)
+- built-in guardrails
+- evidence + reporting
+- persistent memory
 
-- portable model/provider support
-- real tool execution
-- multi-agent orchestration
-- skills
-- MCP integrations where they materially help
+Use only on targets you are explicitly authorized to test.
 
-The product direction is different from a generic coding CLI. `Net-Runner` is aimed at authorized testing workflows such as web app validation, API testing, lab targets, HTB-style environments, and evidence-backed reporting.
+## How It Works
 
----
+When you give Net-Runner a normal prompt like:
 
-## Install
+`Assess https://target.example and start with recon.`
 
-### Option A: npm (recommended)
+it runs a single runtime loop:
 
-```bash
-npm install -g net-runner
-```
+1. Detect assessment intent and target.
+2. Auto-create engagement state in `.netrunner/` (safe defaults first).
+3. Inject engagement context into model turns (scope, authorization, impact, restrictions).
+4. Orchestrate specialist agents and tools for each phase.
+5. Enforce guardrails before higher-impact actions.
+6. Record evidence continuously.
+7. Keep project memory available across sessions.
+8. Produce report-ready output.
 
-### Option B: From source (requires Bun)
+You can run it fully in plain language. Slash commands are optional control tools, not required startup steps.
 
-Use Bun `1.3.11` or newer for source builds on Windows. Older Bun versions such as `1.3.4` can fail with a large batch of unresolved module errors during `bun run build`.
+## Safe Defaults
 
-```bash
-git clone <your-net-runner-repo-url>
-cd net-runner
+Auto-initialized engagements start with:
+- `authorization: unconfirmed`
+- `max impact: read-only`
 
-# Install dependencies
-bun install
+Then confirm in plain language, for example:
 
-# Build
-bun run build
+`I confirm authorization for this engagement. Keep impact limited.`
 
-# Link globally (optional)
-npm link
-```
-
-### Option C: Run directly with Bun (no build step)
-
-```bash
-git clone <your-net-runner-repo-url>
-cd net-runner
-bun install
-bun run dev
-```
-
----
+Net-Runner updates engagement state from that instruction and continues with the same runtime flow.
 
 ## Quick Start
 
-### 1. Set 3 environment variables
+Install:
 
 ```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=sk-your-key-here
-export OPENAI_MODEL=gpt-4o
-```
-
-### 2. Run it
-
-```bash
-# If installed via npm
-net-runner
-
-# If built from source
-bun run dev
-# or after build:
+bun install
+bun run build
 node dist/cli.mjs
 ```
 
-That gives you the converted runtime with the `net-runner` command as the primary entrypoint.
+Then connect your preferred provider/model (OpenAI-compatible or local endpoint supported by runtime config) and start with a normal assessment instruction.
 
----
+## Specialist Agents
 
-## Security Workflows
+Net-Runner includes dedicated agents for:
+- engagement coordination
+- recon
+- web testing
+- API testing
+- network testing
+- exploitation
+- privilege escalation
+- lateral movement
+- retesting
+- evidence quality
+- reporting
 
-The current Net-Runner slice is organized around explicit operator workflows:
+Agents are wired for orchestration and follow-up task routing. Security agents use persistent project memory.
+
+## Evidence And Memory
+
+Net-Runner keeps assessment continuity through one runtime path:
+- engagement state and evidence live under `.netrunner/`
+- specialist agent memory lives under `.netrunner/memory/agents/` and is reused across sessions
+- sub-agent outputs are logged back into the evidence chain
+
+Main outputs:
+- `.netrunner/engagement.json`
+- `.netrunner/evidence/ledger.jsonl`
+- `.netrunner/memory/`
+- `.netrunner/reports/*.md`
+
+## Optional Control Commands
+
+Use these only when you want manual control:
+- `/engagement status`
+- `/engagement capabilities [workflow]`
+- `/engagement guard <planned action>`
+- `/evidence status|note|finding|artifact|close`
+- `/report [file-name]`
+
+## Validation
+
+```bash
+bun run pipeline:redteam
+npm run test:security-slice
+bun run validate:redteam-alignment
+bun run validate:redteam-agent-tools
+bun run smoke:redteam-commands
+bun run build
+```
+
+## Workflows
 
 - `web-app-testing`
 - `api-testing`
 - `lab-target-testing`
 - `ctf-mode`
 
-These workflows are backed by bundled security skills and specialist agents rather than by an MCP-heavy framework design.
-
-### Natural-Language Start
-
-You do not need slash commands to begin. You can type normal instructions like:
-
-- `Start assessment against https://target.example and run recon first`
-- `Pentest API target api.example.com and validate auth`
-- `Run red-team assessment against 10.10.10.10`
-
-If no engagement exists and your prompt includes both assessment intent and a concrete target, Net-Runner auto-initializes engagement state and continues with specialist orchestration.
-
-### Commands
-
-- `/engagement init [workflow] [target]` creates the project-scoped `.netrunner/` envelope and defaults to `web-app-testing` when no workflow is provided.
-- `/engagement status` shows the current scope, workflow, and evidence counts.
-- `/engagement capabilities [workflow]` shows readiness for workflow capabilities and missing prerequisites for the requested workflow, then falls back to the active workflow or `web-app-testing`.
-- `/engagement alignment` validates specialist-agent to capability coverage and workflow mapping.
-- `/engagement guard <planned action>` records a typed guardrail decision before higher-impact steps.
-- `/evidence status|note|finding|artifact|close` appends structured ledger entries without manual JSONL edits.
-- `/report [file-name]` writes a markdown report from the current evidence ledger (`.netrunner/reports/latest.md` by default).
-
-### Runtime Integrations
-
-- Plain-language assessment prompts can auto-initialize engagement state when none exists (disable with `NET_RUNNER_DISABLE_AUTO_ENGAGEMENT=1`).
-- When an engagement is active, Net-Runner records security subagent execution summaries in the evidence ledger.
-- Net-Runner also auto-records subagent output-file artifacts for async/resumed agent runs so assessment traces stay reportable by default.
-- Delegated security-agent tasks are checked against the active engagement guardrails before execution.
-- Security specialists include delegation + teammate continuation tooling (`Agent` + `SendMessage`) so orchestration can recurse without manual rewiring.
-- Security specialists run with project-scoped persistent agent memory when auto-memory is enabled.
-- `/memory` opens memory files so assessment learnings can be reviewed or edited between runs.
-- Auto-memory is enabled by default; if disabled (`NET_RUNNER_DISABLE_AUTO_MEMORY=1` or `autoMemoryEnabled=false`), persistent agent-memory prompts are skipped.
-
-## How Engagement Works
-
-1. Start scope framing with bundled skills like `engagement-setup`, `scope-guard`, and `recon-plan`.
-2. Start with a plain-language assessment prompt or run `/engagement init` to persist workflow and target context to `.netrunner/engagement.json`.
-3. Run specialists for recon, testing, exploitation validation, evidence shaping, and reporting.
-4. Keep high-impact actions explicit with `/engagement guard`.
-5. Append findings, artifacts, and notes with `/evidence`.
-6. Export the engagement ledger with `/report`.
-
-## Architecture Direction
-
-Net-Runner is intentionally `skills first`:
-
-- skills and code execution are the primary extension model
-- built-in tools remain the main execution surface
-- MCP stays available for APIs, environment integrations, and infrastructure where it clearly helps
-
-See:
+## More Docs
 
 - `docs/workflows/overview.md`
 - `docs/capabilities/skills-first-architecture.md`
 
----
-
-## Provider Examples
-
-### OpenAI
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=sk-...
-export OPENAI_MODEL=gpt-4o
-```
-
-### Codex via ChatGPT auth
-
-`codexplan` maps to GPT-5.4 on the Codex backend with high reasoning.
-`codexspark` maps to GPT-5.3 Codex Spark for faster loops.
-
-If you already use the Codex CLI, Net-Runner will read `~/.codex/auth.json`
-automatically. You can also point it elsewhere with `CODEX_AUTH_JSON_PATH` or
-override the token directly with `CODEX_API_KEY`.
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_MODEL=codexplan
-
-# optional if you do not already have ~/.codex/auth.json
-export CODEX_API_KEY=...
-
-net-runner
-```
-
-### DeepSeek
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=sk-...
-export OPENAI_BASE_URL=https://api.deepseek.com/v1
-export OPENAI_MODEL=deepseek-chat
-```
-
-### Google Gemini (via OpenRouter)
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=sk-or-...
-export OPENAI_BASE_URL=https://openrouter.ai/api/v1
-export OPENAI_MODEL=google/gemini-2.0-flash
-```
-
-### Ollama (local, free)
-
-```bash
-ollama pull llama3.3:70b
-
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_BASE_URL=http://localhost:11434/v1
-export OPENAI_MODEL=llama3.3:70b
-# no API key needed for local models
-```
-
-### LM Studio (local)
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_BASE_URL=http://localhost:1234/v1
-export OPENAI_MODEL=your-model-name
-```
-
-### Together AI
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=...
-export OPENAI_BASE_URL=https://api.together.xyz/v1
-export OPENAI_MODEL=meta-llama/Llama-3.3-70B-Instruct-Turbo
-```
-
-### Groq
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=gsk_...
-export OPENAI_BASE_URL=https://api.groq.com/openai/v1
-export OPENAI_MODEL=llama-3.3-70b-versatile
-```
-
-### Mistral
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=...
-export OPENAI_BASE_URL=https://api.mistral.ai/v1
-export OPENAI_MODEL=mistral-large-latest
-```
-
-### Azure OpenAI
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-export OPENAI_API_KEY=your-azure-key
-export OPENAI_BASE_URL=https://your-resource.openai.azure.com/openai/deployments/your-deployment/v1
-export OPENAI_MODEL=gpt-4o
-```
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `CLAUDE_CODE_USE_OPENAI` | Yes | Set to `1` to enable the OpenAI provider |
-| `OPENAI_API_KEY` | Yes* | Your API key (*not needed for local models like Ollama) |
-| `OPENAI_MODEL` | Yes | Model name (e.g. `gpt-4o`, `deepseek-chat`, `llama3.3:70b`) |
-| `OPENAI_BASE_URL` | No | API endpoint (defaults to `https://api.openai.com/v1`) |
-| `CODEX_API_KEY` | Codex only | Codex/ChatGPT access token override |
-| `CODEX_AUTH_JSON_PATH` | Codex only | Path to a Codex CLI `auth.json` file |
-| `CODEX_HOME` | Codex only | Alternative Codex home directory (`auth.json` will be read from here) |
-
-You can also use `ANTHROPIC_MODEL` to override the model name. `OPENAI_MODEL` takes priority.
-
----
-
-## Runtime Hardening
-
-Use these commands to keep the CLI stable and catch environment mistakes early:
-
-```bash
-# quick startup sanity check
-bun run smoke
-
-# validate provider env + reachability
-bun run doctor:runtime
-
-# print machine-readable runtime diagnostics
-bun run doctor:runtime:json
-
-# persist a diagnostics report to reports/doctor-runtime.json
-bun run doctor:report
-
-# full local hardening check (smoke + runtime doctor)
-bun run hardening:check
-
-# strict hardening (includes project-wide typecheck)
-bun run hardening:strict
-
-# validate red-team agent/capability alignment
-bun run validate:redteam-alignment
-
-# validate that specialist toolsets satisfy capability mappings
-bun run validate:redteam-agent-tools
-
-# smoke the engagement/evidence/report command surface in an isolated temp workspace
-bun run smoke:redteam-commands
-
-# run the current red-team validation pipeline
-bun run pipeline:redteam
-```
-
-Notes:
-- `doctor:runtime` fails fast if `CLAUDE_CODE_USE_OPENAI=1` with a placeholder key (`SUA_CHAVE`) or a missing key for non-local providers.
-- Local providers (for example `http://localhost:11434/v1`) can run without `OPENAI_API_KEY`.
-- Codex profiles validate `CODEX_API_KEY` or the Codex CLI auth file and probe `POST /responses` instead of `GET /models`.
-
-### Provider Launch Profiles
-
-Use profile launchers to avoid repeated environment setup:
-
-```bash
-# one-time profile bootstrap (prefer viable local Ollama, otherwise OpenAI)
-bun run profile:init
-
-# preview the best provider/model for your goal
-bun run profile:recommend -- --goal coding --benchmark
-
-# auto-apply the best available local/openai provider/model for your goal
-bun run profile:auto -- --goal latency
-
-# codex bootstrap (defaults to codexplan and ~/.codex/auth.json)
-bun run profile:codex
-
-# openai bootstrap with explicit key
-bun run profile:init -- --provider openai --api-key sk-...
-
-# ollama bootstrap with custom model
-bun run profile:init -- --provider ollama --model llama3.1:8b
-
-# ollama bootstrap with intelligent model auto-selection
-bun run profile:init -- --provider ollama --goal coding
-
-# codex bootstrap with a fast model alias
-bun run profile:init -- --provider codex --model codexspark
-
-# launch using persisted profile
-bun run dev:profile
-
-# codex profile (uses CODEX_API_KEY or ~/.codex/auth.json)
-bun run dev:codex
-
-# OpenAI profile (requires OPENAI_API_KEY in your shell)
-bun run dev:openai
-
-# Ollama profile (defaults: localhost:11434, llama3.1:8b)
-bun run dev:ollama
-```
-
-`profile:recommend` ranks installed Ollama models for `latency`, `balanced`, or `coding`, and `profile:auto` can persist the recommendation directly.
-If no profile exists yet, `dev:profile` now uses the same goal-aware defaults when picking the initial model.
-
-Use `--provider ollama` when you want a local-only path. Auto mode falls back to OpenAI when no viable local chat model is installed.
-Goal-based Ollama selection only recommends among models that are already installed and reachable from Ollama.
-
-Use `profile:codex` or `--provider codex` when you want the ChatGPT Codex backend.
-
-`dev:openai`, `dev:ollama`, and `dev:codex` run `doctor:runtime` first and only launch the app if checks pass.
-For `dev:ollama`, make sure Ollama is running locally before launch.
-
----
-
-## What Works
-
-- **All tools**: Bash, FileRead, FileWrite, FileEdit, Glob, Grep, WebFetch, WebSearch, Agent, MCP, LSP, NotebookEdit, Tasks
-- **Streaming**: Real-time token streaming
-- **Tool calling**: Multi-step tool chains (the model calls tools, gets results, continues)
-- **Images**: Base64 and URL images passed to vision models
-- **Slash commands**: /commit, /review, /compact, /diff, /doctor, etc.
-- **Sub-agents**: AgentTool spawns sub-agents using the same provider
-- **Memory**: Persistent memory system
-
-## What's Different
-
-- **No thinking mode**: Anthropic's extended thinking is disabled (OpenAI models use different reasoning)
-- **No prompt caching**: Anthropic-specific cache headers are skipped
-- **No beta features**: Anthropic-specific beta headers are ignored
-- **Token limits**: Defaults to 32K max output — some models may cap lower, which is handled gracefully
-
----
-
-## Provider Shim Internals
-
-The shim (`src/services/api/openaiShim.ts`) sits between Net-Runner and the LLM API:
-
-```
-Net-Runner Tool System
-        |
-        v
-  Anthropic SDK interface (duck-typed)
-        |
-        v
-  openaiShim.ts  <-- translates formats
-        |
-        v
-  OpenAI Chat Completions API
-        |
-        v
-  Any compatible model
-```
-
-It translates:
-- Anthropic message blocks → OpenAI messages
-- Anthropic tool_use/tool_result → OpenAI function calls
-- OpenAI SSE streaming → Anthropic stream events
-- Anthropic system prompt arrays → OpenAI system messages
-
-The rest of the runtime loop doesn't need provider-specific logic.
-
----
-
-## Model Quality Notes
-
-Not all models are equal at agentic tool use. Here's a rough guide:
-
-| Model | Tool Calling | Code Quality | Speed |
-|-------|-------------|-------------|-------|
-| GPT-4o | Excellent | Excellent | Fast |
-| DeepSeek-V3 | Great | Great | Fast |
-| Gemini 2.0 Flash | Great | Good | Very Fast |
-| Llama 3.3 70B | Good | Good | Medium |
-| Mistral Large | Good | Good | Fast |
-| GPT-4o-mini | Good | Good | Very Fast |
-| Qwen 2.5 72B | Good | Good | Medium |
-| Smaller models (<7B) | Limited | Limited | Very Fast |
-
-For best results, use models with strong function/tool calling support.
-
----
-
-## Files Changed from Original
-
-```
-src/services/api/openaiShim.ts   — NEW: OpenAI-compatible API shim (724 lines)
-src/services/api/client.ts       — Routes to shim when CLAUDE_CODE_USE_OPENAI=1
-src/utils/model/providers.ts     — Added 'openai' provider type
-src/utils/model/configs.ts       — Added openai model mappings
-src/utils/model/model.ts         — Respects OPENAI_MODEL for defaults
-src/utils/auth.ts                — Recognizes OpenAI as valid 3P provider
-```
-
-6 files changed. 786 lines added. Zero dependencies added.
-
----
-
-## Origin
-
-This project is a standalone Net-Runner fork built from an upstream agentic CLI runtime snapshot and then extended for red-team engagement workflows.
-
-The framework and red-team extensions in this repository are maintained as Net-Runner.
-
----
-
 ## License
 
-This repository is provided for educational and research purposes. The original source code is subject to Anthropic's terms. The OpenAI shim additions are public domain.
+This repository is for educational use and authorized security testing.

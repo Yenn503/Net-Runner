@@ -6,14 +6,14 @@ import { logError } from '../../utils/log.js'
 import { getClaudeCodeUserAgent } from '../../utils/userAgent.js'
 
 /**
- * Fetch the user's first Claude Code token date and store in config.
- * This is called after successful login to cache when they started using Claude Code.
+ * Fetch the user's first Net-Runner token date and store in config.
+ * This is called after successful login to cache when they started using Net-Runner.
  */
 export async function fetchAndStoreClaudeCodeFirstTokenDate(): Promise<void> {
   try {
     const config = getGlobalConfig()
 
-    if (config.claudeCodeFirstTokenDate !== undefined) {
+    if (config.netRunnerFirstTokenDate !== undefined) {
       return
     }
 
@@ -52,7 +52,7 @@ export async function fetchAndStoreClaudeCodeFirstTokenDate(): Promise<void> {
 
     saveGlobalConfig(current => ({
       ...current,
-      claudeCodeFirstTokenDate: firstTokenDate,
+      netRunnerFirstTokenDate: firstTokenDate,
     }))
   } catch (error) {
     logError(error)

@@ -50,7 +50,14 @@ const call: LocalCommandCall = async args => {
     const manifest = await initializeNetRunnerProject({
       cwd,
       workflowId,
+      authorizationStatus: 'unconfirmed',
       targets: targetSummary ? [targetSummary] : [],
+      maxImpact: 'read-only',
+      authorizedBy: 'operator (manual init, pending confirmation)',
+      restrictions: [
+        'Remain in read-only mode until operator authorization is explicitly confirmed.',
+        'Do not exceed the declared target scope.',
+      ],
     })
     await appendEvidenceEntry(cwd, {
       type: 'session_start',

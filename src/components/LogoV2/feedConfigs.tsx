@@ -39,7 +39,7 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
       text: note
     };
   });
-  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest claude-cli-internal commits' : 'Check /release-notes for recent updates';
+  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest net-runner-internal commits' : 'Check /release-notes for recent updates';
   return {
     title: "external" === 'ant' ? "Net-Runner Updates [ANT-ONLY: Latest CC commits]" : "Net-Runner Updates",
     lines,

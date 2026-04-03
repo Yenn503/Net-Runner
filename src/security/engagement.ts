@@ -4,6 +4,7 @@ import { findWorkflow, type SecurityWorkflow } from './workflows.js'
 import type { NetRunnerSkillName } from './skillDefinitions.js'
 import { assessActionAgainstImpact, type GuardrailDecision, type ImpactLevel } from './guardrails.js'
 import {
+  getEngagementAgentMemoryRoot,
   getArtifactsDir,
   getEngagementInstructionsDir,
   getEngagementManifestPath,
@@ -45,6 +46,7 @@ export type InitializeEngagementOptions = {
   cwd: string
   name?: string
   workflowId?: SecurityWorkflow['id']
+  authorizationStatus?: 'confirmed' | 'unconfirmed'
   targets?: string[]
   objectives?: string[]
   scopeSummary?: string
@@ -84,6 +86,7 @@ Files:
 - secrets.env: secret values that should stay out of transcripts and reports
 - memory/private.md: operator-only notes
 - memory/team.md: reusable team-safe notes
+- memory/agents/: specialist-agent project memory inside the engagement envelope
 - evidence/ledger.jsonl: append-only evidence log
 - reports/: generated markdown reports
 `
@@ -110,6 +113,21 @@ const DEFAULT_TEAM_MEMORY = `# Team Memory
 Store reusable, non-sensitive findings and workflow notes here.
 `
 
+const DEFAULT_MEMORY_README = `# Net-Runner Memory
+
+This directory keeps engagement-scoped memory for the current assessment.
+
+- private.md: operator-only working notes
+- team.md: reusable assessment notes safe to share in-project
+- agents/: specialist-agent project memory kept inside the same engagement envelope
+`
+
+const DEFAULT_AGENT_MEMORY_README = `# Agent Memory
+
+Each Net-Runner specialist stores project-scoped memory in its own subdirectory here.
+This keeps engagement notes, evidence context, and agent learnings inside one workspace envelope.
+`
+
 export function createDefaultEngagementManifest(
   options: InitializeEngagementOptions,
 ): EngagementManifest {
@@ -132,7 +150,7 @@ export function createDefaultEngagementManifest(
     createdAt: now,
     updatedAt: now,
     authorization: {
-      status: 'confirmed',
+      status: options.authorizationStatus ?? 'confirmed',
       authorizedBy: options.authorizedBy ?? 'operator',
       scopeSummary:
         options.scopeSummary ??
@@ -170,6 +188,7 @@ export async function initializeNetRunnerProject(
     mkdir(projectDir, { recursive: true }),
     mkdir(getEngagementInstructionsDir(options.cwd), { recursive: true }),
     mkdir(getEngagementMemoryDir(options.cwd), { recursive: true }),
+    mkdir(getEngagementAgentMemoryRoot(options.cwd), { recursive: true }),
     mkdir(dirname(getEvidenceLedgerPath(options.cwd)), { recursive: true }),
     mkdir(getArtifactsDir(options.cwd), { recursive: true }),
     mkdir(getFindingsDir(options.cwd), { recursive: true }),
@@ -191,6 +210,14 @@ export async function initializeNetRunnerProject(
     writeIfMissing(
       `${getEngagementMemoryDir(options.cwd)}/team.md`,
       DEFAULT_TEAM_MEMORY,
+    ),
+    writeIfMissing(
+      `${getEngagementMemoryDir(options.cwd)}/README.md`,
+      DEFAULT_MEMORY_README,
+    ),
+    writeIfMissing(
+      `${getEngagementAgentMemoryRoot(options.cwd)}/README.md`,
+      DEFAULT_AGENT_MEMORY_README,
     ),
     writeIfMissing(getEvidenceLedgerPath(options.cwd), ''),
   ])
@@ -240,6 +267,43 @@ export function summarizeEngagement(manifest: EngagementManifest): string {
   ].join('\n')
 }
 
+function truncateContextValue(value: string, maxLength = 240): string {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+  return `${normalized.slice(0, maxLength)}...`
+}
+
+export function formatEngagementContextForPrompt(
+  manifest: EngagementManifest,
+): string {
+  const targets =
+    manifest.targets.length > 0 ? manifest.targets.join(', ') : 'none'
+  const restrictions =
+    manifest.authorization.restrictions.length > 0
+      ? manifest.authorization.restrictions.join(' | ')
+      : 'none'
+  const defaultBehavior =
+    manifest.authorization.status === 'confirmed'
+      ? 'Proceed inside scope and enforce guardrails before higher-impact actions.'
+      : 'Operate in read-only mode until the operator explicitly confirms authorization.'
+
+  return [
+    '[Net-Runner engagement context]',
+    `name=${truncateContextValue(manifest.name, 120)}`,
+    `workflow=${manifest.workflowId}`,
+    `targets=${truncateContextValue(targets)}`,
+    `authorization_status=${manifest.authorization.status}`,
+    `max_impact=${manifest.authorization.maxImpact}`,
+    `scope_summary=${truncateContextValue(manifest.authorization.scopeSummary)}`,
+    `restrictions=${truncateContextValue(restrictions)}`,
+    `default_skills=${manifest.execution.defaultSkills.join(', ')}`,
+    `default_behavior=${defaultBehavior}`,
+    '[/Net-Runner engagement context]',
+  ].join('\n')
+}
+
 export function assessPlannedAction(
   manifest: EngagementManifest,
   plannedAction: string,
@@ -248,5 +312,10 @@ export function assessPlannedAction(
     plannedAction,
     manifest.authorization.maxImpact,
     manifest.authorization.status,
+    {
+      engagementStatus: manifest.status,
+      targets: manifest.targets,
+      restrictions: manifest.authorization.restrictions,
+    },
   )
 }

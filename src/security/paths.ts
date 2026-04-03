@@ -26,6 +26,17 @@ export function getEngagementMemoryDir(cwd: string): string {
   return join(getNetRunnerProjectDir(cwd), 'memory')
 }
 
+export function getEngagementAgentMemoryRoot(cwd: string): string {
+  return join(getEngagementMemoryDir(cwd), 'agents')
+}
+
+export function getEngagementAgentMemoryDir(
+  cwd: string,
+  agentType: string,
+): string {
+  return join(getEngagementAgentMemoryRoot(cwd), agentType)
+}
+
 export function getEvidenceDir(cwd: string): string {
   return join(getNetRunnerProjectDir(cwd), 'evidence')
 }

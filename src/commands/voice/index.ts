@@ -8,7 +8,7 @@ const voice = {
   type: 'local',
   name: 'voice',
   description: 'Toggle voice mode',
-  availability: ['claude-ai'],
+  availability: ['hosted-auth'],
   isEnabled: () => isVoiceGrowthBookEnabled(),
   get isHidden() {
     return !isVoiceModeEnabled()

@@ -16,7 +16,7 @@ function getOauthConfigType(): OauthConfigType {
 }
 
 export function fileSuffixForOauthConfig(): string {
-  if (process.env.CLAUDE_CODE_CUSTOM_OAUTH_URL) {
+  if (process.env.NETRUNNER_CUSTOM_OAUTH_URL) {
     return '-custom-oauth'
   }
   switch (getOauthConfigType()) {
@@ -83,19 +83,19 @@ type OauthConfig = {
 // Production OAuth configuration - Used in normal operation
 const PROD_OAUTH_CONFIG = {
   BASE_API_URL: 'https://api.anthropic.com',
-  CONSOLE_AUTHORIZE_URL: 'https://platform.claude.com/oauth/authorize',
+  CONSOLE_AUTHORIZE_URL: 'https://platform.netrunner.com/oauth/authorize',
   // Bounces through claude.com/cai/* so CLI sign-ins connect to claude.com
   // visits for attribution. 307s to claude.ai/oauth/authorize in two hops.
   CLAUDE_AI_AUTHORIZE_URL: 'https://claude.com/cai/oauth/authorize',
   CLAUDE_AI_ORIGIN: 'https://claude.ai',
-  TOKEN_URL: 'https://platform.claude.com/v1/oauth/token',
+  TOKEN_URL: 'https://platform.netrunner.com/v1/oauth/token',
   API_KEY_URL: 'https://api.anthropic.com/api/oauth/claude_cli/create_api_key',
   ROLES_URL: 'https://api.anthropic.com/api/oauth/claude_cli/roles',
   CONSOLE_SUCCESS_URL:
-    'https://platform.claude.com/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dclaude-code',
+    'https://platform.netrunner.com/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dclaude-code',
   CLAUDEAI_SUCCESS_URL:
-    'https://platform.claude.com/oauth/code/success?app=claude-code',
-  MANUAL_REDIRECT_URL: 'https://platform.claude.com/oauth/code/callback',
+    'https://platform.netrunner.com/oauth/code/success?app=claude-code',
+  MANUAL_REDIRECT_URL: 'https://platform.netrunner.com/oauth/code/callback',
   CLIENT_ID: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
   // No suffix for production config
   OAUTH_FILE_SUFFIX: '',
@@ -106,7 +106,7 @@ const PROD_OAUTH_CONFIG = {
 /**
  * Client ID Metadata Document URL for MCP OAuth (CIMD / SEP-991).
  * When an MCP auth server advertises client_id_metadata_document_supported: true,
- * Claude Code uses this URL as its client_id instead of Dynamic Client Registration.
+ * Net-Runner uses this URL as its client_id instead of Dynamic Client Registration.
  * The URL must point to a JSON document hosted by Anthropic.
  * See: https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00
  */
@@ -173,11 +173,11 @@ function getLocalOauthConfig(): OauthConfig {
   }
 }
 
-// Allowed base URLs for CLAUDE_CODE_CUSTOM_OAUTH_URL override.
+// Allowed base URLs for NETRUNNER_CUSTOM_OAUTH_URL override.
 // Only FedStart/PubSec deployments are permitted to prevent OAuth tokens
 // from being sent to arbitrary endpoints.
 const ALLOWED_OAUTH_BASE_URLS = [
-  'https://beacon.claude-ai.staging.ant.dev',
+  'https://beacon.netrunner-ai.staging.ant.dev',
   'https://claude.fedstart.com',
   'https://claude-staging.fedstart.com',
 ]
@@ -197,12 +197,12 @@ export function getOauthConfig(): OauthConfig {
 
   // Allow overriding all OAuth URLs to point to an approved FedStart deployment.
   // Only allowlisted base URLs are accepted to prevent credential leakage.
-  const oauthBaseUrl = process.env.CLAUDE_CODE_CUSTOM_OAUTH_URL
+  const oauthBaseUrl = process.env.NETRUNNER_CUSTOM_OAUTH_URL
   if (oauthBaseUrl) {
     const base = oauthBaseUrl.replace(/\/$/, '')
     if (!ALLOWED_OAUTH_BASE_URLS.includes(base)) {
       throw new Error(
-        'CLAUDE_CODE_CUSTOM_OAUTH_URL is not an approved endpoint.',
+        'NETRUNNER_CUSTOM_OAUTH_URL is not an approved endpoint.',
       )
     }
     config = {
@@ -222,7 +222,7 @@ export function getOauthConfig(): OauthConfig {
   }
 
   // Allow CLIENT_ID override via environment variable (e.g., for Xcode integration)
-  const clientIdOverride = process.env.CLAUDE_CODE_OAUTH_CLIENT_ID
+  const clientIdOverride = process.env.NETRUNNER_OAUTH_CLIENT_ID
   if (clientIdOverride) {
     config = {
       ...config,

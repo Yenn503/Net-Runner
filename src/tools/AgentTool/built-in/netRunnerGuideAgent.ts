@@ -14,32 +14,32 @@ import type {
   BuiltInAgentDefinition,
 } from '../loadAgentsDir.js'
 
-const CLAUDE_CODE_DOCS_MAP_URL =
-  'https://code.claude.com/docs/en/claude_code_docs_map.md'
-const CDP_DOCS_MAP_URL = 'https://platform.claude.com/llms.txt'
+const NET_RUNNER_DOCS_URL =
+  'https://raw.githubusercontent.com/Yenn503/Net-Runner/main/README.md'
+const CDP_DOCS_MAP_URL = 'https://platform.netrunner.com/llms.txt'
 
-export const CLAUDE_CODE_GUIDE_AGENT_TYPE = 'claude-code-guide'
+export const NET_RUNNER_GUIDE_AGENT_TYPE = 'net-runner-guide'
 
-function getClaudeCodeGuideBasePrompt(): string {
+function getNetRunnerGuideBasePrompt(): string {
   // Ant-native builds alias find/grep to embedded bfs/ugrep and remove the
   // dedicated Glob/Grep tools, so point at find/grep instead.
   const localSearchHint = hasEmbeddedSearchTools()
     ? `${FILE_READ_TOOL_NAME}, \`find\`, and \`grep\``
     : `${FILE_READ_TOOL_NAME}, ${GLOB_TOOL_NAME}, and ${GREP_TOOL_NAME}`
 
-  return `You are the Claude guide agent. Your primary responsibility is helping users understand and use Claude Code, the Claude Agent SDK, and the Claude API (formerly the Anthropic API) effectively.
+  return `You are the Net-Runner guide agent. Your primary responsibility is helping users understand and use Net-Runner, the Claude Agent SDK, and the Claude API (formerly the Anthropic API) effectively.
 
 **Your expertise spans three domains:**
 
-1. **Claude Code** (the CLI tool): Installation, configuration, hooks, skills, MCP servers, keyboard shortcuts, IDE integrations, settings, and workflows.
+1. **Net-Runner** (the CLI tool): Installation, configuration, hooks, skills, MCP servers, keyboard shortcuts, IDE integrations, settings, and workflows.
 
-2. **Claude Agent SDK**: A framework for building custom AI agents based on Claude Code technology. Available for Node.js/TypeScript and Python.
+2. **Claude Agent SDK**: A framework for building custom AI agents based on Net-Runner technology. Available for Node.js/TypeScript and Python.
 
 3. **Claude API**: The Claude API (formerly known as the Anthropic API) for direct model interaction, tool use, and integrations.
 
 **Documentation sources:**
 
-- **Claude Code docs** (${CLAUDE_CODE_DOCS_MAP_URL}): Fetch this for questions about the Claude Code CLI tool, including:
+- **Net-Runner docs** (${NET_RUNNER_DOCS_URL}): Fetch this for questions about the Net-Runner CLI tool, including:
   - Installation, setup, and getting started
   - Hooks (pre/post command execution)
   - Custom skills
@@ -74,7 +74,7 @@ function getClaudeCodeGuideBasePrompt(): string {
 4. Fetch the specific documentation pages
 5. Provide clear, actionable guidance based on official documentation
 6. Use ${WEB_SEARCH_TOOL_NAME} if docs don't cover the topic
-7. Reference local project files (CLAUDE.md, .claude/ directory) when relevant using ${localSearchHint}
+7. Reference local project files (NETRUNNER.md, .netrunner/ directory, or legacy NETRUNNER.md fallbacks) when relevant using ${localSearchHint}
 
 **Guidelines:**
 - Always prioritize official documentation over assumptions
@@ -95,9 +95,9 @@ function getFeedbackGuideline(): string {
   return "- When you cannot find an answer or the feature doesn't exist, direct the user to use /feedback to report a feature request or bug"
 }
 
-export const CLAUDE_CODE_GUIDE_AGENT: BuiltInAgentDefinition = {
-  agentType: CLAUDE_CODE_GUIDE_AGENT_TYPE,
-  whenToUse: `Use this agent when the user asks questions ("Can Claude...", "Does Claude...", "How do I...") about: (1) Claude Code (the CLI tool) - features, hooks, slash commands, MCP servers, settings, IDE integrations, keyboard shortcuts; (2) Claude Agent SDK - building custom agents; (3) Claude API (formerly Anthropic API) - API usage, tool use, Anthropic SDK usage. **IMPORTANT:** Before spawning a new agent, check if there is already a running or recently completed claude-code-guide agent that you can continue via ${SEND_MESSAGE_TOOL_NAME}.`,
+export const NET_RUNNER_GUIDE_AGENT: BuiltInAgentDefinition = {
+  agentType: NET_RUNNER_GUIDE_AGENT_TYPE,
+  whenToUse: `Use this agent when the user asks questions ("Can Net-Runner...", "Does Net-Runner...", "How do I...") about: (1) Net-Runner (the CLI tool) - features, hooks, slash commands, MCP servers, settings, IDE integrations, keyboard shortcuts; (2) Claude Agent SDK - building custom agents; (3) Claude API (formerly Anthropic API) - API usage, tool use, Anthropic SDK usage. **IMPORTANT:** Before spawning a new agent, check if there is already a running or recently completed guide agent that you can continue via ${SEND_MESSAGE_TOOL_NAME}.`,
   // Ant-native builds: Glob/Grep tools are removed; use Bash (with embedded
   // bfs/ugrep via find/grep aliases) for local file search instead.
   tools: hasEmbeddedSearchTools()
@@ -135,7 +135,7 @@ export const CLAUDE_CODE_GUIDE_AGENT: BuiltInAgentDefinition = {
       )
     }
 
-    // 2. Custom agents from .claude/agents/
+    // 2. Custom agents configured in project or user settings
     const customAgents =
       toolUseContext.options.agentDefinitions.activeAgents.filter(
         (a: AgentDefinition) => a.source !== 'built-in',
@@ -181,7 +181,7 @@ export const CLAUDE_CODE_GUIDE_AGENT: BuiltInAgentDefinition = {
 
     // Add the feedback guideline (conditional based on whether user is using 3P services)
     const feedbackGuideline = getFeedbackGuideline()
-    const basePromptWithFeedback = `${getClaudeCodeGuideBasePrompt()}
+    const basePromptWithFeedback = `${getNetRunnerGuideBasePrompt()}
 ${feedbackGuideline}`
 
     // If we have any context to add, append it to the base system prompt

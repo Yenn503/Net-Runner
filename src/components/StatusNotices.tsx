@@ -2,8 +2,8 @@ import { c as _c } from "react-compiler-runtime";
 import * as React from 'react';
 import { Box } from '../ink.js';
 import type { AgentDefinitionsResult } from '../tools/AgentTool/loadAgentsDir.js';
-import type { MemoryFileInfo } from '../utils/claudemd.js';
-import { getMemoryFiles } from '../utils/claudemd.js';
+import type { MemoryFileInfo } from '../utils/netRunnerMd.js';
+import { getMemoryFiles } from '../utils/netRunnerMd.js';
 import { getGlobalConfig } from '../utils/config.js';
 import { getActiveNotices, type StatusNoticeContext } from '../utils/statusNoticeDefinitions.js';
 type Props = {

@@ -202,7 +202,7 @@ Update:
 - add `bin/net-runner` with the same runtime bootstrap
 - README framing, install, quickstart, workflow overview, and skill-first architecture notes
 - Help dialog title/docs link/product references
-- command description strings that explicitly mention `Claude Code` or `Net-Runner` where operator-facing branding matters
+- command description strings that explicitly mention `Net-Runner` or `Net-Runner` where operator-facing branding matters
 
 - [ ] **Step 4: Run tests and targeted verification**
 

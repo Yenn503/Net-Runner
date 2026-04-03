@@ -6,6 +6,7 @@ import test from 'node:test'
 import { readEvidenceEntries } from './evidence.ts'
 import { initializeNetRunnerProject } from './engagement.ts'
 import {
+  evaluateEngagementGuardrail,
   evaluateSubagentGuardrail,
   recordSubagentExecution,
 } from './runtimeIntegration.ts'
@@ -59,4 +60,25 @@ test('recordSubagentExecution appends runtime execution notes into evidence ledg
     runtimeArtifacts[0]?.label ?? '',
     /subagent-output:web-testing-specialist/,
   )
+})
+
+test('evaluateEngagementGuardrail flags out-of-scope direct actions', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'net-runner-guardrail-scope-'))
+  await initializeNetRunnerProject({
+    cwd,
+    workflowId: 'web-app-testing',
+    authorizationStatus: 'confirmed',
+    targets: ['target.example'],
+  })
+
+  const decision = await evaluateEngagementGuardrail(
+    cwd,
+    'curl https://api.outofscope.example',
+  )
+  assert.equal(decision?.action, 'review')
+  assert.deepEqual(decision?.matchedPatterns, ['scope-mismatch'])
+
+  const entries = await readEvidenceEntries(cwd)
+  const guardrailEntries = entries.filter(entry => entry.type === 'guardrail')
+  assert.equal(guardrailEntries.length, 1)
 })
