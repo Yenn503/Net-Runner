@@ -17,8 +17,23 @@ export type NetRunnerCapabilityId =
   | 'http-curl'
   | 'http-wget'
   | 'nmap-enumeration'
+  | 'nuclei-template-scanning'
+  | 'ffuf-fuzzing'
+  | 'nikto-web-scanning'
+  | 'sqlmap-injection-testing'
+  | 'gobuster-enumeration'
+  | 'amass-enumeration'
+  | 'subfinder-enumeration'
+  | 'dnsrecon-enumeration'
+  | 'whatweb-fingerprinting'
   | 'netcat-probing'
   | 'netstat-enumeration'
+  | 'hydra-credential-auditing'
+  | 'john-password-cracking'
+  | 'hashcat-password-cracking'
+  | 'metasploit-framework'
+  | 'smb-enumeration'
+  | 'impacket-operations'
   | 'shodan-search'
   | 'shodan-host-info'
   | 'web-request-analysis'
@@ -271,6 +286,149 @@ const CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
     requiredCommands: ['nmap'],
   },
   {
+    id: 'nuclei-template-scanning',
+    label: 'Nuclei Template Scanning',
+    description:
+      'Template-driven web and service scanning capability for fast vulnerability signal collection.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['web', 'api', 'network', 'recon'],
+    recommendedAgents: [
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+      'network-testing-specialist',
+      'retest-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['nuclei'],
+  },
+  {
+    id: 'ffuf-fuzzing',
+    label: 'FFUF Fuzzing',
+    description:
+      'Wordlist-driven HTTP fuzzing capability for endpoint, parameter, and virtual-host discovery.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['web', 'api', 'recon'],
+    recommendedAgents: [
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+      'exploit-specialist',
+      'retest-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'Write', 'Read', 'TodoWrite'],
+    requiredCommands: ['ffuf'],
+  },
+  {
+    id: 'nikto-web-scanning',
+    label: 'Nikto Web Scanning',
+    description:
+      'Baseline web misconfiguration scanner capability for quick hardening and exposure checks.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['web', 'recon'],
+    recommendedAgents: [
+      'web-testing-specialist',
+      'recon-specialist',
+      'retest-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['nikto'],
+  },
+  {
+    id: 'sqlmap-injection-testing',
+    label: 'SQLMap Injection Testing',
+    description:
+      'Automated SQL injection validation capability with reproducible request and payload context capture.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['web', 'api', 'exploitation'],
+    recommendedAgents: [
+      'api-testing-specialist',
+      'web-testing-specialist',
+      'exploit-specialist',
+      'retest-specialist',
+      'evidence-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'Write', 'Read', 'TodoWrite'],
+    requiredCommands: ['sqlmap'],
+  },
+  {
+    id: 'gobuster-enumeration',
+    label: 'Gobuster Enumeration',
+    description:
+      'Directory, DNS, and VHOST brute-force enumeration capability for broader attack-surface discovery.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['web', 'api', 'recon', 'network'],
+    recommendedAgents: [
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+      'network-testing-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['gobuster'],
+  },
+  {
+    id: 'amass-enumeration',
+    label: 'Amass Enumeration',
+    description:
+      'Asset and subdomain graph enumeration capability for internet-facing recon and attack-path planning.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['recon', 'network'],
+    recommendedAgents: [
+      'recon-specialist',
+      'network-testing-specialist',
+      'engagement-lead',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['amass'],
+  },
+  {
+    id: 'subfinder-enumeration',
+    label: 'Subfinder Enumeration',
+    description:
+      'Passive subdomain discovery capability for low-impact external attack-surface mapping.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['recon', 'network'],
+    recommendedAgents: ['recon-specialist', 'network-testing-specialist'],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['subfinder'],
+  },
+  {
+    id: 'dnsrecon-enumeration',
+    label: 'DNSRecon Enumeration',
+    description:
+      'DNS record and zone recon capability for hostname, resolver, and transfer-path analysis.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['recon', 'network'],
+    recommendedAgents: ['recon-specialist', 'network-testing-specialist'],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['dnsrecon'],
+  },
+  {
+    id: 'whatweb-fingerprinting',
+    label: 'WhatWeb Fingerprinting',
+    description:
+      'Application and framework fingerprinting capability for technology-aware test path selection.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['recon', 'web', 'api'],
+    recommendedAgents: [
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['whatweb'],
+  },
+  {
     id: 'netcat-probing',
     label: 'Netcat Probing',
     description: 'Baseline netcat capability for low-level socket and banner checks.',
@@ -291,6 +449,109 @@ const CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
     executionModel: 'skills-and-tools',
     netRunnerTools: ['Bash'],
     requiredCommands: ['netstat'],
+  },
+  {
+    id: 'hydra-credential-auditing',
+    label: 'Hydra Credential Auditing',
+    description:
+      'Credential brute-force and protocol auth auditing capability for authorized attack-path validation.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['network', 'exploitation', 'privilege-escalation'],
+    recommendedAgents: [
+      'network-testing-specialist',
+      'exploit-specialist',
+      'privilege-escalation-specialist',
+      'retest-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['hydra'],
+  },
+  {
+    id: 'john-password-cracking',
+    label: 'John Password Cracking',
+    description:
+      'Hash cracking capability for offline credential analysis in authorized red-team and lab workflows.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['exploitation', 'privilege-escalation', 'lateral-movement'],
+    recommendedAgents: [
+      'exploit-specialist',
+      'privilege-escalation-specialist',
+      'lateral-movement-specialist',
+      'retest-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['john'],
+  },
+  {
+    id: 'hashcat-password-cracking',
+    label: 'Hashcat Password Cracking',
+    description:
+      'GPU-oriented password recovery capability for authorized offline hash analysis and credential validation.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['exploitation', 'privilege-escalation', 'lateral-movement'],
+    recommendedAgents: [
+      'exploit-specialist',
+      'privilege-escalation-specialist',
+      'lateral-movement-specialist',
+      'retest-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['hashcat'],
+  },
+  {
+    id: 'metasploit-framework',
+    label: 'Metasploit Framework',
+    description:
+      'Exploit-framework capability for controlled module-driven validation in authorized target environments.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['exploitation', 'network', 'lab-control'],
+    recommendedAgents: [
+      'exploit-specialist',
+      'network-testing-specialist',
+      'privilege-escalation-specialist',
+      'lateral-movement-specialist',
+      'engagement-lead',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['msfconsole'],
+  },
+  {
+    id: 'smb-enumeration',
+    label: 'SMB Enumeration',
+    description:
+      'SMB service and share enumeration capability for credentialed and unauthenticated network-path analysis.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['network', 'lateral-movement', 'privilege-escalation'],
+    recommendedAgents: [
+      'network-testing-specialist',
+      'lateral-movement-specialist',
+      'privilege-escalation-specialist',
+      'recon-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['smbclient'],
+  },
+  {
+    id: 'impacket-operations',
+    label: 'Impacket Operations',
+    description:
+      'Impacket-based protocol operation capability for controlled credential, relay, and lateral-movement testing.',
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: ['network', 'lateral-movement', 'privilege-escalation', 'exploitation'],
+    recommendedAgents: [
+      'network-testing-specialist',
+      'lateral-movement-specialist',
+      'privilege-escalation-specialist',
+      'exploit-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'TodoWrite', 'Write', 'Read'],
+    requiredCommands: ['impacket-secretsdump'],
   },
   {
     id: 'shodan-search',

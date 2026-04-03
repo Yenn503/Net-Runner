@@ -18,6 +18,18 @@ import { WEB_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/we
 import { getBuiltInAgents } from '../src/tools/AgentTool/builtInAgents.ts'
 import { AGENT_TOOL_NAME } from '../src/tools/AgentTool/constants.ts'
 import { SEND_MESSAGE_TOOL_NAME } from '../src/tools/SendMessageTool/constants.ts'
+import { BASH_TOOL_NAME } from '../src/tools/BashTool/toolName.ts'
+import { FILE_EDIT_TOOL_NAME } from '../src/tools/FileEditTool/constants.ts'
+import { FILE_READ_TOOL_NAME } from '../src/tools/FileReadTool/prompt.ts'
+import { FILE_WRITE_TOOL_NAME } from '../src/tools/FileWriteTool/prompt.ts'
+import { GLOB_TOOL_NAME } from '../src/tools/GlobTool/prompt.ts'
+import { GREP_TOOL_NAME } from '../src/tools/GrepTool/prompt.ts'
+import { LIST_MCP_RESOURCES_TOOL_NAME } from '../src/tools/ListMcpResourcesTool/prompt.ts'
+import { READ_MCP_RESOURCE_TOOL_NAME } from '../src/tools/ReadMcpResourceTool/prompt.ts'
+import { SKILL_TOOL_NAME } from '../src/tools/SkillTool/constants.ts'
+import { TODO_WRITE_TOOL_NAME } from '../src/tools/TodoWriteTool/constants.ts'
+import { WEB_FETCH_TOOL_NAME } from '../src/tools/WebFetchTool/prompt.ts'
+import { WEB_SEARCH_TOOL_NAME } from '../src/tools/WebSearchTool/prompt.ts'
 
 const report = validateSecurityAgentToolCoverage()
 const registryAgentTooling = new Map(
@@ -61,9 +73,27 @@ for (const builtInAgent of builtInAgentTooling) {
 
 const securityMemoryErrors: string[] = []
 const securityCommunicationErrors: string[] = []
+const securityToolsetErrors: string[] = []
 const builtInAgentsByType = new Map(
   getBuiltInAgents().map(agent => [agent.agentType, agent]),
 )
+const requiredSpecialistTools = [
+  AGENT_TOOL_NAME,
+  SEND_MESSAGE_TOOL_NAME,
+  BASH_TOOL_NAME,
+  FILE_READ_TOOL_NAME,
+  FILE_EDIT_TOOL_NAME,
+  FILE_WRITE_TOOL_NAME,
+  GLOB_TOOL_NAME,
+  GREP_TOOL_NAME,
+  LIST_MCP_RESOURCES_TOOL_NAME,
+  READ_MCP_RESOURCE_TOOL_NAME,
+  SKILL_TOOL_NAME,
+  TODO_WRITE_TOOL_NAME,
+  WEB_FETCH_TOOL_NAME,
+  WEB_SEARCH_TOOL_NAME,
+]
+
 for (const agentType of [
   'engagement-lead',
   'recon-specialist',
@@ -106,6 +136,13 @@ for (const builtInAgent of builtInAgentTooling) {
     securityCommunicationErrors.push(
       `${builtInAgent.agentType} includes ${AGENT_TOOL_NAME} but is missing ${SEND_MESSAGE_TOOL_NAME}.`,
     )
+  }
+  for (const requiredTool of requiredSpecialistTools) {
+    if (!builtInAgent.tools.includes(requiredTool)) {
+      securityToolsetErrors.push(
+        `${builtInAgent.agentType} is missing required specialist tool: ${requiredTool}.`,
+      )
+    }
   }
 }
 
@@ -158,11 +195,19 @@ if (securityCommunicationErrors.length > 0) {
   }
 }
 
+if (securityToolsetErrors.length > 0) {
+  console.log('\nerrors:')
+  for (const error of securityToolsetErrors) {
+    console.log(`- [security-toolset] ${error}`)
+  }
+}
+
 if (
   errors.length > 0 ||
   registryDriftErrors.length > 0 ||
   securityMemoryErrors.length > 0 ||
-  securityCommunicationErrors.length > 0
+  securityCommunicationErrors.length > 0 ||
+  securityToolsetErrors.length > 0
 ) {
   process.exit(1)
 }

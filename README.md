@@ -117,6 +117,18 @@ Use these only when you want manual control:
 - `/evidence status|note|finding|artifact|close`
 - `/report [file-name]`
 
+## Kali Tooling Coverage
+
+Net-Runner specialists are wired to execute and coordinate common Kali/Linux red-team tooling through `Bash` plus skill/MCP paths.
+
+Capability readiness checks include commands such as:
+- `nmap`, `nuclei`, `ffuf`, `nikto`, `sqlmap`, `gobuster`
+- `amass`, `subfinder`, `dnsrecon`, `whatweb`
+- `hydra`, `john`, `hashcat`, `msfconsole`
+- `smbclient`, `impacket-secretsdump`, `tcpdump`, `tshark`
+
+Use `/engagement capabilities [workflow]` to see exactly what is missing on the current host before deep execution.
+
 ## Validation
 
 ```bash
