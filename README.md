@@ -1,6 +1,6 @@
 <div align="center">
 
-# Net-Runner 🥷
+# Net-Runners 🥷
 
 ### Red-Team Assessment Framework
 
