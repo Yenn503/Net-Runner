@@ -10,11 +10,11 @@
 The APT Simulation subsystem enables red teams to simulate realistic Advanced Persistent Threat (APT) attack chains against specific industries. When a client operates in finance, government, healthcare, telecom, or another sector, the operator selects an APT simulation workflow that mirrors the real-world threat actors most likely to target that industry.
 
 **Key stats:**
-- **38 APT groups** profiled with full MITRE ATT&CK technique mappings
+- **40 APT groups** profiled with full MITRE ATT&CK technique mappings
 - **10 detailed attack chains** with phase-by-phase simulation guidance
 - **10 simulation workflows** ready to use, covering 7+ industry sectors
 - **13 industry threat profiles** mapping sectors to relevant threat actors
-- **150+ unique MITRE ATT&CK techniques** in the technique library
+- **172 MITRE ATT&CK technique definitions** in the technique library
 - **Sources**: Every group profile links to MITRE ATT&CK group pages, CISA advisories, Microsoft threat intel, and Mandiant reports
 
 ---
@@ -25,7 +25,7 @@ The APT Simulation subsystem enables red teams to simulate realistic Advanced Pe
 src/security/apt-simulation/
 ├── types.ts              # Core type definitions (all interfaces)
 ├── techniques.ts         # MITRE ATT&CK technique reference library
-├── aptGroups.ts          # 38 APT group profiles with TTP mappings
+├── aptGroups.ts          # 40 APT group profiles with TTP mappings
 ├── industryMapping.ts    # 13 industry → threat actor mappings
 ├── attackChains.ts       # 10 detailed multi-phase attack chains
 ├── aptWorkflows.ts       # 10 simulation workflows with LLM guidance
@@ -66,7 +66,7 @@ Defines all TypeScript interfaces used across the subsystem. No runtime logic �
 
 ### `techniques.ts` — MITRE ATT&CK Technique Library
 
-150+ technique definitions organized by tactic, each with:
+172 technique definitions organized by tactic, each with:
 - Technique ID (e.g. `T1566.001`)
 - Human-readable name
 - Tactic mapping (many techniques span multiple tactics)
@@ -79,7 +79,7 @@ Defines all TypeScript interfaces used across the subsystem. No runtime logic �
 
 ### `aptGroups.ts` — APT Group Profiles
 
-38 groups organized by attribution:
+40 groups organized by attribution:
 
 #### Russia (4 groups)
 | Group | Aliases | Key Industries | Techniques | Source |

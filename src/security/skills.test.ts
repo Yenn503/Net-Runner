@@ -22,6 +22,7 @@ test('Net-Runner registers bundled security workflow skills', () => {
     'post-exploitation-plan',
     'report-generation',
     'attack-path-analysis',
+    'apt-simulation',
   ])
   assert.equal(
     getNetRunnerSkillDefinition('scope-guard')?.primaryExecutionModel,

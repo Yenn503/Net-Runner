@@ -19,6 +19,8 @@
 
 Net-Runner is a final-year university project and research prototype that lets an LLM autonomously run security assessments. Give it a target, and it handles the rest — picking the right workflow, launching specialist agents, running tools, enforcing scope, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
+> “Net-Runner has the structure of a serious agentic security harness, not just a demo — the workflows, guardrails, evidence model, and specialist agents all reinforce each other.” — Cascade
+
 > ⚠️ **Warning**
 > Use this framework only on targets you are explicitly authorized to test. Net-Runner is for legal security testing, lab work, and research use.
 
@@ -171,7 +173,7 @@ Use the full grouped list here: [Pentest Tool Catalog](docs/capabilities/tool-ca
 
 ## 🎭 APT Simulation
 
-Net-Runner includes a built-in APT threat simulation engine with **38 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
+Net-Runner includes a built-in APT threat simulation engine with **40 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
 
 Pick an industry or a threat actor and Net-Runner loads the matching attack chain, assigns specialist agents to each phase, and walks through the intrusion step by step.
 
