@@ -5,6 +5,7 @@ import {
   type CapabilityPackName,
   type SecurityWorkflow,
 } from './workflows.js'
+import { IMPORTED_PENTEST_CAPABILITIES } from './pentestToolCatalog.js'
 
 export type NetRunnerCapabilityId =
   | 'linux-command-execution'
@@ -50,6 +51,7 @@ export type NetRunnerCapabilityId =
   | 'structured-reasoning-log'
   | 'command-and-control-session'
   | 'mcp-api-endpoint-integration'
+  | `kali-${string}`
 
 export type CapabilityExecutionModel =
   | 'skills-and-tools'
@@ -88,7 +90,7 @@ type CapabilityReadinessOptions = {
   commandExists?: (command: string) => Promise<boolean>
 }
 
-const CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
+const CORE_CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
   {
     id: 'linux-command-execution',
     label: 'Linux Command Execution',
@@ -826,6 +828,22 @@ const CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
     optionalMcpServers: ['burp', 'postman', 'jira', 'notion', 'evidence-store'],
   },
 ] as const
+
+const CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
+  ...CORE_CAPABILITY_DEFINITIONS,
+  ...IMPORTED_PENTEST_CAPABILITIES.map(capability => ({
+    id: capability.id,
+    label: capability.label,
+    description: capability.description,
+    implementationPath: 'src/tools/BashTool/BashTool.tsx',
+    capabilityPacks: capability.capabilityPacks,
+    recommendedAgents: capability.recommendedAgents,
+    executionModel: capability.executionModel,
+    netRunnerTools: capability.netRunnerTools,
+    requiredCommands: capability.requiredCommands,
+    optionalMcpServers: capability.optionalMcpServers,
+  })),
+]
 
 export function getNetRunnerCapabilities(): NetRunnerCapabilityDefinition[] {
   return [...CAPABILITY_DEFINITIONS]

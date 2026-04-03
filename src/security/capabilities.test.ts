@@ -24,6 +24,10 @@ test('capability registry covers full assessment pipeline stages', () => {
   assert.ok(capabilityIds.includes('exfiltration-channel-review'))
   assert.ok(capabilityIds.includes('report-export-generation'))
   assert.ok(capabilityIds.includes('mcp-api-endpoint-integration'))
+  assert.ok(capabilityIds.includes('kali-katana'))
+  assert.ok(capabilityIds.includes('kali-netexec'))
+  assert.ok(capabilityIds.includes('kali-sliver-c2'))
+  assert.ok(capabilityIds.includes('kali-mythic-c2'))
 })
 
 test('workflow and agent capability projections are populated', () => {

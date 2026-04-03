@@ -5,6 +5,7 @@ import {
   type NetRunnerCapabilityId,
   type NetRunnerCapabilityDefinition,
 } from './capabilities.js'
+import { IMPORTED_PENTEST_CAPABILITIES } from './pentestToolCatalog.js'
 import {
   NET_RUNNER_AGENT_DEFINITIONS,
   type NetRunnerAgentDefinition,
@@ -98,6 +99,7 @@ const NET_RUNNER_BASELINE_CAPABILITIES: NetRunnerCapabilityId[] = [
   'command-and-control-session',
   'mcp-api-endpoint-integration',
   'report-export-generation',
+  ...IMPORTED_PENTEST_CAPABILITIES.map(capability => capability.id),
 ]
 
 export function validateNetRunnerSecurityAlignment(): NetRunnerSecurityAlignmentReport {

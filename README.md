@@ -126,8 +126,16 @@ Capability readiness checks include commands such as:
 - `amass`, `subfinder`, `dnsrecon`, `whatweb`
 - `hydra`, `john`, `hashcat`, `msfconsole`
 - `smbclient`, `impacket-secretsdump`, `tcpdump`, `tshark`
+- `masscan`, `rustscan`, `katana`, `feroxbuster`, `dirsearch`, `wafw00f`, `wpscan`
+- `dalfox`, `jaeles`, `gau`, `waybackurls`, `arjun`, `paramspider`, `x8`, `qsreplace`, `uro`
+- `enum4linux`, `smbmap`, `dnsenum`, `fierce`, `theHarvester`, `responder`, `netexec`
+- `volatility3`, `binwalk`, `exiftool`, `ghidra`, `radare2`, `gdb`, `ropper`, `ROPgadget`
+- cloud/container/IaC: `trivy`, `checkov`, `terrascan`, `prowler`, `kube-bench`, `kube-hunter`, `pacu`
+- optional C2: `sliver-client`, `mythic-cli`
 
 Use `/engagement capabilities [workflow]` to see exactly what is missing on the current host before deep execution.
+
+Tool catalog design references proven registry patterns from community projects (for example HexStrike’s categorized tool registry) and maps them into Net-Runner’s TypeScript runtime capability model.
 
 ## Validation
 
