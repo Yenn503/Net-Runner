@@ -26,6 +26,8 @@ export function generateMarkdownReport(
   const notes = entries.filter(entry => entry.type === 'note')
   const artifacts = entries.filter(entry => entry.type === 'artifact')
   const guardrails = entries.filter(entry => entry.type === 'guardrail')
+  const executionSteps = entries.filter(entry => entry.type === 'execution_step')
+  const approvals = entries.filter(entry => entry.type === 'approval')
 
   const findingSection =
     findings.length === 0
@@ -63,6 +65,26 @@ ${finding.recommendation ? `Recommendation: ${finding.recommendation}` : 'Recomm
           )
           .join('\n')
 
+  const executionSection =
+    executionSteps.length === 0
+      ? '- None'
+      : executionSteps
+          .map(
+            entry =>
+              `- ${entry.agentType} | ${entry.status} | tools=${entry.totalToolUseCount ?? 0} | duration_ms=${entry.totalDurationMs ?? 0}${entry.summary ? ` | ${entry.summary}` : ''}`,
+          )
+          .join('\n')
+
+  const approvalSection =
+    approvals.length === 0
+      ? '- None'
+      : approvals
+          .map(
+            entry =>
+              `- ${entry.status.toUpperCase()} (${entry.reviewId}): ${entry.plannedAction} (${entry.reason})`,
+          )
+          .join('\n')
+
   return `# Net-Runner Report
 
 ## Engagement
@@ -89,6 +111,14 @@ ${artifactsSection}
 ## Guardrail Decisions
 
 ${guardrailSection}
+
+## Execution Steps
+
+${executionSection}
+
+## Review Decisions
+
+${approvalSection}
 `
 }
 

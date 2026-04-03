@@ -57,6 +57,41 @@ export function isAutoMemoryEnabled(): boolean {
 }
 
 /**
+ * Whether relevant-memory prefetch (indexless recall mode) is enabled.
+ *
+ * Priority:
+ * 1. NETRUNNER_ENABLE_RELEVANT_MEMORY_PREFETCH / NET_RUNNER_ENABLE_RELEVANT_MEMORY_PREFETCH => ON
+ * 2. NETRUNNER_DISABLE_RELEVANT_MEMORY_PREFETCH / NET_RUNNER_DISABLE_RELEVANT_MEMORY_PREFETCH => OFF
+ * 3. auto-memory disabled => OFF
+ * 4. GrowthBook gate tengu_moth_copse (default ON in Net-Runner) => ON/OFF
+ */
+export function isRelevantMemoryPrefetchEnabled(): boolean {
+  if (
+    isEnvTruthy(
+      process.env.NETRUNNER_ENABLE_RELEVANT_MEMORY_PREFETCH ??
+        process.env.NET_RUNNER_ENABLE_RELEVANT_MEMORY_PREFETCH,
+    )
+  ) {
+    return true
+  }
+
+  if (
+    isEnvTruthy(
+      process.env.NETRUNNER_DISABLE_RELEVANT_MEMORY_PREFETCH ??
+        process.env.NET_RUNNER_DISABLE_RELEVANT_MEMORY_PREFETCH,
+    )
+  ) {
+    return false
+  }
+
+  if (!isAutoMemoryEnabled()) {
+    return false
+  }
+
+  return getFeatureValue_CACHED_MAY_BE_STALE('tengu_moth_copse', true)
+}
+
+/**
  * Whether the extract-memories background agent will run this session.
  *
  * The main agent's prompt always has full save instructions regardless of

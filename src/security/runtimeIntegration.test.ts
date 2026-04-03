@@ -50,12 +50,14 @@ test('recordSubagentExecution appends runtime execution notes into evidence ledg
   })
 
   const entries = await readEvidenceEntries(cwd)
-  const runtimeNotes = entries.filter(entry => entry.type === 'note')
+  const runtimeSteps = entries.filter(entry => entry.type === 'execution_step')
   const runtimeArtifacts = entries.filter(entry => entry.type === 'artifact')
-  assert.equal(runtimeNotes.length, 1)
+  assert.equal(runtimeSteps.length, 1)
   assert.equal(runtimeArtifacts.length, 1)
-  assert.match(runtimeNotes[0]?.note ?? '', /subagent=web-testing-specialist/)
-  assert.match(runtimeNotes[0]?.note ?? '', /status=completed/)
+  if (runtimeSteps[0]?.type === 'execution_step') {
+    assert.equal(runtimeSteps[0].agentType, 'web-testing-specialist')
+    assert.equal(runtimeSteps[0].status, 'completed')
+  }
   assert.match(
     runtimeArtifacts[0]?.label ?? '',
     /subagent-output:web-testing-specialist/,
@@ -80,5 +82,7 @@ test('evaluateEngagementGuardrail flags out-of-scope direct actions', async () =
 
   const entries = await readEvidenceEntries(cwd)
   const guardrailEntries = entries.filter(entry => entry.type === 'guardrail')
+  const approvalEntries = entries.filter(entry => entry.type === 'approval')
   assert.equal(guardrailEntries.length, 1)
+  assert.equal(approvalEntries.length, 1)
 })

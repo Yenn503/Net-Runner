@@ -6,8 +6,12 @@ This document defines the retained service contracts so future updates can repla
 
 ## Rule
 
+Target state:
 - Keep a service-backed feature only if it can run behind Net-Runner-owned configuration.
 - If a feature depends on Anthropic-owned infrastructure with no Net-Runner replacement path, remove it instead of leaving a hidden dependency.
+
+Current state:
+- The runtime still includes some non-Net-Runner-owned API dependencies. Those exceptions are listed explicitly below and should be treated as migration debt, not completion.
 
 ## Hosted Web Workspace
 
@@ -120,7 +124,17 @@ Primary source:
 
 - `getOauthConfig().BASE_API_URL`
 
-This surface is still broader than the pure Net-Runner rename. It currently backs multiple runtime features and still needs endpoint-level cleanup in some paths.
+Current production default:
+
+- `https://api.anthropic.com`
+
+Override behavior:
+
+- `NETRUNNER_CUSTOM_OAUTH_URL` can repoint OAuth/API, but only to allowlisted bases currently accepted by runtime validation.
+
+Ownership note:
+
+- This is the main remaining non-Net-Runner-owned hosted dependency in the red-team runtime path.
 
 Current consumers include:
 
@@ -155,6 +169,17 @@ These do not require hosted services:
 - shell, file, and local web tooling
 - local provider connections and OpenAI-compatible providers
 - project memory and agent memory
+- relevant-memory retrieval (auto memory + `.netrunner/memory/agents/`)
+- session-memory summarization for long conversations
+
+## Memory Runtime Toggles
+
+These toggles are local-runtime only and do not depend on hosted APIs:
+
+- `NETRUNNER_DISABLE_RELEVANT_MEMORY_PREFETCH=1` (falls back to `MEMORY.md` index injection)
+- `NETRUNNER_ENABLE_RELEVANT_MEMORY_PREFETCH=1`
+- `NETRUNNER_DISABLE_SESSION_MEMORY=1`
+- `NETRUNNER_ENABLE_SESSION_MEMORY=1`
 
 ## Replacement Queue
 

@@ -2,6 +2,10 @@ import { appendEvidenceEntry } from './evidence.js'
 import { assessPlannedAction, readEngagementManifest } from './engagement.js'
 import type { GuardrailDecision } from './guardrails.js'
 import { NET_RUNNER_AGENT_TYPES, type NetRunnerAgentType } from './agentTypes.js'
+import {
+  appendSecurityExecutionStep,
+  queuePendingSecurityReview,
+} from './runState.js'
 
 const SECURITY_AGENT_TYPES = new Set<string>(NET_RUNNER_AGENT_TYPES)
 
@@ -22,15 +26,37 @@ export async function evaluateEngagementGuardrail(
   }
 
   const decision = assessPlannedAction(manifest, plannedAction)
-  if (decision.action !== 'allow' || options?.recordAllow) {
-    await appendEvidenceEntry(cwd, {
-      type: 'guardrail',
+  let recordedDecision: GuardrailDecision = decision
+
+  if (decision.action === 'review') {
+    const pendingReview = await queuePendingSecurityReview(cwd, {
       plannedAction,
-      decision,
+      reason: decision.reason,
+      matchedPatterns: decision.matchedPatterns,
+    })
+    recordedDecision = {
+      ...decision,
+      reviewId: pendingReview.id,
+      reason: `${decision.reason} Pending review id: ${pendingReview.id}.`,
+    }
+    await appendEvidenceEntry(cwd, {
+      type: 'approval',
+      reviewId: pendingReview.id,
+      status: 'pending',
+      plannedAction,
+      reason: decision.reason,
     })
   }
 
-  return decision
+  if (recordedDecision.action !== 'allow' || options?.recordAllow) {
+    await appendEvidenceEntry(cwd, {
+      type: 'guardrail',
+      plannedAction,
+      decision: recordedDecision,
+    })
+  }
+
+  return recordedDecision
 }
 
 export async function evaluateSubagentGuardrail(
@@ -76,26 +102,32 @@ export async function recordSubagentExecution(
       return
     }
 
-    const lines = [
-      `subagent=${options.agentType}`,
-      `status=${options.status}`,
-      `description=${trimSummary(options.description, 160)}`,
-      `model=${options.model ?? 'inherit'}`,
-      `tool_uses=${options.totalToolUseCount ?? 0}`,
-      `duration_ms=${options.totalDurationMs ?? 0}`,
-      `prompt=${trimSummary(options.prompt, 220)}`,
-    ]
-    if (options.outputFile) {
-      lines.push(`output_file=${options.outputFile}`)
-    }
-
-    if (options.summary && options.summary.trim().length > 0) {
-      lines.push(`summary=${trimSummary(options.summary)}`)
-    }
+    await appendSecurityExecutionStep(options.cwd, {
+      agentType: options.agentType,
+      status: options.status,
+      description: options.description,
+      prompt: options.prompt,
+      summary: options.summary,
+      outputFile: options.outputFile,
+      totalToolUseCount: options.totalToolUseCount,
+      totalDurationMs: options.totalDurationMs,
+      model: options.model,
+    })
 
     await appendEvidenceEntry(options.cwd, {
-      type: 'note',
-      note: lines.join(' | '),
+      type: 'execution_step',
+      agentType: options.agentType,
+      status: options.status,
+      description: trimSummary(options.description, 160),
+      prompt: trimSummary(options.prompt, 220),
+      summary:
+        options.summary && options.summary.trim().length > 0
+          ? trimSummary(options.summary)
+          : undefined,
+      outputFile: options.outputFile,
+      totalToolUseCount: options.totalToolUseCount,
+      totalDurationMs: options.totalDurationMs,
+      model: options.model,
     })
 
     if (options.outputFile) {

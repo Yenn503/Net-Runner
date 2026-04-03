@@ -231,8 +231,13 @@ import { PDF_AT_MENTION_INLINE_THRESHOLD } from '../constants/apiLimits.js'
 import { isAgentSwarmsEnabled } from './agentSwarmsEnabled.js'
 import { findRelevantMemories } from '../memdir/findRelevantMemories.js'
 import { memoryAge, memoryFreshnessText } from '../memdir/memoryAge.js'
-import { getAutoMemPath, isAutoMemoryEnabled } from '../memdir/paths.js'
+import {
+  getAutoMemPath,
+  isAutoMemoryEnabled,
+  isRelevantMemoryPrefetchEnabled,
+} from '../memdir/paths.js'
 import { getAgentMemoryDir } from '../tools/AgentTool/agentMemory.js'
+import { getEngagementAgentMemoryRoot } from '../security/paths.js'
 import {
   readUnreadMessages,
   markMessagesAsReadByPredicate,
@@ -2210,10 +2215,14 @@ async function getRelevantMemoryAttachments(
       ? [getAgentMemoryDir(agentType, agentDef.memory)]
       : []
   })
-  const dirs = memoryDirs.length > 0 ? memoryDirs : [getAutoMemPath()]
+  const dirs =
+    memoryDirs.length > 0
+      ? memoryDirs
+      : [getAutoMemPath(), getEngagementAgentMemoryRoot(getCwd())]
+  const uniqueDirs = [...new Set(dirs)]
 
   const allResults = await Promise.all(
-    dirs.map(dir =>
+    uniqueDirs.map(dir =>
       findRelevantMemories(
         input,
         dir,
@@ -2362,10 +2371,7 @@ export function startRelevantMemoryPrefetch(
   messages: ReadonlyArray<Message>,
   toolUseContext: ToolUseContext,
 ): MemoryPrefetch | undefined {
-  if (
-    !isAutoMemoryEnabled() ||
-    !getFeatureValue_CACHED_MAY_BE_STALE('tengu_moth_copse', false)
-  ) {
+  if (!isRelevantMemoryPrefetchEnabled()) {
     return undefined
   }
 

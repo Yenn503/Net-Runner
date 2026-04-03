@@ -45,6 +45,10 @@ export function getEvidenceLedgerPath(cwd: string): string {
   return join(getEvidenceDir(cwd), 'ledger.jsonl')
 }
 
+export function getRunStatePath(cwd: string): string {
+  return join(getNetRunnerProjectDir(cwd), 'run-state.json')
+}
+
 export function getArtifactsDir(cwd: string): string {
   return join(getNetRunnerProjectDir(cwd), 'artifacts')
 }

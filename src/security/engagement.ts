@@ -15,7 +15,9 @@ import {
   getFindingsDir,
   getNetRunnerProjectDir,
   getReportsDir,
+  getRunStatePath,
 } from './paths.js'
+import { createDefaultSecurityRunState, writeSecurityRunState } from './runState.js'
 
 export type EngagementStatus = 'draft' | 'active' | 'paused' | 'closed'
 
@@ -196,6 +198,13 @@ export async function initializeNetRunnerProject(
   ])
 
   await writeEngagementManifest(options.cwd, manifest)
+  await writeSecurityRunState(
+    options.cwd,
+    createDefaultSecurityRunState({
+      workflowId: manifest.workflowId,
+      currentPhase: 'execution',
+    }),
+  )
   await Promise.all([
     writeIfMissing(
       `${getEngagementInstructionsDir(options.cwd)}/README.md`,
@@ -220,6 +229,17 @@ export async function initializeNetRunnerProject(
       DEFAULT_AGENT_MEMORY_README,
     ),
     writeIfMissing(getEvidenceLedgerPath(options.cwd), ''),
+    writeIfMissing(
+      getRunStatePath(options.cwd),
+      JSON.stringify(
+        createDefaultSecurityRunState({
+          workflowId: manifest.workflowId,
+          currentPhase: 'execution',
+        }),
+        null,
+        2,
+      ),
+    ),
   ])
 
   return manifest

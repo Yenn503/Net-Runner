@@ -7,6 +7,7 @@ export type GuardrailDecision = {
   reason: string
   matchedPatterns: string[]
   tripwireTriggered: boolean
+  reviewId?: string
 }
 
 export type GuardrailContext = {

@@ -26,6 +26,9 @@ const FRONTMATTER_MAX_LINES = 30
  * a header list sorted newest-first (capped at MAX_MEMORY_FILES). Shared by
  * findRelevantMemories (query-time recall) and extractMemories (pre-injects
  * the listing so the extraction agent doesn't spend a turn on `ls`).
+ * In indexless recall mode we prefer topic files; if a directory only has
+ * MEMORY.md (legacy/index-only state), we include it as a compatibility
+ * fallback so historical memory isn't dropped.
  *
  * Single-pass: readFileInRange stats internally and returns mtimeMs, so we
  * read-then-sort rather than stat-sort-read. For the common case (N ≤ 200)
@@ -38,9 +41,12 @@ export async function scanMemoryFiles(
 ): Promise<MemoryHeader[]> {
   try {
     const entries = await readdir(memoryDir, { recursive: true })
-    const mdFiles = entries.filter(
-      f => f.endsWith('.md') && basename(f) !== 'MEMORY.md',
+    const allMdFiles = entries.filter(f => f.endsWith('.md'))
+    const nonEntrypointMdFiles = allMdFiles.filter(
+      f => basename(f) !== 'MEMORY.md',
     )
+    const mdFiles =
+      nonEntrypointMdFiles.length > 0 ? nonEntrypointMdFiles : allMdFiles
 
     const headerResults = await Promise.allSettled(
       mdFiles.map(async (relativePath): Promise<MemoryHeader> => {
@@ -53,11 +59,16 @@ export async function scanMemoryFiles(
           signal,
         )
         const { frontmatter } = parseFrontmatter(content, filePath)
+        const isLegacyEntrypoint = basename(relativePath) === 'MEMORY.md'
         return {
           filename: relativePath,
           filePath,
           mtimeMs,
-          description: frontmatter.description || null,
+          description:
+            frontmatter.description ||
+            (isLegacyEntrypoint
+              ? 'Legacy memory index fallback for retrieval.'
+              : null),
           type: parseMemoryType(frontmatter.type),
         }
       }),

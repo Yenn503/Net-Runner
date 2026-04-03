@@ -42,12 +42,36 @@ export type GuardrailEntry = EvidenceEntryBase & {
   decision: GuardrailDecision
 }
 
+export type ExecutionStepEntry = EvidenceEntryBase & {
+  type: 'execution_step'
+  agentType: string
+  status: 'completed' | 'failed' | 'killed'
+  description: string
+  prompt: string
+  summary?: string
+  outputFile?: string
+  totalToolUseCount?: number
+  totalDurationMs?: number
+  model?: string
+}
+
+export type ApprovalEntry = EvidenceEntryBase & {
+  type: 'approval'
+  reviewId: string
+  status: 'pending' | 'approved' | 'rejected'
+  plannedAction: string
+  reason: string
+  decidedBy?: string
+}
+
 export type EvidenceEntry =
   | SessionBoundaryEntry
   | NoteEntry
   | FindingEntry
   | ArtifactEntry
   | GuardrailEntry
+  | ExecutionStepEntry
+  | ApprovalEntry
 
 export type EvidenceEntryInput =
   | Omit<SessionBoundaryEntry, 'id' | 'createdAt'>
@@ -55,6 +79,8 @@ export type EvidenceEntryInput =
   | Omit<FindingEntry, 'id' | 'createdAt'>
   | Omit<ArtifactEntry, 'id' | 'createdAt'>
   | Omit<GuardrailEntry, 'id' | 'createdAt'>
+  | Omit<ExecutionStepEntry, 'id' | 'createdAt'>
+  | Omit<ApprovalEntry, 'id' | 'createdAt'>
 
 export async function appendEvidenceEntry(
   cwd: string,
@@ -100,6 +126,8 @@ export function countEvidenceEntriesByType(
       finding: 0,
       artifact: 0,
       guardrail: 0,
+      execution_step: 0,
+      approval: 0,
     },
   )
 }

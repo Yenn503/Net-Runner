@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp } from 'node:fs/promises'
+import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -10,7 +10,7 @@ import {
   initializeNetRunnerProject,
   readEngagementManifest,
 } from './engagement.ts'
-import { getEngagementManifestPath } from './paths.ts'
+import { getEngagementManifestPath, getRunStatePath } from './paths.ts'
 
 test('initializing an engagement creates the Net-Runner project envelope', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'net-runner-engagement-'))
@@ -27,6 +27,10 @@ test('initializing an engagement creates the Net-Runner project envelope', async
   assert.equal(loaded?.authorization.authorizedBy, 'qa-team')
   assert.deepEqual(loaded?.targets, ['https://api.target.lab'])
   assert.match(getEngagementManifestPath(cwd), /\.netrunner\/engagement\.json$/)
+  const runState = JSON.parse(await readFile(getRunStatePath(cwd), 'utf8')) as {
+    workflowId: string
+  }
+  assert.equal(runState.workflowId, 'api-testing')
 })
 
 test('engagement guardrail decisions respect the manifest impact boundary', async () => {

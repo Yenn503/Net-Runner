@@ -39,6 +39,7 @@ import {
 import { sequential } from '../../utils/sequential.js'
 import { asSystemPrompt } from '../../utils/systemPromptType.js'
 import { getTokenUsage, tokenCountWithEstimation } from '../../utils/tokens.js'
+import { isEnvTruthy } from '../../utils/envUtils.js'
 import { logEvent } from '../analytics/index.js'
 import { isAutoCompactEnabled } from '../compact/autoCompact.js'
 import {
@@ -78,7 +79,25 @@ import {
  * Uses cached gate value - returns immediately without blocking.
  */
 function isSessionMemoryGateEnabled(): boolean {
-  return getFeatureValue_CACHED_MAY_BE_STALE('tengu_session_memory', false)
+  if (
+    isEnvTruthy(
+      process.env.NETRUNNER_DISABLE_SESSION_MEMORY ??
+        process.env.NET_RUNNER_DISABLE_SESSION_MEMORY,
+    )
+  ) {
+    return false
+  }
+
+  if (
+    isEnvTruthy(
+      process.env.NETRUNNER_ENABLE_SESSION_MEMORY ??
+        process.env.NET_RUNNER_ENABLE_SESSION_MEMORY,
+    )
+  ) {
+    return true
+  }
+
+  return getFeatureValue_CACHED_MAY_BE_STALE('tengu_session_memory', true)
 }
 
 /**

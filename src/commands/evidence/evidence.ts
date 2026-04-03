@@ -60,7 +60,9 @@ const call: LocalCommandCall = async args => {
 - findings: ${counts.finding}
 - notes: ${counts.note}
 - artifacts: ${counts.artifact}
-- guardrails: ${counts.guardrail}`,
+- guardrails: ${counts.guardrail}
+- execution steps: ${counts.execution_step}
+- approvals: ${counts.approval}`,
     }
   }
 

@@ -11,6 +11,10 @@ import {
   readEvidenceEntries,
 } from '../../security/evidence.js'
 import {
+  readSecurityRunState,
+  resolvePendingSecurityReview,
+} from '../../security/runState.js'
+import {
   getCapabilityReadinessSnapshot,
   renderWorkflowCapabilityReadiness,
   summarizeWorkflowCapabilityReadiness,
@@ -25,7 +29,10 @@ function getHelpText(): string {
 - /engagement status
 - /engagement capabilities [workflow]
 - /engagement alignment
-- /engagement guard <planned action>`
+- /engagement guard <planned action>
+- /engagement review
+- /engagement approve <review-id>
+- /engagement reject <review-id>`
 }
 
 const call: LocalCommandCall = async args => {
@@ -81,6 +88,10 @@ const call: LocalCommandCall = async args => {
     }
 
     const counts = countEvidenceEntriesByType(await readEvidenceEntries(cwd))
+    const runState = await readSecurityRunState(cwd)
+    const pendingReviewCount =
+      runState?.pendingReviews.filter(review => review.status === 'pending').length ?? 0
+    const executionStepCount = runState?.executionSteps.length ?? 0
     const readiness = summarizeWorkflowCapabilityReadiness(
       manifest.workflowId,
       await getCapabilityReadinessSnapshot(),
@@ -94,10 +105,16 @@ evidence:
 - notes: ${counts.note}
 - artifacts: ${counts.artifact}
 - guardrails: ${counts.guardrail}
+- execution steps: ${counts.execution_step}
+- approvals: ${counts.approval}
 
 capabilities:
 - ready: ${readiness.ready}/${readiness.total}
-- missing: ${readiness.missing}`,
+- missing: ${readiness.missing}
+
+run state:
+- execution steps: ${executionStepCount}
+- pending reviews: ${pendingReviewCount}`,
     }
   }
 
@@ -166,6 +183,65 @@ capabilities:
       value: `Guardrail decision: ${decision.action.toUpperCase()}
 reason: ${decision.reason}
 matches: ${decision.matchedPatterns.length > 0 ? decision.matchedPatterns.join(', ') : 'none'}`,
+    }
+  }
+
+  if (subcommand === 'review') {
+    const manifest = await readEngagementManifest(cwd)
+    if (!manifest) {
+      return {
+        type: 'text',
+        value:
+          'No Net-Runner engagement found in this workspace. Run `/engagement init` first.',
+      }
+    }
+    const runState = await readSecurityRunState(cwd)
+    const pending = runState?.pendingReviews.filter(review => review.status === 'pending') ?? []
+    if (pending.length === 0) {
+      return {
+        type: 'text',
+        value: 'No pending guardrail reviews.',
+      }
+    }
+    const lines = pending.map(
+      review =>
+        `- ${review.id}\n  action: ${review.plannedAction}\n  reason: ${review.reason}`,
+    )
+    return {
+      type: 'text',
+      value: `Pending guardrail reviews:\n${lines.join('\n')}`,
+    }
+  }
+
+  if (subcommand === 'approve' || subcommand === 'reject') {
+    const reviewId = rest[0]?.trim() ?? ''
+    if (!reviewId) {
+      return {
+        type: 'text',
+        value: `Usage: /engagement ${subcommand} <review-id>`,
+      }
+    }
+    const resolution = subcommand === 'approve' ? 'approved' : 'rejected'
+    const resolved = await resolvePendingSecurityReview(cwd, reviewId, resolution)
+    if (!resolved) {
+      return {
+        type: 'text',
+        value: `No pending review found for id: ${reviewId}`,
+      }
+    }
+
+    await appendEvidenceEntry(cwd, {
+      type: 'approval',
+      reviewId: resolved.id,
+      status: resolved.status,
+      plannedAction: resolved.plannedAction,
+      reason: resolved.reason,
+      decidedBy: resolved.decidedBy ?? 'operator',
+    })
+
+    return {
+      type: 'text',
+      value: `Review ${resolved.id} marked as ${resolved.status}.`,
     }
   }
 

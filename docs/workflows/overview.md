@@ -16,15 +16,18 @@
 ## Runtime flow
 
 1. Start with a plain-language assessment instruction that includes a target.
-2. Net-Runner auto-initializes `.netrunner/engagement.json` if needed.
+2. If the prompt is non-slash, has assessment intent, and includes a detectable URL, IP, or domain, Net-Runner auto-initializes `.netrunner/engagement.json` if needed.
 3. Auto-init starts in safe mode (`authorization=unconfirmed`, `maxImpact=read-only`).
-4. Confirm authorization in normal chat (no slash command required) to unlock the intended impact boundary.
+4. Confirm authorization in normal chat to unlock the intended impact boundary, or initialize manually with `/engagement init [workflow] [target]` if the heuristic did not fire.
 5. The runtime injects engagement context into model turns (scope, status, restrictions, impact).
-6. Specialist agents execute scoped tasks and return outputs to the main thread.
+6. The main agent executes tools directly and can delegate scoped tasks to specialists through `AgentTool` when needed.
 7. Guardrails evaluate higher-impact actions before execution.
-8. Evidence entries and artifacts are appended during execution.
-9. Reports are generated from the evidence chain.
-10. Specialist memory persists under `.netrunner/memory/agents/` for later sessions.
+8. Guardrail review actions are queued in run-state and can be resolved with `/engagement review|approve|reject`.
+9. Evidence entries, artifacts, and execution steps are appended during execution.
+10. Reports are generated from the evidence chain.
+11. Specialist memory persists under `.netrunner/memory/agents/` for later sessions.
+12. Relevant-memory retrieval injects useful prior context from auto memory and engagement agent memory during future turns.
+13. If the prompt explicitly `@agent` targets a specialist, retrieval narrows to that agent memory scope.
 
 ## Specialist agents
 
@@ -66,8 +69,9 @@
 - `coordination`
 - `lab-control`
 
-Before deep execution, run `/engagement capabilities` to verify workflow readiness and missing dependencies.
-Run `/engagement alignment` to confirm specialist-agent capability coverage remains coherent across workflows.
+Optional operator checks before deep execution:
+- Run `/engagement capabilities [workflow]` to inspect missing local commands or env dependencies for a workflow.
+- Run `/engagement alignment` to inspect the static agent/capability mapping in the current build.
 
 Most workflows should rely first on skills plus direct tool execution. `lab-control` and similar integrations are available when the environment benefits from extra infrastructure, but they are not the default expression of framework logic.
 
