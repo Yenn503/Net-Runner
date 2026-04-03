@@ -10,7 +10,7 @@
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/الترخيص-استخدام%20تعليمي-red?style=for-the-badge)](#الترخيص)
 
-**12 وكيلًا متخصصًا · 153 أداة ريد تيم · 18 حزمة قدرات · 10 مهارات اختبار اختراق · 7 مسارات عمل**
+**12 وكيلًا متخصصًا · 153 أداة ريد تيم · 18 حزمة قدرات · 11 مهارة اختبار اختراق · 7 مسارات عمل · 10 محاكاة APT**
 
 [English](README.md) · [Español](README.es.md) · [Français](README.fr.md) · [中文](README.zh.md) · **العربية** · [Português](README.pt.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [हिन्दी](README.hi.md) · [Deutsch](README.de.md)
 
@@ -32,7 +32,8 @@ Net-Runner هو مشروع سنة نهائية جامعي يتيح لنموذج 
 - الـ LLM وكل وكيل متخصص يتذكر ما وجده في الجلسات السابقة، لتبقى التقييمات الطويلة متسقة
 - يفوض المهام للوكلاء المتخصصين عند الحاجة لخبرة محددة
 - يمنع أو ينبه عند أي إجراء خارج النطاق أو يتجاوز مستوى التأثير المسموح
-- يدعم تقييمات الويب وAPI والموبايل والمختبر وActive Directory وWiFi وCTF
+- يدعم تقييمات الويب وAPI والموبايل والمختبر وActive Directory وWiFi وCTF ومحاكاة تهديدات APT
+- يحاكي جهات تهديد حقيقية (APT29، Lazarus، Volt Typhoon وغيرها) مع خرائط MITRE ATT&CK وسلاسل هجوم حسب الصناعة
 
 ## بدء سريع
 
@@ -60,6 +61,8 @@ node dist/cli.mjs
 - فهرس الأدوات الكامل: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - مواءمة البحث: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - أصل المشروع: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
+- محاكاة APT: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)
+- خريطة التهديدات حسب الصناعة: [docs/apt-simulation/industry-threat-map.md](docs/apt-simulation/industry-threat-map.md)
 
 ## الترخيص
 

@@ -10,7 +10,7 @@
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/Лицензия-Учебное%20использование-red?style=for-the-badge)](#лицензия)
 
-**12 специализированных агентов · 153 red-team инструментов · 18 пакетов возможностей · 10 pentest-навыков · 7 workflow**
+**12 специализированных агентов · 153 red-team инструментов · 18 пакетов возможностей · 11 pentest-навыков · 7 workflow · 10 APT-симуляций**
 
 [English](README.md) · [Español](README.es.md) · [Français](README.fr.md) · [中文](README.zh.md) · [العربية](README.ar.md) · [Português](README.pt.md) · **Русский** · [日本語](README.ja.md) · [한국어](README.ko.md) · [हिन्दी](README.hi.md) · [Deutsch](README.de.md)
 
@@ -32,7 +32,8 @@ Net-Runner — это дипломный проект, который позво
 - LLM и каждый специализированный агент запоминают, что нашли в предыдущих сессиях, чтобы длительные оценки оставались последовательными
 - Делегирует задачи специализированным агентам, когда нужна конкретная экспертиза
 - Блокирует или отмечает любое действие за пределами скоупа или превышающее допустимый уровень воздействия
-- Поддерживает оценки web, API, mobile, lab, Active Directory, WiFi и CTF
+- Поддерживает оценки web, API, mobile, lab, Active Directory, WiFi, CTF и симуляции угроз APT
+- Симулирует реальных акторов угроз (APT29, Lazarus, Volt Typhoon и др.) с привязкой к MITRE ATT&CK и цепочками атак по отраслям
 
 ## Быстрый старт
 
@@ -60,6 +61,8 @@ node dist/cli.mjs
 - Полный каталог инструментов: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - Связь с исследованием: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - Происхождение проекта: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
+- Симуляция APT: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)
+- Карта угроз по отраслям: [docs/apt-simulation/industry-threat-map.md](docs/apt-simulation/industry-threat-map.md)
 
 ## Лицензия
 

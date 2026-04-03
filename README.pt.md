@@ -10,7 +10,7 @@
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/Licença-Uso%20Educacional-red?style=for-the-badge)](#licença)
 
-**12 agentes especialistas · 153 ferramentas Red Team · 18 pacotes de capacidade · 10 skills de pentest · 7 workflows**
+**12 agentes especialistas · 153 ferramentas Red Team · 18 pacotes de capacidade · 11 skills de pentest · 7 workflows · 10 simulações APT**
 
 [English](README.md) · [Español](README.es.md) · [Français](README.fr.md) · [中文](README.zh.md) · [العربية](README.ar.md) · **Português** · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [हिन्दी](README.hi.md) · [Deutsch](README.de.md)
 
@@ -32,7 +32,8 @@ Net-Runner é um projeto final de universidade que permite a um LLM executar ava
 - O LLM e cada agente especialista lembram o que encontraram em sessões anteriores, para que avaliações longas continuem coerentes
 - Delega tarefas a agentes especialistas quando expertise específica é necessária
 - Bloqueia ou sinaliza qualquer ação fora do escopo ou que exceda o nível de impacto permitido
-- Suporta avaliações web, API, mobile, lab, Active Directory, WiFi e CTF
+- Suporta avaliações web, API, mobile, lab, Active Directory, WiFi, CTF e simulações de ameaças APT
+- Simula atores de ameaças reais (APT29, Lazarus, Volt Typhoon, etc.) mapeados no MITRE ATT&CK com cadeias de ataque por indústria
 
 ## Início rápido
 
@@ -60,6 +61,8 @@ Avalie https://target.example. Comece com recon, mapeie a superfície de ataque,
 - Catálogo completo de ferramentas: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - Alinhamento com a pesquisa: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - Proveniência do projeto: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
+- Simulação APT: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)
+- Mapa de ameaças por indústria: [docs/apt-simulation/industry-threat-map.md](docs/apt-simulation/industry-threat-map.md)
 
 ## Licença
 

@@ -7,7 +7,7 @@
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/License-Educational%20Use-red?style=for-the-badge)](#license)
 
-**12 Specialist Agents · 153 Red-Team Tools · 18 Capability Packs · 10 Pentest Skills · 7 Workflows**
+**12 Specialist Agents · 153 Red-Team Tools · 18 Capability Packs · 11 Pentest Skills · 7 Workflows · 10 APT Simulations**
 
 *Red-team runtime with workflow control, evidence, memory, and specialist agents.*
 
@@ -32,7 +32,7 @@ Give Net-Runner a target and goal in plain language. It sets up a `.netrunner/` 
 - The LLM and each specialist agent remember what they found before, so multi-session assessments stay on track
 - Picks from 153 red-team tools and delegates to 12 specialist agents when domain expertise is needed
 - Blocks or flags any action that goes out of scope or exceeds the allowed impact level
-- Supports web, API, mobile, lab, Active Directory, WiFi, and CTF assessments
+- Supports web, API, mobile, lab, Active Directory, WiFi, CTF assessments, and APT threat simulations
 
 ---
 
@@ -44,6 +44,7 @@ Give Net-Runner a target and goal in plain language. It sets up a `.netrunner/` 
 - **Skills-first execution** — reusable pentest playbooks (recon, exploit validation, reporting, etc.) that the LLM can trigger on demand
 - **12 specialist agents** — each agent focuses on a specific domain (recon, web, network, AD, etc.) and is deployed when its expertise is needed
 - **Auto-engagement setup** — type a target and goal in plain English; Net-Runner detects the intent, picks the workflow, and starts the assessment
+- **APT simulation** — simulate real-world threat actors (APT29, Lazarus, Volt Typhoon, etc.) mapped to MITRE ATT&CK, with industry-specific attack chains and phase-by-phase guidance
 
 ---
 
@@ -168,6 +169,35 @@ Use the full grouped list here: [Pentest Tool Catalog](docs/capabilities/tool-ca
 
 ---
 
+## 🎭 APT Simulation
+
+Net-Runner includes a built-in APT threat simulation engine with **38 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
+
+Pick an industry or a threat actor and Net-Runner loads the matching attack chain, assigns specialist agents to each phase, and walks through the intrusion step by step.
+
+| Simulation | Threat Actor | Industry |
+|---|---|---|
+| Government Cloud Espionage | APT29 (Cozy Bear) | Government |
+| Credential Harvesting & AD Exploitation | APT28 (Fancy Bear) | Government |
+| Critical Infrastructure Pre-Positioning | Volt Typhoon | Critical Infrastructure |
+| ICS/OT Destructive Operations | Sandworm (APT44) | Energy / OT |
+| SWIFT Financial Heist | APT38 (Bluenoroff) | Financial Services |
+| Identity-Centric Cloud Compromise | Scattered Spider | Financial / Tech |
+| Telecom Infrastructure Espionage | Salt Typhoon | Telecommunications |
+| IT Supply Chain Exploitation | Silk Typhoon (HAFNIUM) | Technology |
+| Healthcare Ransomware & Espionage | Lazarus Group | Healthcare |
+| Manufacturing IP Theft | APT41 (Wicked Panda) | Manufacturing |
+
+```text
+/apt-simulation APT29 against government
+/apt-simulation financial services
+/apt-simulation Volt Typhoon critical infrastructure
+```
+
+Full reference: [APT Simulation Docs](docs/apt-simulation/README.md) · [Industry Threat Map](docs/apt-simulation/industry-threat-map.md) · [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
+
+---
+
 ## 🤖 Specialist Agents
 
 | Agent | Role | Coverage |
@@ -216,6 +246,9 @@ Use the full grouped list here: [Pentest Tool Catalog](docs/capabilities/tool-ca
 - [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
 - [Pentest Tool Catalog](docs/capabilities/tool-catalog.md)
 - [Service Surfaces](docs/capabilities/service-surfaces.md)
+- [APT Simulation Reference](docs/apt-simulation/README.md)
+- [Industry → Threat Actor Map](docs/apt-simulation/industry-threat-map.md)
+- [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
 
 ---
 

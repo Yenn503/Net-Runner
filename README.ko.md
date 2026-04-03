@@ -10,7 +10,7 @@
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/라이선스-교육용-red?style=for-the-badge)](#라이선스)
 
-**12개의 전문 에이전트 · 153개의 레드팀 도구 · 18개의 능력 팩 · 10개의 펜테스트 스킬 · 7개의 워크플로우**
+**12개의 전문 에이전트 · 153개의 레드팀 도구 · 18개의 능력 팩 · 11개의 펜테스트 스킬 · 7개의 워크플로우 · 10개의 APT 시뮬레이션**
 
 [English](README.md) · [Español](README.es.md) · [Français](README.fr.md) · [中文](README.zh.md) · [العربية](README.ar.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · **한국어** · [हिन्दी](README.hi.md) · [Deutsch](README.de.md)
 
@@ -32,7 +32,8 @@ Net-Runner는 최종학년 프로젝트로, LLM이 보안 평가를 자율적으
 - LLM과 각 전문 에이전트가 이전 세션에서 발견한 내용을 기억하여 장기 평가의 일관성 유지
 - 특정 전문 지식이 필요할 때 전문 에이전트에 작업 위임
 - 범위 밖 또는 허용 영향 수준을 초과하는 작업을 차단 또는 경고
-- 웹, API, 모바일, 랩, Active Directory, WiFi, CTF 평가 지원
+- 웹, API, 모바일, 랩, Active Directory, WiFi, CTF 평가 및 APT 위협 시뮬레이션 지원
+- 실제 위협 행위자(APT29, Lazarus, Volt Typhoon 등)를 MITRE ATT&CK에 매핑하여 산업별 공격 체인으로 시뮬레이션
 
 ## 빠른 시작
 
@@ -60,6 +61,8 @@ https://target.example를 평가하세요. recon부터 시작해서 공격면을
 - 전체 도구 카탈로그: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - 연구 정렬 문서: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - 프로젝트 출처 문서: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
+- APT 시뮬레이션: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)
+- 산업별 위협 맵: [docs/apt-simulation/industry-threat-map.md](docs/apt-simulation/industry-threat-map.md)
 
 ## 라이선스
 
