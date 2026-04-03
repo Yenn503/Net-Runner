@@ -5,6 +5,8 @@ import {
 import { saveGlobalConfig } from 'src/utils/config.js'
 import {
   CODE_REVIEW_PLUGIN_WORKFLOW_CONTENT,
+  GITHUB_ACTION_REPO,
+  GITHUB_ACTION_SETUP_DOCS_URL,
   PR_BODY,
   PR_TITLE,
   WORKFLOW_CONTENT,
@@ -27,6 +29,12 @@ async function createWorkflowFile(
     secretExists?: boolean
   },
 ): Promise<void> {
+  if (!GITHUB_ACTION_REPO) {
+    throw new Error(
+      'GitHub workflow automation is not configured for this build. Set NETRUNNER_GITHUB_ACTION_REPO to a published Net-Runner GitHub Action repository before using this command.',
+    )
+  }
+
   // Check if workflow file already exists
   const checkFileResult = await execFileNoThrow('gh', [
     'api',
@@ -42,16 +50,16 @@ async function createWorkflowFile(
 
   let content = workflowContent
   if (secretName === 'NETRUNNER_OAUTH_TOKEN') {
-    // For OAuth tokens, use the claude_code_oauth_token parameter
+    // For OAuth tokens, use the hosted OAuth token parameter
     content = workflowContent.replace(
-      /anthropic_api_key: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/g,
-      `claude_code_oauth_token: \${{ secrets.NETRUNNER_OAUTH_TOKEN }}`,
+      /api_key: \$\{\{ secrets\.NETRUNNER_API_KEY \}\}/g,
+      `oauth_token: \${{ secrets.NETRUNNER_OAUTH_TOKEN }}`,
     )
-  } else if (secretName !== 'ANTHROPIC_API_KEY') {
-    // For other custom secret names, keep using anthropic_api_key parameter
+  } else if (secretName !== 'NETRUNNER_API_KEY') {
+    // For other custom secret names, keep using the generic api_key parameter
     content = workflowContent.replace(
-      /anthropic_api_key: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/g,
-      `anthropic_api_key: \${{ secrets.${secretName} }}`,
+      /api_key: \$\{\{ secrets\.NETRUNNER_API_KEY \}\}/g,
+      `api_key: \${{ secrets.${secretName} }}`,
     )
   }
   const base64Content = Buffer.from(content).toString('base64')
@@ -101,7 +109,7 @@ async function createWorkflowFile(
       '\n\nNeed help? Common issues:\n' +
       '· Permission denied → Run: gh auth refresh -h github.com -s repo,workflow\n' +
       '· Not authorized → Ensure you have admin access to the repository\n' +
-      '· For manual setup → Visit: https://github.com/anthropics/claude-code-action'
+      `· For manual setup → Visit: ${GITHUB_ACTION_SETUP_DOCS_URL}`
 
     throw new Error(
       `Failed to create workflow file ${workflowPath}: ${createFileResult.stderr}${helpText}`,
@@ -127,7 +135,7 @@ export async function setupGitHubActions(
     logEvent('tengu_setup_github_actions_started', {
       skip_workflow: skipWorkflow,
       has_api_key: !!apiKeyOrOAuthToken,
-      using_default_secret_name: secretName === 'ANTHROPIC_API_KEY',
+      using_default_secret_name: secretName === 'NETRUNNER_API_KEY',
       selected_netrunner_workflow: selectedWorkflows.includes('netrunner'),
       selected_netrunner_review_workflow:
         selectedWorkflows.includes('netrunner-review'),
@@ -274,7 +282,7 @@ export async function setupGitHubActions(
           '\n\nNeed help? Common issues:\n' +
           '· Permission denied → Run: gh auth refresh -h github.com -s repo\n' +
           '· Not authorized → Ensure you have admin access to the repository\n' +
-          '· For manual setup → Visit: https://github.com/anthropics/claude-code-action'
+          `· For manual setup → Visit: ${GITHUB_ACTION_SETUP_DOCS_URL}`
 
         throw new Error(
           `Failed to set API key secret: ${setSecretResult.stderr || 'Unknown error'}${helpText}`,
@@ -295,7 +303,7 @@ export async function setupGitHubActions(
       has_api_key: !!apiKeyOrOAuthToken,
       auth_type:
         authType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-      using_default_secret_name: secretName === 'ANTHROPIC_API_KEY',
+      using_default_secret_name: secretName === 'NETRUNNER_API_KEY',
       selected_netrunner_workflow: selectedWorkflows.includes('netrunner'),
       selected_netrunner_review_workflow:
         selectedWorkflows.includes('netrunner-review'),

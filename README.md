@@ -116,6 +116,7 @@ bun run build
 
 - `docs/workflows/overview.md`
 - `docs/capabilities/skills-first-architecture.md`
+- `docs/capabilities/service-surfaces.md`
 
 ## License
 

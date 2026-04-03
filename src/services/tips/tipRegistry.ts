@@ -437,7 +437,7 @@ const externalTips: Tip[] = [
   {
     id: 'desktop-app',
     content: async () =>
-      'Run Net-Runner locally or remotely using the Claude desktop app: clau.de/desktop',
+      'Run Net-Runner locally or remotely using the desktop companion: https://net-runner.dev/desktop',
     cooldownSessions: 15,
     isRelevant: async () => getPlatform() !== 'linux',
   },
@@ -459,14 +459,14 @@ const externalTips: Tip[] = [
   {
     id: 'web-app',
     content: async () =>
-      'Run tasks in the cloud while you keep coding locally · clau.de/web',
+      'Run tasks in the cloud while you keep coding locally · https://net-runner.dev/remote',
     cooldownSessions: 15,
     isRelevant: async () => true,
   },
   {
     id: 'mobile-app',
     content: async () =>
-      '/mobile to use Net-Runner from the Claude app on your phone',
+      '/mobile to use Net-Runner from the mobile app on your phone',
     cooldownSessions: 15,
     isRelevant: async () => true,
   },

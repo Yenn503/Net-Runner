@@ -1,25 +1,26 @@
 /**
- * Constants for the official Anthropic plugins marketplace.
+ * Constants for the first-party Net-Runner plugins marketplace.
  *
- * The official marketplace is hosted on GitHub and provides first-party
- * plugins developed by Anthropic. This file defines the constants needed
- * to install and identify this marketplace.
+ * The marketplace runtime remains built in, but the backing first-party
+ * repository must be configured explicitly until a public Net-Runner
+ * marketplace repo is published.
  */
 
 import type { MarketplaceSource } from './schemas.js'
 
-/**
- * Source configuration for the official Anthropic plugins marketplace.
- * Used when auto-installing the marketplace on startup.
- */
-export const OFFICIAL_MARKETPLACE_SOURCE = {
-  source: 'github',
-  repo: 'anthropics/claude-plugins-official',
-} as const satisfies MarketplaceSource
+export const OFFICIAL_MARKETPLACE_NAME =
+  process.env.NETRUNNER_OFFICIAL_MARKETPLACE_NAME || 'net-runner-official'
 
-/**
- * Display name for the official marketplace.
- * This is the name under which the marketplace will be registered
- * in the known_marketplaces.json file.
- */
-export const OFFICIAL_MARKETPLACE_NAME = 'claude-plugins-official'
+export function getOfficialMarketplaceSource(): MarketplaceSource | null {
+  const repo = process.env.NETRUNNER_OFFICIAL_MARKETPLACE_REPO?.trim()
+  if (!repo) return null
+
+  return {
+    source: 'github',
+    repo,
+  } as const satisfies MarketplaceSource
+}
+
+export function hasOfficialMarketplaceSource(): boolean {
+  return getOfficialMarketplaceSource() !== null
+}

@@ -396,7 +396,7 @@ export function MCPListPanel(t0) {
   }
   let t23;
   if ($[51] !== claudeAiServers || $[52] !== renderServerItem) {
-    t23 = claudeAiServers.length > 0 && <Box flexDirection="column" marginBottom={1}><Box paddingLeft={2}><Text bold={true}>claude.ai</Text></Box>{claudeAiServers.map(server_5 => renderServerItem(server_5))}</Box>;
+    t23 = claudeAiServers.length > 0 && <Box flexDirection="column" marginBottom={1}><Box paddingLeft={2}><Text bold={true}>Hosted Connectors</Text></Box>{claudeAiServers.map(server_5 => renderServerItem(server_5))}</Box>;
     $[51] = claudeAiServers;
     $[52] = renderServerItem;
     $[53] = t23;
@@ -423,7 +423,7 @@ export function MCPListPanel(t0) {
   }
   let t26;
   if ($[60] !== hasFailedClients) {
-    t26 = hasFailedClients && <Text dimColor={true}>{debugMode ? "\u203B Error logs shown inline with --debug" : "\u203B Run claude --debug to see error logs"}</Text>;
+    t26 = hasFailedClients && <Text dimColor={true}>{debugMode ? "\u203B Error logs shown inline with --debug" : "\u203B Run net-runner --debug to see error logs"}</Text>;
     $[60] = hasFailedClients;
     $[61] = t26;
   } else {

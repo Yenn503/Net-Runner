@@ -70,7 +70,7 @@ export type SpawnMode = 'single-session' | 'worktree' | 'same-dir'
 
 /**
  * Well-known worker_type values THIS codebase produces. Sent as
- * `metadata.worker_type` at environment registration so claude.ai can filter
+ * `metadata.worker_type` at environment registration so the hosted workspace can filter
  * the session picker by origin (e.g. assistant tab only shows assistant
  * workers). The backend treats this as an opaque string — desktop cowork
  * sends `"cowork"`, which isn't in this union. REPL code uses this narrow

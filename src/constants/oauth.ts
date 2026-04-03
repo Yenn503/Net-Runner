@@ -62,10 +62,8 @@ type OauthConfig = {
   CONSOLE_AUTHORIZE_URL: string
   CLAUDE_AI_AUTHORIZE_URL: string
   /**
-   * The claude.ai web origin. Separate from CLAUDE_AI_AUTHORIZE_URL because
-   * that now routes through claude.com/cai/* for attribution — deriving
-   * .origin from it would give claude.com, breaking links to /code,
-   * /settings/connectors, and other claude.ai web pages.
+   * Hosted Net-Runner web origin. Kept separate from the authorize URL so the
+   * CLI can open stable hosted routes like /code and /settings/connectors.
    */
   CLAUDE_AI_ORIGIN: string
   TOKEN_URL: string
@@ -80,26 +78,33 @@ type OauthConfig = {
   MCP_PROXY_PATH: string
 }
 
+const PROD_WEB_ORIGIN =
+  process.env.NETRUNNER_HOSTED_WEB_ORIGIN || 'https://net-runner.dev'
+const PROD_PLATFORM_ORIGIN =
+  process.env.NETRUNNER_HOSTED_PLATFORM_ORIGIN ||
+  'https://platform.netrunner.com'
+const PROD_MCP_PROXY_ORIGIN =
+  process.env.NETRUNNER_HOSTED_MCP_PROXY_ORIGIN ||
+  'https://mcp-proxy.netrunner.com'
+
 // Production OAuth configuration - Used in normal operation
 const PROD_OAUTH_CONFIG = {
   BASE_API_URL: 'https://api.anthropic.com',
-  CONSOLE_AUTHORIZE_URL: 'https://platform.netrunner.com/oauth/authorize',
-  // Bounces through claude.com/cai/* so CLI sign-ins connect to claude.com
-  // visits for attribution. 307s to claude.ai/oauth/authorize in two hops.
-  CLAUDE_AI_AUTHORIZE_URL: 'https://claude.com/cai/oauth/authorize',
-  CLAUDE_AI_ORIGIN: 'https://claude.ai',
-  TOKEN_URL: 'https://platform.netrunner.com/v1/oauth/token',
-  API_KEY_URL: 'https://api.anthropic.com/api/oauth/claude_cli/create_api_key',
-  ROLES_URL: 'https://api.anthropic.com/api/oauth/claude_cli/roles',
+  CONSOLE_AUTHORIZE_URL: `${PROD_PLATFORM_ORIGIN}/oauth/authorize`,
+  CLAUDE_AI_AUTHORIZE_URL: `${PROD_WEB_ORIGIN}/oauth/authorize`,
+  CLAUDE_AI_ORIGIN: PROD_WEB_ORIGIN,
+  TOKEN_URL: `${PROD_PLATFORM_ORIGIN}/v1/oauth/token`,
+  API_KEY_URL: `${PROD_PLATFORM_ORIGIN}/api/oauth/netrunner/create_api_key`,
+  ROLES_URL: `${PROD_PLATFORM_ORIGIN}/api/oauth/netrunner/roles`,
   CONSOLE_SUCCESS_URL:
-    'https://platform.netrunner.com/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dclaude-code',
+    `${PROD_PLATFORM_ORIGIN}/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dnet-runner`,
   CLAUDEAI_SUCCESS_URL:
-    'https://platform.netrunner.com/oauth/code/success?app=claude-code',
-  MANUAL_REDIRECT_URL: 'https://platform.netrunner.com/oauth/code/callback',
+    `${PROD_PLATFORM_ORIGIN}/oauth/code/success?app=net-runner`,
+  MANUAL_REDIRECT_URL: `${PROD_PLATFORM_ORIGIN}/oauth/code/callback`,
   CLIENT_ID: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
   // No suffix for production config
   OAUTH_FILE_SUFFIX: '',
-  MCP_PROXY_URL: 'https://mcp-proxy.anthropic.com',
+  MCP_PROXY_URL: PROD_MCP_PROXY_ORIGIN,
   MCP_PROXY_PATH: '/v1/mcp/{server_id}',
 } as const
 
@@ -111,7 +116,7 @@ const PROD_OAUTH_CONFIG = {
  * See: https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00
  */
 export const MCP_CLIENT_METADATA_URL =
-  'https://claude.ai/oauth/claude-code-client-metadata'
+  `${PROD_WEB_ORIGIN}/oauth/net-runner-client-metadata`
 
 // Staging OAuth configuration - only included in ant builds with staging flag
 // Uses literal check for dead code elimination
@@ -122,38 +127,38 @@ const STAGING_OAUTH_CONFIG =
         CONSOLE_AUTHORIZE_URL:
           'https://platform.staging.ant.dev/oauth/authorize',
         CLAUDE_AI_AUTHORIZE_URL:
-          'https://claude-ai.staging.ant.dev/oauth/authorize',
-        CLAUDE_AI_ORIGIN: 'https://claude-ai.staging.ant.dev',
+          'https://staging.net-runner.dev/oauth/authorize',
+        CLAUDE_AI_ORIGIN: 'https://staging.net-runner.dev',
         TOKEN_URL: 'https://platform.staging.ant.dev/v1/oauth/token',
         API_KEY_URL:
-          'https://api-staging.anthropic.com/api/oauth/claude_cli/create_api_key',
+          'https://platform.staging.ant.dev/api/oauth/netrunner/create_api_key',
         ROLES_URL:
-          'https://api-staging.anthropic.com/api/oauth/claude_cli/roles',
+          'https://platform.staging.ant.dev/api/oauth/netrunner/roles',
         CONSOLE_SUCCESS_URL:
-          'https://platform.staging.ant.dev/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dclaude-code',
+          'https://platform.staging.ant.dev/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dnet-runner',
         CLAUDEAI_SUCCESS_URL:
-          'https://platform.staging.ant.dev/oauth/code/success?app=claude-code',
+          'https://platform.staging.ant.dev/oauth/code/success?app=net-runner',
         MANUAL_REDIRECT_URL:
           'https://platform.staging.ant.dev/oauth/code/callback',
         CLIENT_ID: '22422756-60c9-4084-8eb7-27705fd5cf9a',
         OAUTH_FILE_SUFFIX: '-staging-oauth',
-        MCP_PROXY_URL: 'https://mcp-proxy-staging.anthropic.com',
+        MCP_PROXY_URL: 'https://mcp-proxy.staging.net-runner.dev',
         MCP_PROXY_PATH: '/v1/mcp/{server_id}',
       } as const)
     : undefined
 
-// Three local dev servers: :8000 api-proxy (`api dev start -g ccr`),
-// :4000 claude-ai frontend, :3000 Console frontend. Env vars let
-// scripts/claude-localhost override if your layout differs.
+// Three local dev servers: :8000 api-proxy, :4000 hosted web frontend,
+// :3000 platform frontend. Env vars let local workflows override if your
+// layout differs.
 function getLocalOauthConfig(): OauthConfig {
   const api =
-    process.env.CLAUDE_LOCAL_OAUTH_API_BASE?.replace(/\/$/, '') ??
+    process.env.NETRUNNER_LOCAL_OAUTH_API_BASE?.replace(/\/$/, '') ??
     'http://localhost:8000'
   const apps =
-    process.env.CLAUDE_LOCAL_OAUTH_APPS_BASE?.replace(/\/$/, '') ??
+    process.env.NETRUNNER_LOCAL_OAUTH_APPS_BASE?.replace(/\/$/, '') ??
     'http://localhost:4000'
   const consoleBase =
-    process.env.CLAUDE_LOCAL_OAUTH_CONSOLE_BASE?.replace(/\/$/, '') ??
+    process.env.NETRUNNER_LOCAL_OAUTH_CONSOLE_BASE?.replace(/\/$/, '') ??
     'http://localhost:3000'
   return {
     BASE_API_URL: api,
@@ -161,10 +166,10 @@ function getLocalOauthConfig(): OauthConfig {
     CLAUDE_AI_AUTHORIZE_URL: `${apps}/oauth/authorize`,
     CLAUDE_AI_ORIGIN: apps,
     TOKEN_URL: `${api}/v1/oauth/token`,
-    API_KEY_URL: `${api}/api/oauth/claude_cli/create_api_key`,
-    ROLES_URL: `${api}/api/oauth/claude_cli/roles`,
-    CONSOLE_SUCCESS_URL: `${consoleBase}/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dclaude-code`,
-    CLAUDEAI_SUCCESS_URL: `${consoleBase}/oauth/code/success?app=claude-code`,
+    API_KEY_URL: `${api}/api/oauth/netrunner/create_api_key`,
+    ROLES_URL: `${api}/api/oauth/netrunner/roles`,
+    CONSOLE_SUCCESS_URL: `${consoleBase}/buy_credits?returnUrl=/oauth/code/success%3Fapp%3Dnet-runner`,
+    CLAUDEAI_SUCCESS_URL: `${consoleBase}/oauth/code/success?app=net-runner`,
     MANUAL_REDIRECT_URL: `${consoleBase}/oauth/code/callback`,
     CLIENT_ID: '22422756-60c9-4084-8eb7-27705fd5cf9a',
     OAUTH_FILE_SUFFIX: '-local-oauth',
@@ -177,9 +182,10 @@ function getLocalOauthConfig(): OauthConfig {
 // Only FedStart/PubSec deployments are permitted to prevent OAuth tokens
 // from being sent to arbitrary endpoints.
 const ALLOWED_OAUTH_BASE_URLS = [
-  'https://beacon.netrunner-ai.staging.ant.dev',
-  'https://claude.fedstart.com',
-  'https://claude-staging.fedstart.com',
+  'https://beacon.netrunner.dev',
+  'https://net-runner.dev',
+  'https://staging.net-runner.dev',
+  'https://platform.netrunner.com',
 ]
 
 // Default to prod config, override with test/staging if enabled
@@ -212,10 +218,10 @@ export function getOauthConfig(): OauthConfig {
       CLAUDE_AI_AUTHORIZE_URL: `${base}/oauth/authorize`,
       CLAUDE_AI_ORIGIN: base,
       TOKEN_URL: `${base}/v1/oauth/token`,
-      API_KEY_URL: `${base}/api/oauth/claude_cli/create_api_key`,
-      ROLES_URL: `${base}/api/oauth/claude_cli/roles`,
-      CONSOLE_SUCCESS_URL: `${base}/oauth/code/success?app=claude-code`,
-      CLAUDEAI_SUCCESS_URL: `${base}/oauth/code/success?app=claude-code`,
+      API_KEY_URL: `${base}/api/oauth/netrunner/create_api_key`,
+      ROLES_URL: `${base}/api/oauth/netrunner/roles`,
+      CONSOLE_SUCCESS_URL: `${base}/oauth/code/success?app=net-runner`,
+      CLAUDEAI_SUCCESS_URL: `${base}/oauth/code/success?app=net-runner`,
       MANUAL_REDIRECT_URL: `${base}/oauth/code/callback`,
       OAUTH_FILE_SUFFIX: '-custom-oauth',
     }

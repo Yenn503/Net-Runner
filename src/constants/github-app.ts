@@ -1,7 +1,14 @@
 export const PR_TITLE = 'Add Net-Runner GitHub Workflow'
 
+export const GITHUB_ACTION_REPO =
+  process.env.NETRUNNER_GITHUB_ACTION_REPO?.trim() || null
 export const GITHUB_ACTION_SETUP_DOCS_URL =
-  'https://github.com/anthropics/claude-code-action/blob/main/docs/setup.md'
+  process.env.NETRUNNER_GITHUB_ACTION_DOCS_URL?.trim() ||
+  'https://docs.netrunner.com/integrations/github-actions'
+export const GITHUB_ACTION_SECRET_NAME = 'NETRUNNER_API_KEY'
+const GITHUB_ACTION_USES_LINE = GITHUB_ACTION_REPO
+  ? `uses: ${GITHUB_ACTION_REPO}@v1`
+  : '# Configure NETRUNNER_GITHUB_ACTION_REPO before using this workflow'
 
 export const WORKFLOW_CONTENT = `name: Net-Runner
 
@@ -37,9 +44,9 @@ jobs:
 
       - name: Run Net-Runner
         id: netrunner
-        uses: anthropics/claude-code-action@v1
+        ${GITHUB_ACTION_USES_LINE}
         with:
-          anthropic_api_key: \${{ secrets.ANTHROPIC_API_KEY }}
+          api_key: \${{ secrets.${GITHUB_ACTION_SECRET_NAME} }}
 
           # This is an optional setting that allows Net-Runner to read CI results on PRs
           additional_permissions: |
@@ -50,7 +57,7 @@ jobs:
 
           # Optional: Add agent arguments to customize behavior and configuration
           # See the Net-Runner action documentation for available options
-          # claude_args: '--allowed-tools Bash(gh pr:*)'
+          # netrunner_args: '--allowed-tools Bash(gh pr:*)'
 
 `
 
@@ -82,7 +89,7 @@ Once the workflow is triggered, Net-Runner will analyze the comment and surround
 
 ### Security
 
-- Our Anthropic API key is securely stored as a GitHub Actions secret
+- Our Net-Runner API key is securely stored as a GitHub Actions secret
 - Only users with write access to the repository can trigger the workflow
 - All Net-Runner runs are stored in the GitHub Actions run history
 - Net-Runner's default tools are limited to reading/writing files and interacting with our repo by creating comments, branches, and commits.
@@ -131,11 +138,9 @@ jobs:
 
       - name: Run Net-Runner Review
         id: netrunner-review
-        uses: anthropics/claude-code-action@v1
+        ${GITHUB_ACTION_USES_LINE}
         with:
-          anthropic_api_key: \${{ secrets.ANTHROPIC_API_KEY }}
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
+          api_key: \${{ secrets.${GITHUB_ACTION_SECRET_NAME} }}
           prompt: '/code-review:code-review \${{ github.repository }}/pull/\${{ github.event.pull_request.number }}'
           # See the Net-Runner action documentation for available options
 

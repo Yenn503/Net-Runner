@@ -70,3 +70,5 @@ Before deep execution, run `/engagement capabilities` to verify workflow readine
 Run `/engagement alignment` to confirm specialist-agent capability coverage remains coherent across workflows.
 
 Most workflows should rely first on skills plus direct tool execution. `lab-control` and similar integrations are available when the environment benefits from extra infrastructure, but they are not the default expression of framework logic.
+
+If a workflow needs hosted support, check `docs/capabilities/service-surfaces.md` first. That file is the source of truth for which service-backed features are intentionally retained and which still need replacement or removal.

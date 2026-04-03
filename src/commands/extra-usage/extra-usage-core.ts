@@ -102,8 +102,8 @@ export async function runExtraUsage(): Promise<ExtraUsageResult> {
   }
 
   const url = isTeamOrEnterprise
-    ? 'https://claude.ai/admin-settings/usage'
-    : 'https://claude.ai/settings/usage'
+    ? 'https://net-runner.dev/admin-settings/usage'
+    : 'https://net-runner.dev/settings/usage'
 
   try {
     const opened = await openBrowser(url)

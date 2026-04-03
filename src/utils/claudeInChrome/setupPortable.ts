@@ -3,7 +3,8 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { isFsInaccessible } from '../errors.js'
 
-export const CHROME_EXTENSION_URL = 'https://claude.ai/chrome'
+export const CHROME_EXTENSION_URL =
+  process.env.NETRUNNER_CHROME_EXTENSION_URL || 'https://net-runner.dev/chrome'
 
 // Production extension ID
 const PROD_EXTENSION_ID = 'fcoeoabgfenejglbffodgkkbkcdhcgfn'
@@ -135,7 +136,7 @@ export function getAllBrowserDataPathsPortable(): BrowserPath[] {
 }
 
 /**
- * Detects if the Claude in Chrome extension is installed by checking the Extensions
+ * Detects if the Browser Bridge extension is installed by checking the Extensions
  * directory across all supported Chromium-based browsers and their profiles.
  *
  * This is a portable version that can be used by both TUI and VS Code extension.
@@ -152,7 +153,7 @@ export async function detectExtensionInstallationPortable(
   browser: ChromiumBrowser | null
 }> {
   if (browserPaths.length === 0) {
-    log?.(`[Claude in Chrome] No browser paths to check`)
+    log?.(`[Net-Runner Browser Bridge] No browser paths to check`)
     return { isInstalled: false, browser: null }
   }
 
@@ -181,7 +182,7 @@ export async function detectExtensionInstallationPortable(
 
     if (profileDirs.length > 0) {
       log?.(
-        `[Claude in Chrome] Found ${browser} profiles: ${profileDirs.join(', ')}`,
+        `[Net-Runner Browser Bridge] Found ${browser} profiles: ${profileDirs.join(', ')}`,
       )
     }
 
@@ -198,7 +199,7 @@ export async function detectExtensionInstallationPortable(
         try {
           await readdir(extensionPath)
           log?.(
-            `[Claude in Chrome] Extension ${extensionId} found in ${browser} ${profile}`,
+            `[Net-Runner Browser Bridge] Extension ${extensionId} found in ${browser} ${profile}`,
           )
           return { isInstalled: true, browser }
         } catch {
@@ -208,7 +209,7 @@ export async function detectExtensionInstallationPortable(
     }
   }
 
-  log?.(`[Claude in Chrome] Extension not found in any browser`)
+  log?.(`[Net-Runner Browser Bridge] Extension not found in any browser`)
   return { isInstalled: false, browser: null }
 }
 

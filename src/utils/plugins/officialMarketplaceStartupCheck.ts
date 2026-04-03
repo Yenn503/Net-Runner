@@ -26,7 +26,8 @@ import {
 } from './marketplaceManager.js'
 import {
   OFFICIAL_MARKETPLACE_NAME,
-  OFFICIAL_MARKETPLACE_SOURCE,
+  getOfficialMarketplaceSource,
+  hasOfficialMarketplaceSource,
 } from './officialMarketplace.js'
 import { fetchOfficialMarketplaceFromGcs } from './officialMarketplaceGcs.js'
 
@@ -36,6 +37,7 @@ import { fetchOfficialMarketplaceFromGcs } from './officialMarketplaceGcs.js'
 export type OfficialMarketplaceSkipReason =
   | 'already_attempted'
   | 'already_installed'
+  | 'source_unconfigured'
   | 'policy_blocked'
   | 'git_unavailable'
   | 'gcs_unavailable'
@@ -160,6 +162,14 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
   }
 
   try {
+    if (!hasOfficialMarketplaceSource()) {
+      logForDebugging(
+        'Official marketplace auto-install skipped: no first-party marketplace source configured',
+      )
+      return { installed: false, skipped: true, reason: 'source_unconfigured' }
+    }
+    const officialMarketplaceSource = getOfficialMarketplaceSource()!
+
     // Check if auto-install is disabled via env var
     if (isOfficialMarketplaceAutoInstallDisabled()) {
       logForDebugging(
@@ -195,7 +205,7 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
     }
 
     // Check enterprise policy restrictions
-    if (!isSourceAllowedByPolicy(OFFICIAL_MARKETPLACE_SOURCE)) {
+    if (!isSourceAllowedByPolicy(officialMarketplaceSource)) {
       logForDebugging(
         'Official marketplace blocked by enterprise policy, skipping',
       )
@@ -227,7 +237,7 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
     if (gcsSha !== null) {
       const known = await loadKnownMarketplacesConfig()
       known[OFFICIAL_MARKETPLACE_NAME] = {
-        source: OFFICIAL_MARKETPLACE_SOURCE,
+        source: officialMarketplaceSource,
         installLocation,
         lastUpdated: new Date().toISOString(),
       }
@@ -334,7 +344,7 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
 
     // Attempt installation
     logForDebugging('Attempting to auto-install official marketplace')
-    await addMarketplaceSource(OFFICIAL_MARKETPLACE_SOURCE)
+    await addMarketplaceSource(officialMarketplaceSource)
 
     // Success
     logForDebugging('Successfully auto-installed official marketplace')

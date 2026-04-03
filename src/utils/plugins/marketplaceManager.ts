@@ -65,7 +65,7 @@ import {
 } from './marketplaceHelpers.js'
 import {
   OFFICIAL_MARKETPLACE_NAME,
-  OFFICIAL_MARKETPLACE_SOURCE,
+  getOfficialMarketplaceSource,
 } from './officialMarketplace.js'
 import { fetchOfficialMarketplaceFromGcs } from './officialMarketplaceGcs.js'
 import {
@@ -160,6 +160,7 @@ export type DeclaredMarketplace = {
  */
 export function getDeclaredMarketplaces(): Record<string, DeclaredMarketplace> {
   const implicit: Record<string, DeclaredMarketplace> = {}
+  const officialMarketplaceSource = getOfficialMarketplaceSource()
 
   // Only the official marketplace can be implicitly declared — it's the one
   // built-in source we know. Other marketplaces have no default source to inject.
@@ -171,10 +172,11 @@ export function getDeclaredMarketplaces(): Record<string, DeclaredMarketplace> {
   for (const [pluginId, value] of Object.entries(enabledPlugins)) {
     if (
       value &&
-      parsePluginIdentifier(pluginId).marketplace === OFFICIAL_MARKETPLACE_NAME
+      parsePluginIdentifier(pluginId).marketplace === OFFICIAL_MARKETPLACE_NAME &&
+      officialMarketplaceSource
     ) {
       implicit[OFFICIAL_MARKETPLACE_NAME] = {
-        source: OFFICIAL_MARKETPLACE_SOURCE,
+        source: officialMarketplaceSource,
         sourceIsFallback: true,
       }
       break

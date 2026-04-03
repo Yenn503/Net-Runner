@@ -6,7 +6,7 @@ import { checkAndInstallOfficialMarketplace } from '../utils/plugins/officialMar
 import { useStartupNotification } from './notifs/useStartupNotification.js';
 
 /**
- * Hook that handles official marketplace auto-installation and shows
+ * Hook that handles first-party marketplace auto-installation and shows
  * notifications for success/failure in the bottom right of the REPL.
  */
 export function useOfficialMarketplaceNotification() {
@@ -28,7 +28,7 @@ async function _temp() {
     logForDebugging("Showing marketplace installation success notification");
     notifs.push({
       key: "marketplace-installed",
-      jsx: <Text color="success">✓ Anthropic marketplace installed · /plugin to see available plugins</Text>,
+      jsx: <Text color="success">✓ First-party marketplace installed · /plugin to see available plugins</Text>,
       priority: "immediate",
       timeoutMs: 7000
     });
@@ -37,7 +37,7 @@ async function _temp() {
       logForDebugging("Showing marketplace installation failure notification");
       notifs.push({
         key: "marketplace-install-failed",
-        jsx: <Text color="warning">Failed to install Anthropic marketplace · Will retry on next startup</Text>,
+        jsx: <Text color="warning">Failed to install first-party marketplace · Will retry on next startup</Text>,
         priority: "immediate",
         timeoutMs: 8000
       });
