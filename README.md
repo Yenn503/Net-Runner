@@ -1,3 +1,10 @@
+<!--
+SEO Keywords: AI security testing framework, autonomous penetration testing, LLM red team tool, 
+agentic security assessment, AI-powered penetration testing, autonomous security testing,
+LLM security framework, AI penetration testing tool, security assessment automation,
+red team automation, AI security assessment, LLM security testing
+-->
+
 <div align="center">
 
 
@@ -17,7 +24,7 @@
 
 </div>
 
-Net-Runner is a final-year university project and research prototype that lets an LLM autonomously run security assessments. Give it a target, and it handles the rest — picking the right workflow, launching specialist agents, running tools, enforcing scope, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
+Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment — picking workflows, launching specialist agents, running 153+ red-team tools, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
 ---
 
