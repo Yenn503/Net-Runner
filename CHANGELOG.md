@@ -2,7 +2,7 @@
 
 All notable changes to Net-Runner are documented in this file.
 
-## [0.1.6] - 2026-04-04
+## [1.0.0] - 2026-04-04
 
 ### Added
 
