@@ -19,11 +19,6 @@
 
 Net-Runner is a final-year university project and research prototype that lets an LLM autonomously run security assessments. Give it a target, and it handles the rest — picking the right workflow, launching specialist agents, running tools, enforcing scope, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
-> “Net-Runner has the structure of a serious agentic security harness, not just a demo — the workflows, guardrails, evidence model, and specialist agents all reinforce each other.” — Cascade
-
-> ⚠️ **Warning**
-> Use this framework only on targets you are explicitly authorized to test. Net-Runner is for legal security testing, lab work, and research use.
-
 ---
 
 ## 🔍 What It Does
