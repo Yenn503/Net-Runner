@@ -38,6 +38,56 @@ Give Net-Runner a target in plain language. It sets up a `.netrunner/` project f
 
 ---
 
+## 🤖 Specialist Agents
+
+Net-Runner deploys 12 domain-focused agents when specific expertise is needed. Each agent has its own memory and tool patterns.
+
+| Agent | Role | Coverage |
+|-------|------|----------|
+| **Engagement Lead** | Coordinates scoped testing engagements and workflow execution | Workflow orchestration, scope validation, task routing |
+| **Recon Specialist** | Discovery and attack surface mapping | External recon, asset discovery, cloud and identity enumeration |
+| **Web Testing Specialist** | HTTP and web application security validation | Route discovery, content fuzzing, web vuln validation |
+| **API Testing Specialist** | API endpoint discovery and security testing | API schemas, auth/state testing, GraphQL and JWT checks |
+| **Network Testing Specialist** | Network and service assessment | Service enumeration, protocol testing, packet capture |
+| **Exploit Specialist** | Controlled proof-of-impact validation | Exploit research, payload generation, runtime validation |
+| **Privilege Escalation Specialist** | Post-access privilege boundary testing | Local privilege checks, escalation-path validation, post-access review |
+| **Lateral Movement Specialist** | Network pivot and credential path validation | Trust-path analysis, credential reuse, multi-host movement |
+| **AD Specialist** | Active Directory and Kerberos security testing | Kerberos, LDAP, BloodHound, AD CS, Windows domain attack paths |
+| **Retest Specialist** | Finding validation and false positive reduction | Reproduction testing, fix validation, regression checks |
+| **Evidence Specialist** | Artifact collection and finding documentation | Evidence capture, artifact handling, proof quality |
+| **Reporting Specialist** | Security assessment report generation | Finding narratives, severity scoring, report structure |
+
+---
+
+## 🎭 APT Simulation
+
+Net-Runner includes a built-in APT threat simulation engine with **40 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
+
+Pick an industry or a threat actor and Net-Runner loads the matching attack chain, assigns specialist agents to each phase, and walks through the intrusion step by step.
+
+| Simulation | Threat Actor | Industry |
+|---|---|---|
+| Government Cloud Espionage | APT29 (Cozy Bear) | Government |
+| Credential Harvesting & AD Exploitation | APT28 (Fancy Bear) | Government |
+| Critical Infrastructure Pre-Positioning | Volt Typhoon | Critical Infrastructure |
+| ICS/OT Destructive Operations | Sandworm (APT44) | Energy / OT |
+| SWIFT Financial Heist | APT38 (Bluenoroff) | Financial Services |
+| Identity-Centric Cloud Compromise | Scattered Spider | Financial / Tech |
+| Telecom Infrastructure Espionage | Salt Typhoon | Telecommunications |
+| IT Supply Chain Exploitation | Silk Typhoon (HAFNIUM) | Technology |
+| Healthcare Ransomware & Espionage | Lazarus Group | Healthcare |
+| Manufacturing IP Theft | APT41 (Wicked Panda) | Manufacturing |
+
+```text
+/apt-simulation APT29 against government
+/apt-simulation financial services
+/apt-simulation Volt Typhoon critical infrastructure
+```
+
+Full reference: [APT Simulation Docs](docs/apt-simulation/README.md) · [Industry Threat Map](docs/apt-simulation/industry-threat-map.md) · [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
+
+---
+
 ## 🚀 Getting Started
 
 <details>
@@ -147,49 +197,6 @@ The recon stack includes cloud and identity enumeration tools: `cloud_enum`, `GH
 | Evidence | 5 | volatility, autopsy |
 | API | 3 | postman, openapi-generator |
 | Coordination | 2 | — |
-
----
-
-## 🎭 APT Simulation
-
-Net-Runner includes a built-in APT threat simulation engine with **40 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
-
-Pick an industry or a threat actor and Net-Runner loads the matching attack chain, assigns specialist agents to each phase, and walks through the intrusion step by step.
-
-| Simulation | Threat Actor | Industry |
-|---|---|---|
-| Government Cloud Espionage | APT29 (Cozy Bear) | Government |
-| Credential Harvesting & AD Exploitation | APT28 (Fancy Bear) | Government |
-| Critical Infrastructure Pre-Positioning | Volt Typhoon | Critical Infrastructure |
-| ICS/OT Destructive Operations | Sandworm (APT44) | Energy / OT |
-| SWIFT Financial Heist | APT38 (Bluenoroff) | Financial Services |
-| Identity-Centric Cloud Compromise | Scattered Spider | Financial / Tech |
-| Telecom Infrastructure Espionage | Salt Typhoon | Telecommunications |
-| IT Supply Chain Exploitation | Silk Typhoon (HAFNIUM) | Technology |
-| Healthcare Ransomware & Espionage | Lazarus Group | Healthcare |
-| Manufacturing IP Theft | APT41 (Wicked Panda) | Manufacturing |
-
-```text
-/apt-simulation APT29 against government
-/apt-simulation financial services
-/apt-simulation Volt Typhoon critical infrastructure
-```
-
-Full reference: [APT Simulation Docs](docs/apt-simulation/README.md) · [Industry Threat Map](docs/apt-simulation/industry-threat-map.md) · [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
-
----
-
-## 🤖 Specialist Agents
-
-12 domain-focused agents for specific assessment phases — [full roster](docs/agents/overview.md)
-
-| Agent | Role |
-|-------|------|
-| **Engagement Lead** | Workflow orchestration and scope validation |
-| **Recon Specialist** | Attack surface discovery and enumeration |
-| **Web Testing Specialist** | HTTP and web application security testing |
-| **Exploit Specialist** | Proof-of-impact validation |
-| **AD Specialist** | Active Directory and Kerberos testing |
 
 ---
 
