@@ -5,7 +5,3 @@ dist/
 .env.*
 .net-runner-profile.json
 reports/
-
-# Personal / coursework files
-*.pdf
-*.PDF
