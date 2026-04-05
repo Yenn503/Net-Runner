@@ -26,6 +26,8 @@ red team automation, AI security assessment, LLM security testing
 
 Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment — picking workflows, launching specialist agents, running 153+ red-team tools, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
+The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic — instead of exposing 153 tools as individual MCP definitions (which would consume ~150K+ tokens of context), Net-Runner presents a minimal MCP surface (~10 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM — GitHub Copilot, Claude Desktop, Cursor — can connect and drive the full harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** framework where MCP calls are essential-only and the real work happens through shell execution, specialist agents, and reusable skill bundles.
+
 ---
 
 ## 🔍 What It Does
@@ -245,7 +247,61 @@ Everything the LLM finds, logs, and produces stays here. Agents store their memo
 
 ---
 
-## 📚 Documentation
+## � MCP Integration
+
+Net-Runner works in two directions over the [Model Context Protocol](https://modelcontextprotocol.io/):
+
+### External LLM → Net-Runner (inbound)
+
+Connect any MCP-compatible LLM — **GitHub Copilot**, **Claude Desktop**, **Cursor**, **Windsurf** — and it can drive the full harness: 153 tools, 12 specialist agents, evidence capture, guardrails, and the intelligence engine.
+
+**VS Code Copilot** — create `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "net-runner": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/net-runner-release/dist/cli.mjs", "mcp", "serve"]
+    }
+  }
+}
+```
+
+**Claude Desktop** — add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "node",
+      "args": ["/path/to/net-runner-release/dist/cli.mjs", "mcp", "serve"]
+    }
+  }
+}
+```
+
+You talk to the LLM through **its own interface** (Copilot Chat, Claude Desktop, Cursor AI panel). The LLM calls Net-Runner tools transparently — you stay in your IDE the whole time.
+
+### Net-Runner → External MCP Servers (outbound)
+
+Net-Runner can also connect to external MCP servers for additional tools. Add them via `.mcp.json` or the CLI:
+
+```bash
+net-runner mcp add my-scanner -- node path/to/scanner-server.js
+net-runner mcp list
+```
+
+### Both directions simultaneously
+
+You can run Net-Runner in CLI mode with its own LLM **and** expose it as an MCP server for another LLM at the same time. These are separate processes.
+
+Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
+
+---
+
+## � Documentation
 
 - [Workflow Overview](docs/workflows/overview.md)
 - [Research Alignment](docs/project/research-alignment.md)
@@ -257,6 +313,7 @@ Everything the LLM finds, logs, and produces stays here. Agents store their memo
 - [Industry → Threat Actor Map](docs/apt-simulation/industry-threat-map.md)
 - [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
 - [Intelligence Engine Reference](docs/intelligence-engine/README.md)
+- [MCP Integration Guide](docs/mcp-integration/README.md)
 
 ---
 

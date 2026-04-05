@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "net-runner": {
+      "type": "stdio",
+      "command": "bun",
+      "args": ["run", "mcp"],
+      "env": {}
+    }
+  }
+}

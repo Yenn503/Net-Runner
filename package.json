@@ -30,6 +30,7 @@
     "dev:fast": "bun run profile:fast && bun run dev:ollama:fast",
     "dev:code": "bun run profile:code && bun run dev:profile",
     "start": "node dist/cli.mjs",
+    "mcp": "node dist/cli.mjs mcp serve",
     "test:security-slice": "bun test src/security/*.test.ts",
     "test:provider-recommendation": "node --test --experimental-strip-types src/utils/providerRecommendation.test.ts src/utils/providerProfile.test.ts",
     "typecheck": "tsc --noEmit",

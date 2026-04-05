@@ -15,6 +15,7 @@ import {
   getEmptyToolPermissionContext,
   type ToolUseContext,
 } from '../Tool.js'
+import { getBuiltInAgents } from '../tools/AgentTool/builtInAgents.js'
 import { getTools } from '../tools.js'
 import { createAbortController } from '../utils/abortController.js'
 import { createFileStateCacheWithSizeLimit } from '../utils/fileStateCache.js'
@@ -44,9 +45,12 @@ export async function startMCPServer(
     READ_FILE_STATE_CACHE_SIZE,
   )
   setCwd(cwd)
+  const builtInAgents = getBuiltInAgents()
+  const agentDefs = { activeAgents: builtInAgents, allAgents: builtInAgents }
+
   const server = new Server(
     {
-      name: 'claude/tengu',
+      name: 'net-runner',
       version: MACRO.VERSION,
     },
     {
@@ -85,7 +89,7 @@ export async function startMCPServer(
               description: await tool.prompt({
                 getToolPermissionContext: async () => toolPermissionContext,
                 tools,
-                agents: [],
+                agents: builtInAgents,
               }),
               inputSchema: zodToJsonSchema(tool.inputSchema) as ToolInput,
               outputSchema,
@@ -121,7 +125,7 @@ export async function startMCPServer(
           isNonInteractiveSession: true,
           debug,
           verbose,
-          agentDefinitions: { activeAgents: [], allAgents: [] },
+          agentDefinitions: agentDefs,
         },
         getAppState: () => getDefaultAppState(),
         setAppState: () => {},
