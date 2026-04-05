@@ -60,3 +60,7 @@ export function getFindingsDir(cwd: string): string {
 export function getReportsDir(cwd: string): string {
   return join(getNetRunnerProjectDir(cwd), 'reports')
 }
+
+export function getIntelligenceStatePath(cwd: string): string {
+  return join(getNetRunnerProjectDir(cwd), 'intelligence-state.json')
+}

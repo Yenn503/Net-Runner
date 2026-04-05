@@ -1,4 +1,4 @@
-import { appendEvidenceEntry } from './evidence.js'
+import { appendEvidenceEntry, readEvidenceEntries } from './evidence.js'
 import { assessPlannedAction, readEngagementManifest } from './engagement.js'
 import type { GuardrailDecision } from './guardrails.js'
 import { NET_RUNNER_AGENT_TYPES, type NetRunnerAgentType } from './agentTypes.js'
@@ -6,6 +6,14 @@ import {
   appendSecurityExecutionStep,
   queuePendingSecurityReview,
 } from './runState.js'
+import {
+  processToolFailureWithPersistence,
+  autoDetectWafWithPersistence,
+  ingestEvidenceToGraphWithPersistence,
+  type ToolFailureContext,
+  type EnrichedFailureResult,
+  type WafAutoDetectResult,
+} from './intelligenceMiddleware.js'
 
 const SECURITY_AGENT_TYPES = new Set<string>(NET_RUNNER_AGENT_TYPES)
 
@@ -91,6 +99,53 @@ function trimSummary(value: string, max = 400): string {
     return trimmed
   }
   return `${trimmed.slice(0, max)}...`
+}
+
+// ---------------------------------------------------------------------------
+// Intelligence middleware hooks
+// ---------------------------------------------------------------------------
+
+export async function handleToolFailure(
+  cwd: string,
+  ctx: ToolFailureContext,
+): Promise<EnrichedFailureResult | null> {
+  try {
+    const manifest = await readEngagementManifest(cwd)
+    if (!manifest) return null
+    return await processToolFailureWithPersistence(cwd, ctx)
+  } catch {
+    return null
+  }
+}
+
+export async function handleHttpResponse(
+  cwd: string,
+  statusCode: number,
+  headers: Record<string, string>,
+  body: string,
+  cookies?: string,
+): Promise<WafAutoDetectResult | null> {
+  try {
+    const manifest = await readEngagementManifest(cwd)
+    if (!manifest) return null
+    return await autoDetectWafWithPersistence(cwd, statusCode, headers, body, cookies)
+  } catch {
+    return null
+  }
+}
+
+export async function syncEvidenceToKnowledgeGraph(
+  cwd: string,
+): Promise<{ imported: number } | null> {
+  try {
+    const manifest = await readEngagementManifest(cwd)
+    if (!manifest) return null
+    const entries = await readEvidenceEntries(cwd)
+    if (entries.length === 0) return { imported: 0 }
+    return await ingestEvidenceToGraphWithPersistence(cwd, entries)
+  } catch {
+    return null
+  }
 }
 
 export async function recordSubagentExecution(

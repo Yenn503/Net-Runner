@@ -10,6 +10,11 @@ export type NetRunnerSkillName =
   | 'report-generation'
   | 'attack-path-analysis'
   | 'apt-simulation'
+  | 'feedback-loop'
+  | 'statistical-verification'
+  | 'waf-detection'
+  | 'mcts-planning'
+  | 'oob-verification'
 
 export type NetRunnerSkillDefinition = {
   name: NetRunnerSkillName
@@ -94,6 +99,41 @@ export const NET_RUNNER_SKILL_DEFINITIONS: NetRunnerSkillDefinition[] = [
     title: 'APT Simulation',
     description:
       'Launch a threat simulation based on a specific APT group or target industry. Follows real-world attack chains mapped to MITRE ATT&CK techniques for realistic red-team exercises.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'feedback-loop',
+    title: 'Feedback Loop Engine',
+    description:
+      'Classify tool and HTTP failures into actionable categories (WAF, rate-limit, auth, timeout), select payload mutation strategies, and produce structured retry guidance with adaptive learning.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'statistical-verification',
+    title: 'Statistical Verification',
+    description:
+      "Confirm time-based and boolean-based blind injection vulnerabilities using Welch's t-test. Reduces false positives by comparing baseline vs payload response times or lengths with formal hypothesis testing.",
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'waf-detection',
+    title: 'WAF Detection & Bypass',
+    description:
+      'Fingerprint Web Application Firewalls from HTTP response data and map detected WAF types to specific bypass techniques. Supports Cloudflare, Akamai, Imperva, ModSecurity, AWS WAF, and 6 more.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'mcts-planning',
+    title: 'MCTS Attack Path Planning',
+    description:
+      'Use Monte Carlo Tree Search to discover optimal attack paths. Models the pentest as a decision tree with UCB1 exploration, simulates outcomes, and ranks next actions with agent assignments.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'oob-verification',
+    title: 'Out-of-Band Verification',
+    description:
+      'Generate and track OOB callback payloads for blind vulnerability confirmation (blind XXE, SSRF, RCE, SQLi, Log4Shell). Produces structured payloads and monitors callback status.',
     primaryExecutionModel: 'skills-and-tools',
   },
 ] as const

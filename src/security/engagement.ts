@@ -18,6 +18,7 @@ import {
   getRunStatePath,
 } from './paths.js'
 import { createDefaultSecurityRunState, writeSecurityRunState } from './runState.js'
+import { ensureIntelligenceState } from './intelligenceState.js'
 
 export type EngagementStatus = 'draft' | 'active' | 'paused' | 'closed'
 
@@ -241,6 +242,8 @@ export async function initializeNetRunnerProject(
       ),
     ),
   ])
+
+  await ensureIntelligenceState(options.cwd)
 
   return manifest
 }
