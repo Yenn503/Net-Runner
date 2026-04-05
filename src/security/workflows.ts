@@ -161,7 +161,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation'],
+    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification'],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -184,7 +184,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation'],
+    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification'],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -237,7 +237,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
+    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification', 'mcts-planning'],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -268,7 +268,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'evidence',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis'],
+    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'feedback-loop', 'statistical-verification', 'oob-verification', 'mcts-planning'],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -298,7 +298,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
+    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification', 'mcts-planning'],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',

@@ -20,6 +20,11 @@ import { registerUpdateConfigSkill } from './updateConfig.js'
 import { registerVerifySkill } from './verify.js'
 import { registerVulnAssessmentSkill } from './vulnAssessment.js'
 import { registerAptSimulationSkill } from './aptSimulation.js'
+import { registerFeedbackLoopSkill } from './feedbackLoop.js'
+import { registerStatisticalVerificationSkill } from './statisticalVerification.js'
+import { registerWafDetectionSkill } from './wafDetection.js'
+import { registerMctsPlanningSkill } from './mctsPlanning.js'
+import { registerOobVerificationSkill } from './oobVerification.js'
 
 /**
  * Initialize all bundled skills.
@@ -42,6 +47,11 @@ export function initBundledSkills(): void {
   registerReportGenerationSkill()
   registerAttackPathAnalysisSkill()
   registerAptSimulationSkill()
+  registerFeedbackLoopSkill()
+  registerStatisticalVerificationSkill()
+  registerWafDetectionSkill()
+  registerMctsPlanningSkill()
+  registerOobVerificationSkill()
   registerUpdateConfigSkill()
   registerKeybindingsSkill()
   registerVerifySkill()

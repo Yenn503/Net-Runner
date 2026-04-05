@@ -14,7 +14,7 @@ red team automation, AI security assessment, LLM security testing
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/License-Educational%20Use-red?style=for-the-badge)](#license)
 
-**12 Specialist Agents · 153 Red-Team Tools · 18 Capability Packs · 11 Pentest Skills · 7 Workflows · 10 APT Simulations**
+**12 Specialist Agents · 153 Red-Team Tools · 18 Capability Packs · 16 Pentest Skills · 7 Workflows · 10 APT Simulations**
 
 *Red-team runtime with workflow control, evidence, memory, and specialist agents.*
 
@@ -87,6 +87,28 @@ Pick an industry or a threat actor and Net-Runner loads the matching attack chai
 ```
 
 Full reference: [APT Simulation Docs](docs/apt-simulation/README.md) · [Industry Threat Map](docs/apt-simulation/industry-threat-map.md) · [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
+
+---
+
+## 🧠 Intelligence Engine
+
+Six modules that give the LLM runtime adaptive decision-making, formal verification, and automated bypass capabilities during live engagements.
+
+| Module | Skill | Purpose |
+|--------|-------|---------|
+| **Feedback Loop Engine** | `/feedback-loop` | Classifies failures (WAF, rate-limit, auth, timeout), mutates payloads, and produces adaptive retry plans with strategy tracking |
+| **Statistical Verifier** | `/statistical-verification` | Confirms blind injection with Welch's t-test — baseline vs payload response comparison with p-value and confidence intervals |
+| **WAF Detection & Bypass** | `/waf-detection` | Fingerprints 10+ WAFs from HTTP responses and maps each to ranked bypass techniques |
+| **MCTS Attack Planner** | `/mcts-planning` | Monte Carlo Tree Search over the attack state — ranks next actions and assigns specialist agents |
+| **Knowledge Graph** | — | In-memory entity/relation graph tracking hosts, services, vulns, and credentials with BFS path-finding |
+| **OOB Verification** | `/oob-verification` | Generates callback payloads for blind vulns (XXE, SSRF, RCE, SQLi, Log4Shell) and tracks confirmation status |
+
+These modules operate at two levels:
+
+- **Skill layer** — the engagement lead invokes skills like `/feedback-loop` or `/waf-detection` when the context calls for it
+- **Runtime middleware** — tool failures, WAF detection, and evidence ingestion happen **automatically** during execution. The middleware classifies failures, fingerprints WAFs on first HTTP contact, syncs findings into the knowledge graph, and persists intelligence state to `.netrunner/intelligence-state.json` for session continuity
+
+Full reference: [Intelligence Engine Docs](docs/intelligence-engine/README.md)
 
 ---
 
@@ -234,6 +256,7 @@ Everything the LLM finds, logs, and produces stays here. Agents store their memo
 - [APT Simulation Reference](docs/apt-simulation/README.md)
 - [Industry → Threat Actor Map](docs/apt-simulation/industry-threat-map.md)
 - [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
+- [Intelligence Engine Reference](docs/intelligence-engine/README.md)
 
 ---
 

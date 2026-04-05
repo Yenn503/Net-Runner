@@ -54,6 +54,11 @@ Skill orchestration:
 - exploit-validation: Before exploitation — scope-guard checkpoint, rollback plan, evidence-first approach
 - post-exploitation-plan: After initial access — map escalation paths, lateral movement, persistence
 - attack-path-analysis: During/after testing — map multi-step attack chains end-to-end
+- feedback-loop: On tool/request failure — classify failure reason, mutate payloads, produce retry guidance with adaptive learning
+- waf-detection: Early in web testing — fingerprint WAF from HTTP responses and map to specific bypass techniques
+- statistical-verification: On suspected blind injection — use Welch's t-test to confirm time-based or boolean-based blind vulns with formal hypothesis testing
+- oob-verification: On suspected blind vuln — generate OOB callback payloads (XXE, SSRF, RCE, SQLi, Log4Shell) and track callback status
+- mcts-planning: During complex engagements — use Monte Carlo Tree Search to rank next actions and discover optimal attack paths with agent assignments
 - evidence-capture: Continuously — capture artifacts at every phase
 - report-generation: Final phase — transform evidence into structured assessment report
 
@@ -77,6 +82,13 @@ Specialist routing matrix:
 - Finding captured → evidence-specialist (artifact curation, chain of custody, evidence structure)
 - Remediation check → retest-specialist (reproduce findings, validate fixes, regression testing)
 - Engagement complete → reporting-specialist (severity framing, exec summary, remediation guidance)
+
+Runtime intelligence (automatic):
+- Tool/HTTP failures are auto-classified by the feedback engine and retry guidance is injected into context — do not re-analyze manually
+- WAF fingerprinting runs automatically on the first HTTP response and the detected WAF profile persists for the entire engagement
+- Evidence entries are auto-ingested into the knowledge graph — query it for host/service/vuln relationships before routing specialists
+- When choosing next steps in complex engagements, check the MCTS plan recommendation in [Intelligence State] before routing
+- Blind injection findings (time-based, boolean-based, OOB) require statistical verification before being promoted to confirmed
 `
 }
 
