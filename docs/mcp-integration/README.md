@@ -1,6 +1,6 @@
 # MCP Integration
 
-Net-Runner exposes its entire tool harness over the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) so any MCP-compatible LLM can drive it. It also acts as an MCP **client**, connecting to external MCP servers for additional capabilities.
+Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat. It also acts as an MCP **client**, connecting to external MCP servers for additional capabilities.
 
 ---
 
@@ -9,24 +9,25 @@ Net-Runner exposes its entire tool harness over the [Model Context Protocol (MCP
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    External LLM                         │
-│  (Copilot · Claude Desktop · Cursor · custom agent)     │
+│  (Copilot · Claude Code · Cursor · Windsurf · …)       │
 │                                                         │
-│  Speaks MCP ──► calls Net-Runner tools                  │
+│  Speaks MCP ──► calls 8 nr_* tools                     │
+│  Uses own file tools for reading code / state / docs   │
 └────────────────────────┬────────────────────────────────┘
-                         │ stdio / SSE / HTTP
+                         │ stdio or httpStream
                          ▼
 ┌─────────────────────────────────────────────────────────┐
-│                   Net-Runner MCP Server                  │
+│              Net-Runner FastMCP Server                   │
 │                                                         │
-│  Exposes:                                               │
-│  • Bash / shell execution                               │
-│  • File read / write / edit                             │
-│  • 12 specialist agents (engagement-lead, recon, …)     │
-│  • 153 red-team tools via shell                         │
-│  • Skills, workflows, guardrails, evidence capture      │
-│  • Intelligence engine (WAF, feedback, MCTS, KG, OOB)  │
+│  8 tools (nr_* prefix):                                │
+│  • nr_exec          — shell execution (153 tools)      │
+│  • nr_engagement_*  — init, status                     │
+│  • nr_scope_check   — guardrail enforcement            │
+│  • nr_save_*        — finding + note evidence capture  │
+│  • nr_list_evidence — query evidence ledger            │
+│  • nr_discover      — agents/skills/workflows/caps     │
 │                                                         │
-│  src/entrypoints/mcp.ts                                 │
+│  src/mcp/server.ts                                     │
 └────────────────────────┬────────────────────────────────┘
                          │
                          ▼
@@ -42,101 +43,43 @@ Net-Runner exposes its entire tool harness over the [Model Context Protocol (MCP
 
 Two directions:
 
-- **Inbound** — an external LLM connects TO Net-Runner and uses it as a tool server
+- **Inbound** — an external LLM connects TO Net-Runner and uses its 8 tools
 - **Outbound** — Net-Runner connects TO external MCP servers for additional capabilities
 
 ---
 
 ## Direction 1: External LLM → Net-Runner (Inbound)
 
-The external LLM treats Net-Runner as an MCP tool server. It sees all tools, can run shell commands, delegate to specialist agents, and use the full harness.
+The external LLM treats Net-Runner as an MCP tool server with 8 `nr_*` tools. `nr_exec` is the workhorse — all 153 pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
 
 ### Prerequisites
 
 ```bash
 bun install
-bun run build
 ```
 
-### GitHub Copilot (VS Code)
+No build step needed — the FastMCP server runs directly from TypeScript source via `bun`.
 
-1. Open your project in VS Code with Copilot installed.
+### Tool surface (8 tools)
 
-2. Create or edit `.vscode/mcp.json` in your project root:
+| Tool | Purpose |
+|---|---|
+| `nr_exec` | **Shell execution — the workhorse.** All 153 pentest tools run here. |
+| `nr_engagement_init` | Initialize `.netrunner/` engagement with workflow, targets, scope |
+| `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
+| `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
+| `nr_save_finding` | Record security finding with severity, evidence, CWE |
+| `nr_save_note` | Append note to evidence ledger |
+| `nr_list_evidence` | Query evidence entries with optional type filter |
+| `nr_discover` | Progressive disclosure — list agents, skills, workflows, or capabilities on demand |
 
-```json
-{
-  "servers": {
-    "net-runner": {
-      "type": "stdio",
-      "command": "node",
-      "args": [
-        "/absolute/path/to/net-runner-release/dist/cli.mjs",
-        "mcp",
-        "serve"
-      ]
-    }
-  }
-}
-```
+### Client configurations
 
-3. Copilot will discover the server and list Net-Runner's tools in the MCP panel.
+Replace `/path/to/net-runner-release` with your actual clone path.
 
-4. You talk to Copilot through the normal Copilot Chat interface. When Copilot needs to run a pentest tool, read a file, or delegate to a specialist agent, it calls Net-Runner tools behind the scenes.
+#### Cursor
 
-### GitHub Copilot (CLI)
-
-```bash
-gh copilot config set mcp-servers '{
-  "net-runner": {
-    "type": "stdio",
-    "command": "node",
-    "args": ["/absolute/path/to/net-runner-release/dist/cli.mjs", "mcp", "serve"]
-  }
-}'
-```
-
-### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
-
-```json
-{
-  "mcpServers": {
-    "net-runner": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/net-runner-release/dist/cli.mjs",
-        "mcp",
-        "serve"
-      ]
-    }
-  }
-}
-```
-
-### Cursor
-
-Add to Cursor's MCP settings (`Settings → MCP Servers → Add`):
-
-```json
-{
-  "net-runner": {
-    "command": "node",
-    "args": [
-      "/absolute/path/to/net-runner-release/dist/cli.mjs",
-      "mcp",
-      "serve"
-    ]
-  }
-}
-```
-
-### Windsurf (Cascade)
-
-**Option A — stdio (Windsurf manages the server):**
-
-Add to `.windsurf/mcp.json` in the project root:
+Create `.cursor/mcp.json` in the project root, or `~/.cursor/mcp.json` for global:
 
 ```json
 {
@@ -144,58 +87,106 @@ Add to `.windsurf/mcp.json` in the project root:
     "net-runner": {
       "command": "bun",
       "args": ["run", "src/mcp/server.ts", "--stdio"],
-      "cwd": "/absolute/path/to/net-runner-release"
+      "env": { "NR_CWD": "/path/to/net-runner-release" }
     }
   }
 }
 ```
 
-**Option B — httpStream (terminal view with banner and live logs):**
+#### Claude Code
 
-1. Start the server in a terminal:
+Via CLI (easiest):
 
 ```bash
-bun run mcp:server
+claude mcp add --transport stdio net-runner -- bun run /path/to/net-runner-release/src/mcp/server.ts --stdio
 ```
 
-2. Add to your Windsurf global config (`~/.codeium/windsurf/mcp_config.json`):
+Or add to `.mcp.json` in the project root:
 
 ```json
 {
   "mcpServers": {
     "net-runner": {
-      "serverUrl": "http://localhost:8745/mcp"
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "env": { "NR_CWD": "/path/to/net-runner-release" }
     }
   }
 }
 ```
 
-The terminal shows the banner, all registered tools, and live logs of every tool call.
+Scopes: `--scope local` (default, `~/.claude.json`), `--scope project` (`.mcp.json`), or `--scope user` (`~/.claude.json`).
 
-### Any MCP-compatible client
+#### Claude Desktop
 
-**stdio (standard):**
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "bun",
+      "args": ["run", "/path/to/net-runner-release/src/mcp/server.ts", "--stdio"],
+      "env": { "NR_CWD": "/path/to/net-runner-release" }
+    }
+  }
+}
+```
+
+#### VS Code / GitHub Copilot
+
+Create `.vscode/mcp.json` in the project root:
+
+```json
+{
+  "servers": {
+    "net-runner": {
+      "type": "stdio",
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "env": { "NR_CWD": "${workspaceFolder}" }
+    }
+  }
+}
+```
+
+Note: VS Code uses `"servers"` (not `"mcpServers"`) and supports `${workspaceFolder}`.
+
+#### Windsurf
+
+Create `.windsurf/mcp.json` in the project root, or add to `~/.codeium/windsurf/mcp_config.json` for global:
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "cwd": "/path/to/net-runner-release"
+    }
+  }
+}
+```
+
+#### Any other MCP client
 
 ```
-command: node
-args:    ["/path/to/net-runner-release/dist/cli.mjs", "mcp", "serve"]
+command:   bun
+args:      run src/mcp/server.ts --stdio
+cwd:       /path/to/net-runner-release
 transport: stdio
 ```
 
-**FastMCP stdio (from source, no build required):**
+### Terminal view (httpStream mode)
 
-```
-command: bun
-args:    ["run", "src/mcp/server.ts", "--stdio"]
-cwd:     /path/to/net-runner-release
-```
-
-**FastMCP httpStream (terminal view):**
+Run the server standalone to see the live banner, tool list, and session/call logs:
 
 ```bash
-bun run mcp:server          # starts on http://localhost:8745/mcp
-NR_PORT=9000 bun run mcp:server  # custom port
+bun run mcp:server              # http://localhost:8745/mcp
+NR_PORT=9000 bun run mcp:server # custom port
 ```
+
+The terminal shows a sunset gradient banner, all 8 registered tools, and live activity logs with session IDs, durations, and result sizes.
 
 ---
 
@@ -290,15 +281,14 @@ You can run Net-Runner in CLI mode (with its own LLM) **and** expose it as an MC
 
 ## What the External LLM Gets
 
-When an LLM connects to Net-Runner via MCP, it sees:
+Through 8 MCP tools + its own built-in file/edit tools:
 
-- **Shell execution** — run any command (nmap, sqlmap, nuclei, etc.)
-- **File operations** — read, write, edit files in the project
-- **12 specialist agents** — delegate to engagement-lead, recon-specialist, web-testing-specialist, etc.
-- **Agent memory** — agents remember findings across sessions via `.netrunner/memory/`
-- **Guardrails** — all actions checked against scope and impact rules
-- **Evidence capture** — findings logged to `.netrunner/evidence/`
-- **Intelligence engine** — WAF detection, feedback loop, MCTS planning, knowledge graph
+- **Shell execution** (`nr_exec`) — run any of 153 pentest tools (nmap, sqlmap, nuclei, burp, etc.)
+- **Engagement lifecycle** (`nr_engagement_init`, `nr_engagement_status`) — initialize and track assessments
+- **Guardrails** (`nr_scope_check`) — verify actions are in scope before execution
+- **Evidence** (`nr_save_finding`, `nr_save_note`, `nr_list_evidence`) — capture findings and notes
+- **Discovery** (`nr_discover`) — explore 12 agents, 11 skills, 7+ workflows, and 153 capabilities on demand
+- **File access** — the LLM reads agent prompts, skill definitions, intelligence state, and evidence files using its own file tools (no MCP duplication needed)
 
 The external LLM becomes the "brain" and Net-Runner becomes the "hands."
 
@@ -314,15 +304,18 @@ The external LLM becomes the "brain" and Net-Runner becomes the "hands."
 
 ---
 
-## Typical Copilot Workflow
+## Typical Workflow
 
-1. Open your pentest project in VS Code
-2. Configure `.vscode/mcp.json` to point at Net-Runner
-3. Open Copilot Chat
-4. Type: "Run an nmap scan on 10.10.10.1 and save the results"
-5. Copilot calls Net-Runner's Bash tool → nmap runs → results come back to Copilot
-6. Copilot summarizes the findings in chat
-7. Type: "Now run nuclei against the open web ports"
-8. Copilot calls Net-Runner again → nuclei runs → findings captured
+1. Open your pentest project in your IDE
+2. Configure MCP to point at Net-Runner (see client configs above)
+3. Open your AI chat panel (Copilot Chat, Cursor, Cascade, Claude Code, etc.)
+4. Type: "Initialize an engagement for 10.10.10.1 with web-app-testing workflow"
+5. LLM calls `nr_engagement_init` → `.netrunner/` project created
+6. Type: "Run an nmap scan on the target"
+7. LLM calls `nr_exec` → nmap runs → results come back
+8. Type: "Save the open ports as a finding"
+9. LLM calls `nr_save_finding` → evidence captured
+10. Type: "Now run nuclei against the open web ports"
+11. LLM calls `nr_exec` → nuclei runs → findings captured
 
-You stay in VS Code the whole time. Net-Runner handles the tool execution, evidence capture, and guardrail enforcement.
+You stay in your IDE the whole time. Net-Runner handles tool execution, evidence capture, and guardrail enforcement.

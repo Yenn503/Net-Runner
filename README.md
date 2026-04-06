@@ -266,7 +266,10 @@ Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Executi
 
 ### Connect from any MCP client
 
-**Windsurf** — add to `.windsurf/mcp.json` (project-level) or `~/.codeium/windsurf/mcp_config.json` (global):
+Replace `/path/to/net-runner-release` with your actual clone path.
+
+<details>
+<summary><strong>Cursor</strong> — <code>.cursor/mcp.json</code> (project) or <code>~/.cursor/mcp.json</code> (global)</summary>
 
 ```json
 {
@@ -274,13 +277,53 @@ Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Executi
     "net-runner": {
       "command": "bun",
       "args": ["run", "src/mcp/server.ts", "--stdio"],
-      "cwd": "/path/to/net-runner-release"
+      "env": { "NR_CWD": "/path/to/net-runner-release" }
     }
   }
 }
 ```
+</details>
 
-**VS Code Copilot** — create `.vscode/mcp.json`:
+<details>
+<summary><strong>Claude Code</strong> — CLI or <code>.mcp.json</code> (project) or <code>~/.claude.json</code> (user)</summary>
+
+```bash
+claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
+```
+
+Or add to `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "env": { "NR_CWD": "/path/to/net-runner-release" }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Claude Desktop</strong> — <code>claude_desktop_config.json</code></summary>
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "bun",
+      "args": ["run", "/path/to/net-runner-release/src/mcp/server.ts", "--stdio"],
+      "env": { "NR_CWD": "/path/to/net-runner-release" }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>VS Code / GitHub Copilot</strong> — <code>.vscode/mcp.json</code></summary>
 
 ```json
 {
@@ -289,13 +332,15 @@ Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Executi
       "type": "stdio",
       "command": "bun",
       "args": ["run", "src/mcp/server.ts", "--stdio"],
-      "cwd": "/path/to/net-runner-release"
+      "env": { "NR_CWD": "${workspaceFolder}" }
     }
   }
 }
 ```
+</details>
 
-**Claude Desktop** — add to `claude_desktop_config.json`:
+<details>
+<summary><strong>Windsurf</strong> — <code>.windsurf/mcp.json</code> (project) or <code>~/.codeium/windsurf/mcp_config.json</code> (global)</summary>
 
 ```json
 {
@@ -308,10 +353,11 @@ Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Executi
   }
 }
 ```
+</details>
 
 ### Terminal view (httpStream mode)
 
-Start the server to see a live banner, tool list, and all call/session logs:
+Run the server standalone to see the live banner, tool list, and session/call logs:
 
 ```bash
 bun run mcp:server              # http://localhost:8745/mcp
@@ -320,7 +366,7 @@ NR_PORT=9000 bun run mcp:server # custom port
 
 ### Net-Runner → External MCP Servers (outbound)
 
-Net-Runner can also connect to external MCP servers for additional tools. Add them via `.mcp.json` or the CLI:
+Net-Runner can also connect to external MCP servers for additional tools:
 
 ```bash
 net-runner mcp add my-scanner -- node path/to/scanner-server.js
