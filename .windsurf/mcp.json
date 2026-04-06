@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "cwd": "/Users/testinglaptop/CascadeProjects/Net-Runner/net-runner-release"
+    }
+  }
+}
