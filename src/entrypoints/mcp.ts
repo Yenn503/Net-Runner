@@ -28,6 +28,11 @@ import { jsonStringify } from '../utils/slowOperations.js'
 import { getErrorParts } from '../utils/toolErrors.js'
 import { zodToJsonSchema } from '../utils/zodToJsonSchema.js'
 
+// Build-time constants injected by Bun bundler
+declare const MACRO: {
+  VERSION: string
+}
+
 type ToolInput = Tool['inputSchema']
 type ToolOutput = Tool['outputSchema']
 

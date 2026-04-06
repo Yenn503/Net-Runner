@@ -247,13 +247,38 @@ Everything the LLM finds, logs, and produces stays here. Agents store their memo
 
 ---
 
-## � MCP Integration
+## 🔌 MCP Integration
 
-Net-Runner works in two directions over the [Model Context Protocol](https://modelcontextprotocol.io/):
+Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat.
 
-### External LLM → Net-Runner (inbound)
+### Tool surface (8 tools, `nr_*` prefix)
 
-Connect any MCP-compatible LLM — **GitHub Copilot**, **Claude Desktop**, **Cursor**, **Windsurf** — and it can drive the full harness: 153 tools, 12 specialist agents, evidence capture, guardrails, and the intelligence engine.
+| Tool | Purpose |
+|---|---|
+| `nr_exec` | **Shell execution — the workhorse.** All 153 pentest tools run here. |
+| `nr_engagement_init` | Initialize `.netrunner/` engagement with workflow, targets, scope |
+| `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
+| `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
+| `nr_save_finding` | Record security finding with severity, evidence, CWE |
+| `nr_save_note` | Append note to evidence ledger |
+| `nr_list_evidence` | Query evidence entries with optional type filter |
+| `nr_discover` | Progressive disclosure — list agents, skills, workflows, or capabilities on demand |
+
+### Connect from any MCP client
+
+**Windsurf** — add to `.windsurf/mcp.json` (project-level) or `~/.codeium/windsurf/mcp_config.json` (global):
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "cwd": "/path/to/net-runner-release"
+    }
+  }
+}
+```
 
 **VS Code Copilot** — create `.vscode/mcp.json`:
 
@@ -262,8 +287,9 @@ Connect any MCP-compatible LLM — **GitHub Copilot**, **Claude Desktop**, **Cur
   "servers": {
     "net-runner": {
       "type": "stdio",
-      "command": "node",
-      "args": ["/path/to/net-runner-release/dist/cli.mjs", "mcp", "serve"]
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "cwd": "/path/to/net-runner-release"
     }
   }
 }
@@ -275,14 +301,22 @@ Connect any MCP-compatible LLM — **GitHub Copilot**, **Claude Desktop**, **Cur
 {
   "mcpServers": {
     "net-runner": {
-      "command": "node",
-      "args": ["/path/to/net-runner-release/dist/cli.mjs", "mcp", "serve"]
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "cwd": "/path/to/net-runner-release"
     }
   }
 }
 ```
 
-You talk to the LLM through **its own interface** (Copilot Chat, Claude Desktop, Cursor AI panel). The LLM calls Net-Runner tools transparently — you stay in your IDE the whole time.
+### Terminal view (httpStream mode)
+
+Start the server to see a live banner, tool list, and all call/session logs:
+
+```bash
+bun run mcp:server              # http://localhost:8745/mcp
+NR_PORT=9000 bun run mcp:server # custom port
+```
 
 ### Net-Runner → External MCP Servers (outbound)
 
@@ -292,10 +326,6 @@ Net-Runner can also connect to external MCP servers for additional tools. Add th
 net-runner mcp add my-scanner -- node path/to/scanner-server.js
 net-runner mcp list
 ```
-
-### Both directions simultaneously
-
-You can run Net-Runner in CLI mode with its own LLM **and** expose it as an MCP server for another LLM at the same time. These are separate processes.
 
 Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
 

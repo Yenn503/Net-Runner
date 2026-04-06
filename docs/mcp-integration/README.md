@@ -134,26 +134,47 @@ Add to Cursor's MCP settings (`Settings → MCP Servers → Add`):
 
 ### Windsurf (Cascade)
 
+**Option A — stdio (Windsurf manages the server):**
+
 Add to `.windsurf/mcp.json` in the project root:
 
 ```json
 {
   "mcpServers": {
     "net-runner": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/net-runner-release/dist/cli.mjs",
-        "mcp",
-        "serve"
-      ]
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "cwd": "/absolute/path/to/net-runner-release"
     }
   }
 }
 ```
 
+**Option B — httpStream (terminal view with banner and live logs):**
+
+1. Start the server in a terminal:
+
+```bash
+bun run mcp:server
+```
+
+2. Add to your Windsurf global config (`~/.codeium/windsurf/mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "serverUrl": "http://localhost:8745/mcp"
+    }
+  }
+}
+```
+
+The terminal shows the banner, all registered tools, and live logs of every tool call.
+
 ### Any MCP-compatible client
 
-The pattern is always the same:
+**stdio (standard):**
 
 ```
 command: node
@@ -161,12 +182,19 @@ args:    ["/path/to/net-runner-release/dist/cli.mjs", "mcp", "serve"]
 transport: stdio
 ```
 
-If you're running from source without building:
+**FastMCP stdio (from source, no build required):**
 
 ```
 command: bun
-args:    ["run", "mcp"]
+args:    ["run", "src/mcp/server.ts", "--stdio"]
 cwd:     /path/to/net-runner-release
+```
+
+**FastMCP httpStream (terminal view):**
+
+```bash
+bun run mcp:server          # starts on http://localhost:8745/mcp
+NR_PORT=9000 bun run mcp:server  # custom port
 ```
 
 ---
