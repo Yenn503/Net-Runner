@@ -2,6 +2,8 @@
 
 Net-Runner's intelligence engine is a set of six modules under `src/security/` that give the LLM runtime adaptive reasoning during live engagements. Each module is registered as a skill and invoked automatically by the engagement lead when the situation calls for it.
 
+The skill layer is now **code-backed**. The bundled intelligence skills under `src/skills/bundled/` call the real TypeScript modules and format live results from persisted engagement state, evidence, and explicit structured input. The same core modules are also wired into the runtime middleware, so the skill layer and automatic execution path stay aligned.
+
 ---
 
 ## Modules
@@ -176,6 +178,21 @@ The intelligence modules are wired into workflows via `src/security/workflows.ts
 | **ad-testing** | All six (including mcts-planning) |
 
 The engagement lead's prompt includes orchestration guidance for when to invoke each skill. The system does not require manual invocation — the LLM recognises the context and triggers the appropriate module.
+
+## Code-Backed Skill Runtime
+
+The bundled intelligence skills are mediated through `src/skills/bundled/intelligenceSkillRuntime.ts`.
+
+That runtime does three things:
+
+- **Uses the same core modules as runtime middleware** — feedback, WAF detection, MCTS planning, statistical verification, and OOB generation all call the real `src/security/` implementations
+- **Consumes persisted engagement context** — skills read `.netrunner/intelligence-state.json`, engagement metadata, and evidence when available
+- **Formats operator-facing outputs** — the returned skill text is a computed result, not a static instruction block
+
+This keeps the behavior consistent across two paths:
+
+- **Automatic runtime activation** from `nr_exec`, evidence ingestion, and blind-finding gating
+- **Explicit skill invocation** from the engagement lead or operator when deeper analysis is needed
 
 ---
 

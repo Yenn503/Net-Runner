@@ -4,12 +4,73 @@ import { getAWSRegion, isEnvTruthy } from '../envUtils.js'
 import { logError } from '../log.js'
 import { getAWSClientProxyConfig } from '../proxy.js'
 
+const importRuntimeModule = new Function(
+  'specifier',
+  'return import(specifier)',
+) as (specifier: string) => Promise<Record<string, unknown>>
+
+type BedrockCredentials = {
+  accessKeyId: string
+  secretAccessKey: string
+  sessionToken?: string
+}
+
+type BedrockClientConfig = {
+  region: string
+  endpoint?: string
+  credentials?: BedrockCredentials
+  requestHandler?: unknown
+  httpAuthSchemes?: unknown[]
+  httpAuthSchemeProvider?: () => unknown[]
+}
+
+type BedrockInferenceProfileSummary = {
+  inferenceProfileId?: string
+}
+
+type BedrockListInferenceProfilesResponse = {
+  inferenceProfileSummaries?: BedrockInferenceProfileSummary[]
+  nextToken?: string
+}
+
+type BedrockGetInferenceProfileResponse = {
+  models?: Array<{
+    modelArn?: string
+  }>
+}
+
+type BedrockClientLike = {
+  send(command: unknown): Promise<unknown>
+}
+
+type BedrockModule = {
+  BedrockClient: new (config: BedrockClientConfig) => BedrockClientLike
+  ListInferenceProfilesCommand: new (input: {
+    nextToken?: string
+    typeEquals: 'SYSTEM_DEFINED'
+  }) => unknown
+  GetInferenceProfileCommand: new (input: {
+    inferenceProfileIdentifier: string
+  }) => unknown
+}
+
+async function loadBedrockModule(): Promise<BedrockModule> {
+  try {
+    return (await importRuntimeModule('@aws-sdk/client-bedrock')) as BedrockModule
+  } catch (error) {
+    throw new Error(
+      'Bedrock support requires @aws-sdk/client-bedrock to be installed',
+      { cause: error },
+    )
+  }
+}
+
 export const getBedrockInferenceProfiles = memoize(async function (): Promise<
   string[]
 > {
   const [client, { ListInferenceProfilesCommand }] = await Promise.all([
     createBedrockClient(),
-    import('@aws-sdk/client-bedrock'),
+    loadBedrockModule(),
   ])
   const allProfiles = []
   let nextToken: string | undefined
@@ -20,7 +81,8 @@ export const getBedrockInferenceProfiles = memoize(async function (): Promise<
         ...(nextToken && { nextToken }),
         typeEquals: 'SYSTEM_DEFINED',
       })
-      const response = await client.send(command)
+      const response =
+        (await client.send(command)) as BedrockListInferenceProfilesResponse
 
       if (response.inferenceProfileSummaries) {
         allProfiles.push(...response.inferenceProfileSummaries)
@@ -48,7 +110,7 @@ export function findFirstMatch(
 }
 
 async function createBedrockClient() {
-  const { BedrockClient } = await import('@aws-sdk/client-bedrock')
+  const { BedrockClient } = await loadBedrockModule()
   // Match the Anthropic Bedrock SDK's region behavior exactly:
   // - Reads AWS_REGION or AWS_DEFAULT_REGION env vars (not AWS config files)
   // - Falls back to 'us-east-1' if neither is set
@@ -57,7 +119,7 @@ async function createBedrockClient() {
 
   const skipAuth = isEnvTruthy(process.env.NETRUNNER_SKIP_BEDROCK_AUTH)
 
-  const clientConfig: ConstructorParameters<typeof BedrockClient>[0] = {
+  const clientConfig: BedrockClientConfig = {
     region,
     ...(process.env.ANTHROPIC_BEDROCK_BASE_URL && {
       endpoint: process.env.ANTHROPIC_BEDROCK_BASE_URL,
@@ -144,12 +206,13 @@ export const getInferenceProfileBackingModel = memoize(async function (
   try {
     const [client, { GetInferenceProfileCommand }] = await Promise.all([
       createBedrockClient(),
-      import('@aws-sdk/client-bedrock'),
+      loadBedrockModule(),
     ])
     const command = new GetInferenceProfileCommand({
       inferenceProfileIdentifier: profileId,
     })
-    const response = await client.send(command)
+    const response =
+      (await client.send(command)) as BedrockGetInferenceProfileResponse
 
     if (!response.models || response.models.length === 0) {
       return null

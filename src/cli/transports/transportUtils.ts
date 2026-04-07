@@ -2,7 +2,7 @@ import { URL } from 'url'
 import { isEnvTruthy } from '../../utils/envUtils.js'
 import { HybridTransport } from './HybridTransport.js'
 import { SSETransport } from './SSETransport.js'
-import type { Transport } from './Transport.js'
+import type { Transport } from './Transport.ts'
 import { WebSocketTransport } from './WebSocketTransport.js'
 
 /**

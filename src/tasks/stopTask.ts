@@ -6,6 +6,7 @@ import type { TaskStateBase } from '../Task.js'
 import { getTaskByType } from '../tasks.js'
 import { emitTaskTerminatedSdk } from '../utils/sdkEventQueue.js'
 import { isLocalShellTask } from './LocalShellTask/guards.js'
+import { markTaskNotified } from './LocalShellTask/LocalShellTask.js'
 
 export class StopTaskError extends Error {
   constructor(
@@ -68,21 +69,11 @@ export async function stopTask(
   // suppress — the AbortError catch sends a notification carrying
   // extractPartialResult(agentMessages), which is the payload not noise.
   if (isLocalShellTask(task)) {
-    let suppressed = false
-    setAppState(prev => {
-      const prevTask = prev.tasks[taskId]
-      if (!prevTask || prevTask.notified) {
-        return prev
-      }
-      suppressed = true
-      return {
-        ...prev,
-        tasks: {
-          ...prev.tasks,
-          [taskId]: { ...prevTask, notified: true },
-        },
-      }
-    })
+    const prevTask = getAppState().tasks?.[taskId] as TaskStateBase | undefined
+    const suppressed = prevTask?.notified !== true
+    if (suppressed) {
+      markTaskNotified(taskId, setAppState)
+    }
     // Suppressing the XML notification also suppresses print.ts's parsed
     // task_notification SDK event — emit it directly so SDK consumers see
     // the task close.

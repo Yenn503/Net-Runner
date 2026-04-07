@@ -33,7 +33,6 @@ import installGitHubApp from './commands/install-github-app/index.js'
 import installSlackApp from './commands/install-slack-app/index.js'
 import breakCache from './commands/break-cache/index.js'
 import mcp from './commands/mcp/index.js'
-import mobile from './commands/mobile/index.js'
 import onboarding from './commands/onboarding/index.js'
 import pr_comments from './commands/pr_comments/index.js'
 import report from './commands/report/index.js'
@@ -83,45 +82,23 @@ const remoteControlServerCommand =
 const voiceCommand = feature('VOICE_MODE')
   ? require('./commands/voice/index.js').default
   : null
-const forceSnip = feature('HISTORY_SNIP')
-  ? require('./commands/force-snip.js').default
-  : null
-const workflowsCmd = feature('WORKFLOW_SCRIPTS')
-  ? (
-      require('./commands/workflows/index.js') as typeof import('./commands/workflows/index.js')
-    ).default
-  : null
+const forceSnip = null
+const workflowsCmd = null
 const webCmd = feature('CCR_REMOTE_SETUP')
-  ? (
-      require('./commands/remote-setup/index.js') as typeof import('./commands/remote-setup/index.js')
-    ).default
+  ? require('./commands/remote-setup/index.js').default
   : null
-const clearSkillIndexCache = feature('EXPERIMENTAL_SKILL_SEARCH')
-  ? (
-      require('./services/skillSearch/localSearch.js') as typeof import('./services/skillSearch/localSearch.js')
-    ).clearSkillIndexCache
-  : null
-const subscribePr = feature('KAIROS_GITHUB_WEBHOOKS')
-  ? require('./commands/subscribe-pr.js').default
-  : null
-const ultraplan = feature('ULTRAPLAN')
-  ? require('./commands/ultraplan.js').default
-  : null
+const clearSkillIndexCache = (): void => {}
+const subscribePr = null
+const ultraplan = null
 const torch = feature('TORCH') ? require('./commands/torch.js').default : null
 const peersCmd = feature('UDS_INBOX')
-  ? (
-      require('./commands/peers/index.js') as typeof import('./commands/peers/index.js')
-    ).default
+  ? require('./commands/peers/index.js').default
   : null
 const forkCmd = feature('FORK_SUBAGENT')
-  ? (
-      require('./commands/fork/index.js') as typeof import('./commands/fork/index.js')
-    ).default
+  ? require('./commands/fork/index.js').default
   : null
 const buddy = feature('BUDDY')
-  ? (
-      require('./commands/buddy/index.js') as typeof import('./commands/buddy/index.js')
-    ).default
+  ? require('./commands/buddy/index.js').default
   : null
 /* eslint-enable @typescript-eslint/no-require-imports */
 import thinkback from './commands/thinkback/index.js'
@@ -143,10 +120,6 @@ import mockLimits from './commands/mock-limits/index.js'
 import bridgeKick from './commands/bridge-kick.js'
 import version from './commands/version.js'
 import summary from './commands/summary/index.js'
-import {
-  resetLimits,
-  resetLimitsNonInteractive,
-} from './commands/reset-limits/index.js'
 import antTrace from './commands/ant-trace/index.js'
 import perfIssue from './commands/perf-issue/index.js'
 import sandboxToggle from './commands/sandbox-toggle/index.js'
@@ -211,6 +184,12 @@ import {
   getCommandName,
   isCommandEnabled,
 } from './types/command.js'
+
+const resetLimitsModule = require('./commands/reset-limits/index.js') as {
+  resetLimits: Command
+  resetLimitsNonInteractive: Command
+}
+const { resetLimits, resetLimitsNonInteractive } = resetLimitsModule
 
 // Re-export types from the centralized location
 export type {
@@ -291,7 +270,6 @@ const COMMANDS = memoize((): Command[] => [
   installSlackApp,
   mcp,
   memory,
-  mobile,
   model,
   outputStyle,
   remoteEnv,
@@ -404,11 +382,7 @@ async function getSkills(cwd: string): Promise<{
 }
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-const getWorkflowCommands = feature('WORKFLOW_SCRIPTS')
-  ? (
-      require('./tools/WorkflowTool/createWorkflowCommand.js') as typeof import('./tools/WorkflowTool/createWorkflowCommand.js')
-    ).getWorkflowCommands
-  : null
+const getWorkflowCommands = async (_cwd: string): Promise<Command[]> => []
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 /**
@@ -460,7 +434,7 @@ const loadAllCommands = memoize(async (cwd: string): Promise<Command[]> => {
   ] = await Promise.all([
     getSkills(cwd),
     getPluginCommands(),
-    getWorkflowCommands ? getWorkflowCommands(cwd) : Promise.resolve([]),
+    getWorkflowCommands(cwd),
   ])
 
   return [
@@ -534,7 +508,7 @@ export function clearCommandMemoizationCaches(): void {
   // built ON TOP of getSkillToolCommands/getCommands. Clearing only the inner
   // caches is a no-op for the outer — lodash memoize returns the cached result
   // without ever reaching the cleared inners. Must clear it explicitly.
-  clearSkillIndexCache?.()
+  clearSkillIndexCache()
 }
 
 export function clearCommandsCache(): void {
@@ -639,7 +613,6 @@ export const REMOTE_SAFE_COMMANDS: Set<Command> = new Set([
   keybindings, // Keybinding management
   statusline, // Status line toggle
   stickers, // Stickers
-  mobile, // Mobile QR code
 ])
 
 /**

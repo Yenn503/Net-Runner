@@ -9,7 +9,7 @@ import {
   NON_REBINDABLE,
   normalizeKeyForComparison,
 } from './reservedShortcuts.js'
-import type { KeybindingBlock } from './types.js'
+import type { KeybindingBlock, KeybindingValue } from './types.js'
 
 /**
  * Filter out reserved shortcuts that cannot be rebound.
@@ -22,7 +22,7 @@ function filterReservedShortcuts(blocks: KeybindingBlock[]): KeybindingBlock[] {
 
   return blocks
     .map(block => {
-      const filteredBindings: Record<string, string | null> = {}
+      const filteredBindings: Record<string, KeybindingValue> = {}
       for (const [key, action] of Object.entries(block.bindings)) {
         if (!reservedKeys.has(normalizeKeyForComparison(key))) {
           filteredBindings[key] = action

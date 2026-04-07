@@ -1,4 +1,5 @@
 import type { ToolUseContext } from '../../../Tool.js'
+import type { TaskStateBase } from '../../../Task.js'
 import {
   findTeammateTaskByAgentId,
   requestTeammateShutdown,
@@ -203,7 +204,10 @@ export class InProcessBackend implements TeammateExecutor {
 
     // Get current AppState to find the task
     const state = this.context.getAppState()
-    const task = findTeammateTaskByAgentId(agentId, state.tasks)
+    const task = findTeammateTaskByAgentId(
+      agentId,
+      state.tasks as Record<string, TaskStateBase>,
+    )
 
     if (!task) {
       logForDebugging(
@@ -270,7 +274,10 @@ export class InProcessBackend implements TeammateExecutor {
 
     // Get current AppState to find the task
     const state = this.context.getAppState()
-    const task = findTeammateTaskByAgentId(agentId, state.tasks)
+    const task = findTeammateTaskByAgentId(
+      agentId,
+      state.tasks as Record<string, TaskStateBase>,
+    )
 
     if (!task) {
       logForDebugging(
@@ -307,7 +314,10 @@ export class InProcessBackend implements TeammateExecutor {
 
     // Get current AppState to find the task
     const state = this.context.getAppState()
-    const task = findTeammateTaskByAgentId(agentId, state.tasks)
+    const task = findTeammateTaskByAgentId(
+      agentId,
+      state.tasks as Record<string, TaskStateBase>,
+    )
 
     if (!task) {
       logForDebugging(

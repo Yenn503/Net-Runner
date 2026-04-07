@@ -36,7 +36,11 @@ function resumeHelpMessage(result: ResumeResult): string {
       return `Found ${result.count} sessions matching ${chalk.bold(result.arg)}. Please use /resume to pick a specific session.`;
   }
 }
-function ResumeError(t0) {
+function ResumeError(t0: {
+  message: string;
+  args: string;
+  onDone: () => void;
+}) {
   const $ = _c(10);
   const {
     message,
@@ -246,7 +250,7 @@ export const call: LocalJSXCommandCall = async (onDone, context, args) => {
     });
     if (titleMatches.length === 1) {
       const log = titleMatches[0]!;
-      const sessionId = getSessionIdFromLog(log);
+      const sessionId = validateUuid(getSessionIdFromLog(log));
       if (sessionId) {
         const fullLog = isLiteLog(log) ? await loadFullLog(log) : log;
         void onResume(sessionId, fullLog, 'slash_command_title');

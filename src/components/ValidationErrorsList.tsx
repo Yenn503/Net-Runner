@@ -59,7 +59,15 @@ function buildNestedTree(errors: ValidationError[]): TreeNode {
 /**
  * Groups and displays validation errors using treeify with deduplication
  */
-export function ValidationErrorsList(t0) {
+type ValidationErrorsListProps = {
+  errors: ValidationError[];
+};
+type SuggestionPair = {
+  suggestion?: string;
+  docLink?: string;
+};
+
+export function ValidationErrorsList(t0: ValidationErrorsListProps): React.ReactNode {
   const $ = _c(9);
   const {
     errors
@@ -125,10 +133,10 @@ export function ValidationErrorsList(t0) {
   }
   return t3;
 }
-function _temp3(pair, index) {
+function _temp3(pair: SuggestionPair, index: number): React.ReactNode {
   return <Box key={`suggestion-pair-${index}`} flexDirection="column" marginBottom={1}>{pair.suggestion && <Text dimColor={true} wrap="wrap">{pair.suggestion}</Text>}{pair.docLink && <Text dimColor={true} wrap="wrap">Learn more: {pair.docLink}</Text>}</Box>;
 }
-function _temp2(a, b) {
+function _temp2(a: ValidationError, b: ValidationError): number {
   if (!a.path && b.path) {
     return -1;
   }
@@ -137,7 +145,7 @@ function _temp2(a, b) {
   }
   return (a.path || "").localeCompare(b.path || "");
 }
-function _temp(acc, error) {
+function _temp(acc: Record<string, ValidationError[]>, error: ValidationError): Record<string, ValidationError[]> {
   const file = error.file || "(file not specified)";
   if (!acc[file]) {
     acc[file] = [];

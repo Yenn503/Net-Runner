@@ -16,6 +16,16 @@ import {
   matchesNegativeKeyword,
 } from '../userPromptKeywords.js'
 
+function getLastTextBlockText(input: ContentBlockParam[]): string {
+  for (let i = input.length - 1; i >= 0; i--) {
+    const block = input[i]
+    if (block?.type === 'text') {
+      return block.text
+    }
+  }
+  return ''
+}
+
 export function processTextPrompt(
   input: string | Array<ContentBlockParam>,
   imageContentBlocks: ContentBlockParam[],
@@ -47,7 +57,7 @@ export function processTextPrompt(
   const otelPromptText =
     typeof input === 'string'
       ? input
-      : input.findLast(block => block.type === 'text')?.text || ''
+      : getLastTextBlockText(input)
   if (otelPromptText) {
     void logOTelEvent('user_prompt', {
       prompt_length: String(otelPromptText.length),

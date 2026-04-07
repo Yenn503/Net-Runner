@@ -2,12 +2,14 @@
 
 *Last updated: 2026-04-04*
 
+Several items below were originally proposed before the intelligence engine and MCP runtime middleware were wired into production. The statuses in this document now reflect the current codebase rather than the earlier design intent.
+
 ## High-Impact Enhancements
 
 ### 1. Attack Path Planning Algorithm
 
-**Status**: Not implemented  
-**Priority**: High  
+**Status**: Implemented in the current engagement-scoped runtime
+**Priority**: High
 **Effort**: Medium
 
 Implement intelligent attack path selection using Monte Carlo Tree Search (MCTS) or similar decision-making algorithm.
@@ -17,21 +19,22 @@ Implement intelligent attack path selection using Monte Carlo Tree Search (MCTS)
 - Balance exploration (trying new paths) vs exploitation (known good paths)
 - Reduce wasted time on low-probability attack vectors
 
-**Implementation:**
-- Track success rates per (target_type, action) combination
-- Use UCB1 algorithm for path selection: `score = win_rate + c * sqrt(log(parent_visits) / node_visits)`
-- Store decision tree in engagement memory for session continuity
+**Current state:**
+- `src/security/mctsPlanner.ts` implements MCTS ranking with UCB1-style exploration
+- `src/security/intelligenceMiddleware.ts` and `runtimeIntegration.ts` persist and surface ranked next actions
+- `nr_save_finding` and engagement intelligence updates can trigger fresh planning
 
-**Files to create:**
-- `src/coordinator/attackPlanner.ts`
-- `src/coordinator/pathSelection.ts`
+**Remaining future work:**
+- Persist richer action-success history across engagements instead of per-engagement state only
+- Add target-similarity and historical path priors to improve ranking
+- Expose higher-level path summaries in reporting
 
 ---
 
 ### 2. Knowledge Graph for Target Intelligence
 
-**Status**: Not implemented  
-**Priority**: High  
+**Status**: Partially implemented
+**Priority**: High
 **Effort**: High
 
 Build persistent knowledge graph to remember relationships between targets, services, vulnerabilities, and credentials across all engagements.
@@ -48,22 +51,22 @@ Target --[HAS_CRED]--> Credential
 Service --[ACCESSED_VIA]--> Credential
 ```
 
-**Implementation:**
-- Lightweight in-memory graph with optional Neo4j export
-- Store in `.netrunner/knowledge/graph.json`
-- Query API: `findSimilarTargets()`, `getAttackPaths()`, `inferCredentialReuse()`
+**Current state:**
+- `src/security/knowledgeGraph.ts` implements the in-memory entity/relation graph and pathfinding
+- Evidence can already be ingested automatically through the runtime intelligence middleware
+- Knowledge-graph stats are persisted into `.netrunner/intelligence-state.json`
 
-**Files to create:**
-- `src/knowledge/graph.ts`
-- `src/knowledge/similarity.ts`
-- `src/knowledge/pathFinder.ts`
+**Remaining future work:**
+- Persist the full graph itself across sessions instead of only derived stats
+- Add cross-engagement similarity lookups and credential-reuse inference
+- Support export/sync to external graph backends when needed
 
 ---
 
 ### 3. Advanced Verification Framework
 
-**Status**: Partial (basic verification in skills)  
-**Priority**: Medium  
+**Status**: Partially implemented
+**Priority**: Medium
 **Effort**: Medium
 
 Reduce false positives through multi-method vulnerability verification.
@@ -90,26 +93,23 @@ Reduce false positives through multi-method vulnerability verification.
    - Requires callback server setup
    - Gold standard for confirming exploitation
 
-**Implementation:**
-- Extend `verify` skill with `--method statistical|boolean-blind|time-based|oob`
-- Store verification proofs in evidence ledger
-- Auto-escalate findings that pass multiple verification methods
+**Current state:**
+- `src/security/statisticalVerifier.ts` implements Welch's t-test and response-length differential analysis
+- `src/security/oobVerification.ts` generates blind-verification callback payloads and tracks statuses
+- Blind findings can be gated by intelligence middleware before promotion
+- The corresponding intelligence skills are now code-backed rather than prompt-only
 
-**Files to modify:**
-- `src/skills/bundled/verify.ts`
-- `src/security/evidence.ts`
-
-**Files to create:**
-- `src/verification/statistical.ts`
-- `src/verification/timebase.ts`
-- `src/verification/oob.ts`
+**Remaining future work:**
+- Unify the verification flows behind a single operator-facing verification surface
+- Persist formal verification evidence directly into the evidence ledger and reporting path
+- Auto-promote or suppress findings based on combined verification outcomes
 
 ---
 
 ### 4. Session Checkpoint & Resume
 
-**Status**: Partial (run state exists, resume not implemented)  
-**Priority**: Medium  
+**Status**: Partial (run state exists, resume not implemented)
+**Priority**: Medium
 **Effort**: Low
 
 Enable pause/resume for long-running assessments.
@@ -145,8 +145,8 @@ await resumeFromCheckpoint(engagementPath)
 
 ### 5. Payload Mutation Engine
 
-**Status**: Not implemented  
-**Priority**: Low  
+**Status**: Partially implemented
+**Priority**: Low
 **Effort**: Medium
 
 Automatically mutate payloads to bypass WAF/filters when initial attempts fail.
@@ -158,21 +158,14 @@ Automatically mutate payloads to bypass WAF/filters when initial attempts fail.
 - **Syntax alternatives**: `UNION SELECT` vs `UNION ALL SELECT`
 - **Whitespace variation**: tabs, newlines, multiple spaces
 
-**Implementation:**
-```typescript
-const mutator = new PayloadMutator()
-for (const variant of mutator.generate('SELECT * FROM users', {
-  methods: ['encode', 'case', 'comment'],
-  maxVariants: 50
-})) {
-  const result = await testPayload(variant)
-  if (result.success) break
-}
-```
+**Current state:**
+- `src/security/feedbackEngine.ts` already selects encoding, payload-mutation, header, delay, and protocol strategies
+- The runtime feedback loop generates mutated payload guidance for blocked or filtered attempts
 
-**Files to create:**
-- `src/payloads/mutator.ts`
-- `src/payloads/encoders.ts`
+**Remaining future work:**
+- Add a standalone reusable mutator surface for non-intelligence workflows
+- Track per-target mutation effectiveness over longer histories
+- Expand payload-generation coverage beyond the current feedback-engine strategy set
 
 ---
 
@@ -227,6 +220,8 @@ Tool Performance Report:
 ## Not Recommended
 
 **Heavy MCP Integration**: Net-Runner uses skills + direct code execution. Adding MCP tool layer would add complexity without clear benefit.
+
+**MCP Tool Surface Expansion for Batch/Skill Logic**: Composite execution and intelligence behavior now live inside existing tool/skill boundaries. Adding more MCP tools for these same concerns would reintroduce context bloat.
 
 **External Python Tool Wrappers**: Already have 153 tools. Focus on workflow intelligence, not tool collection.
 

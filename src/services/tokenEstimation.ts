@@ -411,7 +411,12 @@ function roughTokenCountEstimationForBlock(
     return 2000
   }
   if (block.type === 'tool_result') {
-    return roughTokenCountEstimationForContent(block.content)
+    return roughTokenCountEstimationForContent(
+      block.content as
+        | string
+        | import('@anthropic-ai/sdk/resources/index.mjs').ContentBlockParam[]
+        | undefined,
+    )
   }
   if (block.type === 'tool_use') {
     // input is the JSON the model generated — arbitrarily large (bash

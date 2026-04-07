@@ -26,7 +26,17 @@ type Props = {
   isTranscriptMode?: boolean;
   timestamp?: string;
 };
-export function UserTextMessage(t0) {
+type OptionalUserTextMessageComponent = React.ComponentType<{
+  addMargin: boolean;
+  param: TextBlockParam;
+}>;
+type OptionalUserTextMessageModule = {
+  UserGitHubWebhookMessage?: OptionalUserTextMessageComponent;
+  UserForkBoilerplateMessage?: OptionalUserTextMessageComponent;
+  UserCrossSessionMessage?: OptionalUserTextMessageComponent;
+  UserChannelMessage?: OptionalUserTextMessageComponent;
+};
+export function UserTextMessage(t0: Props) {
   const $ = _c(49);
   const {
     addMargin,
@@ -101,7 +111,10 @@ export function UserTextMessage(t0) {
       }
       const {
         UserGitHubWebhookMessage
-      } = t1 as typeof import('./UserGitHubWebhookMessage.js');
+      } = t1 as OptionalUserTextMessageModule;
+      if (!UserGitHubWebhookMessage) {
+        return null;
+      }
       let t2;
       if ($[10] !== addMargin || $[11] !== param) {
         t2 = <UserGitHubWebhookMessage addMargin={addMargin} param={param} />;
@@ -198,7 +211,10 @@ export function UserTextMessage(t0) {
       }
       const {
         UserForkBoilerplateMessage
-      } = t1 as typeof import('./UserForkBoilerplateMessage.js');
+      } = t1 as OptionalUserTextMessageModule;
+      if (!UserForkBoilerplateMessage) {
+        return null;
+      }
       let t2;
       if ($[33] !== addMargin || $[34] !== param) {
         t2 = <UserForkBoilerplateMessage addMargin={addMargin} param={param} />;
@@ -222,7 +238,10 @@ export function UserTextMessage(t0) {
       }
       const {
         UserCrossSessionMessage
-      } = t1 as typeof import('./UserCrossSessionMessage.js');
+      } = t1 as OptionalUserTextMessageModule;
+      if (!UserCrossSessionMessage) {
+        return null;
+      }
       let t2;
       if ($[37] !== addMargin || $[38] !== param) {
         t2 = <UserCrossSessionMessage addMargin={addMargin} param={param} />;
@@ -246,7 +265,10 @@ export function UserTextMessage(t0) {
       }
       const {
         UserChannelMessage
-      } = t1 as typeof import('./UserChannelMessage.js');
+      } = t1 as OptionalUserTextMessageModule;
+      if (!UserChannelMessage) {
+        return null;
+      }
       let t2;
       if ($[41] !== addMargin || $[42] !== param) {
         t2 = <UserChannelMessage addMargin={addMargin} param={param} />;

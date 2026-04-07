@@ -48,6 +48,7 @@ import { useSearchInput } from '../../hooks/useSearchInput.js';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { clearFastModeCooldown, FAST_MODE_MODEL_DISPLAY, isFastModeAvailable, isFastModeEnabled, getFastModeModel, isFastModeSupportedByModel } from '../../utils/fastMode.js';
 import { isFullscreenEnvEnabled } from '../../utils/fullscreen.js';
+import type { ThemeSetting } from '../../utils/theme.js';
 type Props = {
   onClose: (result?: string, options?: {
     display?: CommandResultDisplay;
@@ -200,6 +201,7 @@ export function Config({
   const memoryFiles = React.use(getMemoryFiles(true));
   const shouldShowExternalIncludesToggle = hasExternalNetRunnerMdIncludes(memoryFiles);
   const autoUpdaterDisabledReason = getAutoUpdaterDisabledReason();
+  const isAntUser = process.env.USER_TYPE === 'ant';
   function onChangeMainModelConfig(value: string | null): void {
     const previousModel = mainLoopModel;
     logEvent('tengu_config_model_changed', {
@@ -392,7 +394,7 @@ export function Config({
     }
   }] : []),
   // Speculation toggle (ant-only)
-  ...("external" === 'ant' ? [{
+  ...(isAntUser ? [{
     id: 'speculationEnabled',
     label: 'Speculative execution',
     value: globalConfig.speculationEnabled ?? true,
@@ -1448,7 +1450,7 @@ export function Config({
   }, [showSubmenu, headerFocused, isSearchMode, searchQuery, setSearchQuery, toggleSetting]);
   return <Box flexDirection="column" width="100%" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
       {showSubmenu === 'Theme' ? <>
-          <ThemePicker onThemeSelect={setting_1 => {
+          <ThemePicker onThemeSelect={(setting_1: ThemeSetting) => {
         isDirty.current = true;
         setTheme(setting_1);
         setShowSubmenu(null);
@@ -1685,7 +1687,7 @@ export function Config({
                               </> : setting_2.id === 'theme' ? <Text color={isSelected ? 'suggestion' : undefined}>
                                 {THEME_LABELS[setting_2.value.toString()] ?? setting_2.value.toString()}
                               </Text> : setting_2.id === 'notifChannel' ? <Text color={isSelected ? 'suggestion' : undefined}>
-                                <NotifChannelLabel value={setting_2.value.toString()} />
+                                <NotifChannelLabel value={setting_2.value as GlobalConfig['preferredNotifChannel']} />
                               </Text> : setting_2.id === 'defaultPermissionMode' ? <Text color={isSelected ? 'suggestion' : undefined}>
                                 {permissionModeTitle(setting_2.value as PermissionMode)}
                               </Text> : setting_2.id === 'autoUpdatesChannel' && autoUpdaterDisabledReason ? <Box flexDirection="column">
@@ -1751,7 +1753,9 @@ const THEME_LABELS: Record<string, string> = {
   'dark-ansi': 'Dark mode (ANSI colors only)',
   'light-ansi': 'Light mode (ANSI colors only)'
 };
-function NotifChannelLabel(t0) {
+function NotifChannelLabel(t0: {
+  value: GlobalConfig['preferredNotifChannel'];
+}) {
   const $ = _c(4);
   const {
     value

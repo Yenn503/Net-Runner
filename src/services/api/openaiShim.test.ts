@@ -62,7 +62,12 @@ afterEach(() => {
 
 test('preserves usage from final OpenAI stream chunk with empty choices', async () => {
   globalThis.fetch = (async (_input, init) => {
-    const url = typeof _input === 'string' ? _input : _input.url
+    const url =
+      typeof _input === 'string'
+        ? _input
+        : _input instanceof URL
+          ? _input.toString()
+          : _input.url
     expect(url).toBe('http://example.test/v1/chat/completions')
 
     const body = JSON.parse(String(init?.body))

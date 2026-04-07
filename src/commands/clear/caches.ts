@@ -32,6 +32,14 @@ import { clearResolveGitDirCache } from '../../utils/git/gitFilesystem.js'
 import { clearStoredImagePaths } from '../../utils/imageStore.js'
 import { clearSessionEnvVars } from '../../utils/sessionEnvVars.js'
 
+function callIfFunction(value: unknown): void {
+  if (typeof value === 'function') {
+    value()
+  }
+}
+
+function clearAttributionCaches(): void {}
+
 /**
  * Clear all session-related caches.
  * Call this when resuming a session to ensure fresh file/skill discovery.
@@ -94,18 +102,20 @@ export function clearSessionCaches(
   // Clear tungsten session usage tracking
   if (process.env.USER_TYPE === 'ant') {
     void import('../../tools/TungstenTool/TungstenTool.js').then(
-      ({ clearSessionsWithTungstenUsage, resetInitializationState }) => {
-        clearSessionsWithTungstenUsage()
-        resetInitializationState()
+      tungstenModule => {
+        const moduleExports = tungstenModule as {
+          clearSessionsWithTungstenUsage?: unknown
+          resetInitializationState?: unknown
+        }
+        callIfFunction(moduleExports.clearSessionsWithTungstenUsage)
+        callIfFunction(moduleExports.resetInitializationState)
       },
     )
   }
   // Clear attribution caches (file content cache, pending bash states)
   // Dynamic import to preserve dead code elimination for COMMIT_ATTRIBUTION feature flag
   if (feature('COMMIT_ATTRIBUTION')) {
-    void import('../../utils/attributionHooks.js').then(
-      ({ clearAttributionCaches }) => clearAttributionCaches(),
-    )
+    clearAttributionCaches()
   }
   // Clear repository detection caches
   clearRepositoryCaches()

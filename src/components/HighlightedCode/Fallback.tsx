@@ -1,7 +1,8 @@
 import { c as _c } from "react-compiler-runtime";
 import { extname } from 'path';
-import React, { Suspense, use, useMemo } from 'react';
+import React, { Suspense, use } from 'react';
 import { Ansi, Text } from '../../ink.js';
+import type { CliHighlight } from '../../utils/cliHighlight.js';
 import { getCliHighlightPromise } from '../../utils/cliHighlight.js';
 import { logForDebugging } from '../../utils/debug.js';
 import { convertLeadingTabsToSpaces } from '../../utils/file.js';
@@ -18,7 +19,11 @@ type Props = {
 // of code+language to avoid retaining full source strings (#24180 RSS fix).
 const HL_CACHE_MAX = 500;
 const hlCache = new Map<string, string>();
-function cachedHighlight(hl: NonNullable<Awaited<ReturnType<typeof getCliHighlightPromise>>>, code: string, language: string): string {
+type HighlightedProps = {
+  codeWithSpaces: string;
+  language: string;
+};
+function cachedHighlight(hl: CliHighlight, code: string, language: string): string {
   const key = hashPair(language, code);
   const hit = hlCache.get(key);
   if (hit !== undefined) {
@@ -36,7 +41,7 @@ function cachedHighlight(hl: NonNullable<Awaited<ReturnType<typeof getCliHighlig
   hlCache.set(key, out);
   return out;
 }
-export function HighlightedCodeFallback(t0) {
+export function HighlightedCodeFallback(t0: Props) {
   const $ = _c(20);
   const {
     code,
@@ -121,7 +126,7 @@ export function HighlightedCodeFallback(t0) {
   }
   return t8;
 }
-function Highlighted(t0) {
+function Highlighted(t0: HighlightedProps) {
   const $ = _c(10);
   const {
     codeWithSpaces,
@@ -134,7 +139,7 @@ function Highlighted(t0) {
   } else {
     t1 = $[0];
   }
-  const hl = use(t1);
+  const hl = use(t1) as CliHighlight | null;
   let t2;
   if ($[1] !== codeWithSpaces || $[2] !== hl || $[3] !== language) {
     bb0: {

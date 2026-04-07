@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { logEvent } from 'src/services/analytics/index.js';
 import type { CommandResultDisplay, LocalJSXCommandContext } from '../../commands.js';
 import { Select } from '../../components/CustomSelect/index.js';
+import type { OptionWithDescription } from '../../components/CustomSelect/select.js';
 import { Dialog } from '../../components/design-system/Dialog.js';
 import { IdeAutoConnectDialog, IdeDisableAutoConnectDialog, shouldShowAutoConnectDialog, shouldShowDisableAutoConnectDialog } from '../../components/IdeAutoConnectDialog.js';
 import { Box, Text } from '../../ink.js';
@@ -22,7 +23,22 @@ type IDEScreenProps = {
   onClose: () => void;
   onSelect: (ide?: DetectedIDEInfo) => void;
 };
-function IDEScreen(t0) {
+type IDESelectOption = OptionWithDescription<string>;
+
+type RunningIDESelectorProps = {
+  runningIDEs: IdeType[];
+  onSelectIDE: (ide: IdeType) => void;
+  onDone: (result?: string, options?: {
+    display?: CommandResultDisplay;
+  }) => void;
+};
+
+type InstallOnMountProps = {
+  ide: IdeType;
+  onInstall: (ide: IdeType) => void;
+};
+
+function IDEScreen(t0: IDEScreenProps) {
   const $ = _c(39);
   const {
     availableIDEs,
@@ -44,14 +60,18 @@ function IDEScreen(t0) {
   const [showDisableAutoConnectDialog, setShowDisableAutoConnectDialog] = useState(false);
   let t2;
   if ($[2] !== availableIDEs || $[3] !== onSelect) {
-    t2 = value => {
+    t2 = (value: string) => {
       if (value !== "None" && shouldShowAutoConnectDialog()) {
         setShowAutoConnectDialog(true);
       } else {
         if (value === "None" && shouldShowDisableAutoConnectDialog()) {
           setShowDisableAutoConnectDialog(true);
         } else {
-          onSelect(availableIDEs.find(ide => ide.port === parseInt(value)));
+          onSelect(
+            availableIDEs.find(
+              (ide: DetectedIDEInfo) => ide.port === parseInt(value),
+            ),
+          );
         }
       }
     };
@@ -64,7 +84,7 @@ function IDEScreen(t0) {
   const handleSelectIDE = t2;
   let t3;
   if ($[5] !== availableIDEs) {
-    t3 = availableIDEs.reduce(_temp, {});
+    t3 = availableIDEs.reduce(_temp, {} as Record<string, number>);
     $[5] = availableIDEs;
     $[6] = t3;
   } else {
@@ -75,7 +95,7 @@ function IDEScreen(t0) {
   if ($[7] !== availableIDEs || $[8] !== ideCounts) {
     let t5;
     if ($[10] !== ideCounts) {
-      t5 = ide_1 => {
+      t5 = (ide_1: DetectedIDEInfo): IDESelectOption => {
         const hasMultipleInstances = (ideCounts[ide_1.name] || 0) > 1;
         const showWorkspace = hasMultipleInstances && ide_1.workspaceFolders.length > 0;
         return {
@@ -136,7 +156,7 @@ function IDEScreen(t0) {
   }
   let t6;
   if ($[19] !== availableIDEs.length || $[20] !== handleSelectIDE || $[21] !== options || $[22] !== selectedValue) {
-    t6 = availableIDEs.length !== 0 && <Select defaultValue={selectedValue} defaultFocusValue={selectedValue} options={options} onChange={value_0 => {
+    t6 = availableIDEs.length !== 0 && <Select defaultValue={selectedValue} defaultFocusValue={selectedValue} options={options} onChange={(value_0: string) => {
       setSelectedValue(value_0);
       handleSelectIDE(value_0);
     }} />;
@@ -195,13 +215,13 @@ function IDEScreen(t0) {
   }
   return t11;
 }
-function _temp3(ide_3, index) {
+function _temp3(ide_3: DetectedIDEInfo, index: number) {
   return <Box key={index} paddingLeft={3}><Text dimColor={true}>• {ide_3.name}: {formatWorkspaceFolders(ide_3.workspaceFolders)}</Text></Box>;
 }
-function _temp2(ide_2) {
+function _temp2(ide_2: DetectedIDEInfo) {
   return ide_2.name === "VS Code" || ide_2.name === "Visual Studio Code";
 }
-function _temp(acc, ide_0) {
+function _temp(acc: Record<string, number>, ide_0: DetectedIDEInfo) {
   acc[ide_0.name] = (acc[ide_0.name] || 0) + 1;
   return acc;
 }
@@ -224,7 +244,7 @@ type IDEOpenSelectionProps = {
     display?: CommandResultDisplay;
   }) => void;
 };
-function IDEOpenSelection(t0) {
+function IDEOpenSelection(t0: IDEOpenSelectionProps) {
   const $ = _c(18);
   const {
     availableIDEs,
@@ -242,8 +262,10 @@ function IDEOpenSelection(t0) {
   const [selectedValue, setSelectedValue] = useState(t1);
   let t2;
   if ($[2] !== availableIDEs || $[3] !== onSelectIDE) {
-    t2 = value => {
-      const selectedIDE = availableIDEs.find(ide => ide.port === parseInt(value));
+    t2 = (value: string) => {
+      const selectedIDE = availableIDEs.find(
+        (ide: DetectedIDEInfo) => ide.port === parseInt(value),
+      );
       onSelectIDE(selectedIDE);
     };
     $[2] = availableIDEs;
@@ -277,7 +299,7 @@ function IDEOpenSelection(t0) {
   const handleCancel = t4;
   let t5;
   if ($[9] !== handleSelectIDE) {
-    t5 = value_0 => {
+    t5 = (value_0: string) => {
       setSelectedValue(value_0);
       handleSelectIDE(value_0);
     };
@@ -307,23 +329,23 @@ function IDEOpenSelection(t0) {
   }
   return t7;
 }
-function _temp4(ide_0) {
+function _temp4(ide_0: DetectedIDEInfo): IDESelectOption {
   return {
     label: ide_0.name,
     value: ide_0.port.toString()
   };
 }
-function RunningIDESelector(t0) {
+function RunningIDESelector(t0: RunningIDESelectorProps) {
   const $ = _c(15);
   const {
     runningIDEs,
     onSelectIDE,
     onDone
   } = t0;
-  const [selectedValue, setSelectedValue] = useState(runningIDEs[0] ?? "");
+  const [selectedValue, setSelectedValue] = useState<IdeType>(runningIDEs[0]!);
   let t1;
   if ($[0] !== onSelectIDE) {
-    t1 = value => {
+    t1 = (value: IdeType) => {
       onSelectIDE(value as IdeType);
     };
     $[0] = onSelectIDE;
@@ -356,7 +378,7 @@ function RunningIDESelector(t0) {
   const handleCancel = t3;
   let t4;
   if ($[6] !== handleSelectIDE) {
-    t4 = value_0 => {
+    t4 = (value_0: IdeType) => {
       setSelectedValue(value_0);
       handleSelectIDE(value_0);
     };
@@ -386,13 +408,13 @@ function RunningIDESelector(t0) {
   }
   return t6;
 }
-function _temp5(ide) {
+function _temp5(ide: IdeType): OptionWithDescription<IdeType> {
   return {
     label: toIDEDisplayName(ide),
     value: ide
   };
 }
-function InstallOnMount(t0) {
+function InstallOnMount(t0: InstallOnMountProps) {
   const $ = _c(4);
   const {
     ide,

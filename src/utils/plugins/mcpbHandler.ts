@@ -21,6 +21,34 @@ import {
 import { jsonParse, jsonStringify } from '../slowOperations.js'
 import { getSystemDirectories } from '../systemDirectories.js'
 import { classifyFetchError, logPluginFetch } from './fetchTelemetry.js'
+
+type PluginSecretsMap = Record<string, Record<string, string>>
+type GetMcpConfigForManifestFn = (args: {
+  manifest: McpbManifest
+  extensionPath: string
+  systemDirs: ReturnType<typeof getSystemDirectories>
+  userConfig: UserConfigValues
+  pathSeparator: string
+}) => Promise<McpServerConfig | null>
+
+function hasGetMcpConfigForManifest(
+  value: unknown,
+): value is { getMcpConfigForManifest: GetMcpConfigForManifestFn } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'getMcpConfigForManifest' in value &&
+    typeof value.getMcpConfigForManifest === 'function'
+  )
+}
+
+function getPluginSecretsMap(): PluginSecretsMap {
+  const secrets = getSecureStorage().read()?.pluginSecrets
+  if (!secrets || typeof secrets !== 'object') {
+    return {}
+  }
+  return secrets as PluginSecretsMap
+}
 /**
  * User configuration values for MCPB
  */
@@ -147,10 +175,7 @@ export function loadMcpServerUserConfig(
     const nonSensitive =
       settings.pluginConfigs?.[pluginId]?.mcpServers?.[serverName]
 
-    const sensitive =
-      getSecureStorage().read()?.pluginSecrets?.[
-        serverSecretsKey(pluginId, serverName)
-      ]
+    const sensitive = getPluginSecretsMap()[serverSecretsKey(pluginId, serverName)]
 
     if (!nonSensitive && !sensitive) {
       return null
@@ -229,8 +254,7 @@ export function saveMcpServerUserConfig(
     // value win on next read.
     const storage = getSecureStorage()
     const k = serverSecretsKey(pluginId, serverName)
-    const existingInSecureStorage =
-      storage.read()?.pluginSecrets?.[k] ?? undefined
+    const existingInSecureStorage = getPluginSecretsMap()[k] ?? undefined
     const secureScrubbed = existingInSecureStorage
       ? Object.fromEntries(
           Object.entries(existingInSecureStorage).filter(
@@ -245,16 +269,20 @@ export function saveMcpServerUserConfig(
         Object.keys(existingInSecureStorage).length
     if (Object.keys(sensitive).length > 0 || needSecureScrub) {
       const existing = storage.read() ?? {}
-      if (!existing.pluginSecrets) {
-        existing.pluginSecrets = {}
-      }
+      const pluginSecrets: PluginSecretsMap =
+        existing.pluginSecrets && typeof existing.pluginSecrets === 'object'
+          ? (existing.pluginSecrets as PluginSecretsMap)
+          : {}
       // secureStorage keyvault is a flat object — direct replace, no merge
       // semantics to worry about (unlike settings.json's mergeWith).
-      existing.pluginSecrets[k] = {
+      pluginSecrets[k] = {
         ...secureScrubbed,
         ...sensitive,
       }
-      const result = storage.update(existing)
+      const result = storage.update({
+        ...existing,
+        pluginSecrets,
+      })
       if (!result.success) {
         throw new Error(
           `Failed to save sensitive config to secure storage for ${k}`,
@@ -417,7 +445,17 @@ async function generateMcpConfig(
 ): Promise<McpServerConfig> {
   // Lazy import: @anthropic-ai/mcpb barrel pulls in zod v3 schemas (~700KB of
   // bound closures). See dxt/helpers.ts for details.
-  const { getMcpConfigForManifest } = await import('@anthropic-ai/mcpb')
+  const mcpbModule = await import('@anthropic-ai/mcpb')
+  const defaultExport = (mcpbModule as { default?: unknown }).default
+  const getMcpConfigForManifest =
+    hasGetMcpConfigForManifest(mcpbModule)
+      ? mcpbModule.getMcpConfigForManifest
+      : hasGetMcpConfigForManifest(defaultExport)
+        ? defaultExport.getMcpConfigForManifest
+        : null
+  if (!getMcpConfigForManifest) {
+    throw new Error('Failed to load getMcpConfigForManifest from @anthropic-ai/mcpb')
+  }
   const mcpConfig = await getMcpConfigForManifest({
     manifest,
     extensionPath: extractedPath,

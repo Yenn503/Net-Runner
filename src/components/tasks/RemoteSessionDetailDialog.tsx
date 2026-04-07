@@ -7,6 +7,7 @@ import type { DeepImmutable } from 'src/types/utils.js';
 import type { CommandResultDisplay } from '../../commands.js';
 import { DIAMOND_FILLED, DIAMOND_OPEN } from '../../constants/figures.js';
 import { useElapsedTime } from '../../hooks/useElapsedTime.js';
+import type { ExitState } from '../../hooks/useExitOnCtrlCDWithKeybindings.js';
 import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import { Box, Link, Text } from '../../ink.js';
 import type { RemoteAgentTaskState } from '../../tasks/RemoteAgentTask/RemoteAgentTask.js';
@@ -78,7 +79,20 @@ const AGENT_VERB = {
   needs_input: 'waiting',
   plan_ready: 'done'
 } as const;
-function UltraplanSessionDetail(t0) {
+type ReviewStage = NonNullable<NonNullable<RemoteAgentTaskState['reviewProgress']>['stage']>;
+type SessionDetailProps = {
+  session: DeepImmutable<RemoteAgentTaskState>;
+  onDone: Props['onDone'];
+  onBack?: Props['onBack'];
+  onKill?: Props['onKill'];
+};
+type UltraplanMenuAction = 'open' | 'stop' | 'back';
+type StagePipelineProps = {
+  stage: ReviewStage | undefined;
+  completed: boolean;
+  hasProgress: boolean;
+};
+function UltraplanSessionDetail(t0: SessionDetailProps): React.ReactNode {
   const $ = _c(70);
   const {
     session,
@@ -95,6 +109,9 @@ function UltraplanSessionDetail(t0) {
   let lastBlock = null;
   for (const msg of session.log) {
     if (msg.type !== "assistant") {
+      continue;
+    }
+    if (!msg.message || typeof msg.message !== 'object' || !('content' in msg.message) || !Array.isArray(msg.message.content)) {
       continue;
     }
     for (const block of msg.message.content) {
@@ -195,7 +212,7 @@ function UltraplanSessionDetail(t0) {
     }
     let t10;
     if ($[15] !== goBackOrClose || $[16] !== onKill) {
-      t10 = <Dialog title="Stop ultraplan?" onCancel={t6} color="background"><Box flexDirection="column" gap={1}>{t7}<Select options={t9} onChange={v => {
+      t10 = <Dialog title="Stop ultraplan?" onCancel={t6} color="background"><Box flexDirection="column" gap={1}>{t7}<Select options={t9} onChange={(v: 'stop' | 'back') => {
             if (v === "stop") {
               onKill?.();
               goBackOrClose();
@@ -350,7 +367,7 @@ function UltraplanSessionDetail(t0) {
   }
   let t23;
   if ($[54] !== goBackOrClose || $[55] !== onDone || $[56] !== sessionUrl) {
-    t23 = v_0 => {
+    t23 = (v_0: UltraplanMenuAction) => {
       switch (v_0) {
         case "open":
           {
@@ -421,7 +438,7 @@ const STAGE_LABELS: Record<(typeof STAGES)[number], string> = {
 // "Setup" label shows before the orchestrator writes its first progress
 // snapshot (container boot + repo clone), so the 0-found display doesn't
 // look like a hung finder.
-function StagePipeline(t0) {
+function StagePipeline(t0: StagePipelineProps): React.ReactNode {
   const $ = _c(15);
   const {
     stage,
@@ -505,7 +522,7 @@ function reviewCountsLine(session: DeepImmutable<RemoteAgentTaskState>): string 
   return formatReviewStageCounts(p.stage, p.bugsFound, verified, refuted);
 }
 type MenuAction = 'open' | 'stop' | 'back' | 'dismiss';
-function ReviewSessionDetail(t0) {
+function ReviewSessionDetail(t0: SessionDetailProps): React.ReactNode {
   const $ = _c(56);
   const {
     session,
@@ -576,7 +593,7 @@ function ReviewSessionDetail(t0) {
     }
     let t7;
     if ($[8] !== goBackOrClose || $[9] !== onKill) {
-      t7 = <Dialog title="Stop ultrareview?" onCancel={t3} color="background"><Box flexDirection="column" gap={1}>{t4}<Select options={t6} onChange={v => {
+      t7 = <Dialog title="Stop ultrareview?" onCancel={t3} color="background"><Box flexDirection="column" gap={1}>{t4}<Select options={t6} onChange={(v: 'stop' | 'back') => {
             if (v === "stop") {
               onKill?.();
               goBackOrClose();
@@ -620,7 +637,7 @@ function ReviewSessionDetail(t0) {
   const options = t3;
   let t4;
   if ($[15] !== goBackOrClose || $[16] !== handleClose || $[17] !== onDone || $[18] !== sessionUrl) {
-    t4 = action => {
+    t4 = (action: MenuAction) => {
       bb45: switch (action) {
         case "open":
           {
@@ -772,7 +789,7 @@ function ReviewSessionDetail(t0) {
   }
   return t20;
 }
-function _temp(exitState) {
+function _temp(exitState: ExitState): React.ReactNode {
   return exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline><KeyboardShortcutHint shortcut="Enter" action="select" /><KeyboardShortcutHint shortcut="Esc" action="go back" /></Byline>;
 }
 export function RemoteSessionDetailDialog({

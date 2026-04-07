@@ -95,6 +95,7 @@ import type { APIError } from '@anthropic-ai/sdk'
 import type {
   BetaContentBlock,
   BetaMessage,
+  BetaRawMessageStreamEvent,
   BetaRedactedThinkingBlock,
   BetaThinkingBlock,
   BetaToolUseBlock,
@@ -331,11 +332,13 @@ function isSyntheticApiErrorMessage(
 export function getLastAssistantMessage(
   messages: Message[],
 ): AssistantMessage | undefined {
-  // findLast exits early from the end — much faster than filter + last for
-  // large message arrays (called on every REPL render via useFeedbackSurvey).
-  return messages.findLast(
-    (msg): msg is AssistantMessage => msg.type === 'assistant',
-  )
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message?.type === 'assistant') {
+      return message
+    }
+  }
+  return undefined
 }
 
 export function hasToolCallsInLastAssistantTurn(messages: Message[]): boolean {
@@ -722,7 +725,7 @@ export function isNotEmptyMessage(message: Message): boolean {
 // Deterministic UUID derivation. Produces a stable UUID-shaped string from a
 // parent UUID + content block index so that the same input always produces the
 // same key across calls. Used by normalizeMessages and synthetic message creation.
-export function deriveUUID(parentUUID: UUID, index: number): UUID {
+export function deriveUUID(parentUUID: string, index: number): UUID {
   const hex = index.toString(16).padStart(12, '0')
   return `${parentUUID.slice(0, 24)}${hex}` as UUID
 }
@@ -1855,7 +1858,15 @@ function smooshSystemReminderSiblings(
     if (srText.length === 0) return msg
 
     // Smoosh into the LAST tool_result (positionally adjacent in rendered prompt)
-    const lastTrIdx = kept.findLastIndex(b => b.type === 'tool_result')
+    let lastTrIdx = -1
+    for (let i = kept.length - 1; i >= 0; i--) {
+      const block = kept[i]
+      if (block?.type === 'tool_result') {
+        lastTrIdx = i
+        break
+      }
+    }
+    if (lastTrIdx === -1) return msg
     const lastTr = kept[lastTrIdx] as ToolResultBlockParam
     const smooshed = smooshIntoToolResult(lastTr, srText)
     if (smooshed === null) return msg // tool_ref constraint — leave alone
@@ -2986,29 +2997,31 @@ export function handleMessageFromStream(
     return
   }
 
-  if (message.event.type === 'message_start') {
+  const event = message.event as BetaRawMessageStreamEvent
+
+  if (event.type === 'message_start') {
     if (message.ttftMs != null) {
       onApiMetrics?.({ ttftMs: message.ttftMs })
     }
   }
 
-  if (message.event.type === 'message_stop') {
+  if (event.type === 'message_stop') {
     onSetStreamMode('tool-use')
     onStreamingToolUses(() => [])
     return
   }
 
-  switch (message.event.type) {
+  switch (event.type) {
     case 'content_block_start':
       onStreamingText?.(() => null)
       if (
         feature('CONNECTOR_TEXT') &&
-        isConnectorTextBlock(message.event.content_block)
+        isConnectorTextBlock(event.content_block)
       ) {
         onSetStreamMode('responding')
         return
       }
-      switch (message.event.content_block.type) {
+      switch (event.content_block.type) {
         case 'thinking':
         case 'redacted_thinking':
           onSetStreamMode('thinking')
@@ -3018,8 +3031,8 @@ export function handleMessageFromStream(
           return
         case 'tool_use': {
           onSetStreamMode('tool-input')
-          const contentBlock = message.event.content_block
-          const index = message.event.index
+          const contentBlock = event.content_block
+          const index = event.index
           onStreamingToolUses(_ => [
             ..._,
             {
@@ -3046,16 +3059,16 @@ export function handleMessageFromStream(
       }
       return
     case 'content_block_delta':
-      switch (message.event.delta.type) {
+      switch (event.delta.type) {
         case 'text_delta': {
-          const deltaText = message.event.delta.text
+          const deltaText = event.delta.text
           onUpdateLength(deltaText)
           onStreamingText?.(text => (text ?? '') + deltaText)
           return
         }
         case 'input_json_delta': {
-          const delta = message.event.delta.partial_json
-          const index = message.event.index
+          const delta = event.delta.partial_json
+          const index = event.index
           onUpdateLength(delta)
           onStreamingToolUses(_ => {
             const element = _.find(_ => _.index === index)
@@ -3073,7 +3086,7 @@ export function handleMessageFromStream(
           return
         }
         case 'thinking_delta':
-          onUpdateLength(message.event.delta.thinking)
+          onUpdateLength(event.delta.thinking)
           return
         case 'signature_delta':
           // Signatures are cryptographic authentication strings, not model
@@ -4648,7 +4661,7 @@ export function getMessagesAfterCompactBoundary<
   if (!options?.includeSnipped && feature('HISTORY_SNIP')) {
     /* eslint-disable @typescript-eslint/no-require-imports */
     const { projectSnippedView } =
-      require('../services/compact/snipProjection.js') as typeof import('../services/compact/snipProjection.js')
+      require('../services/compact/snipProjection.ts') as typeof import('../services/compact/snipProjection.ts')
     /* eslint-enable @typescript-eslint/no-require-imports */
     return projectSnippedView(sliced as Message[]) as T[]
   }

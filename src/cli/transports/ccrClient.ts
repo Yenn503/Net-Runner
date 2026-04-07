@@ -78,6 +78,28 @@ type ClientEvent = {
   ephemeral?: boolean
 }
 
+type MessageStartStreamEvent = SDKPartialAssistantMessage & {
+  event: {
+    type: 'message_start'
+    message: { id: string }
+  }
+}
+
+type TextDeltaStreamEvent = SDKPartialAssistantMessage & {
+  event: {
+    type: 'content_block_delta'
+    index: number
+    delta: { type: 'text_delta'; text: string }
+  }
+}
+
+type AssistantMessageWithId = StdoutMessage & {
+  type: 'assistant'
+  session_id: string
+  parent_tool_use_id: string | null
+  message: { id: string }
+}
+
 /**
  * Structural subset of a stream_event carrying a text_delta. Not a narrowing
  * of SDKPartialAssistantMessage — RawMessageStreamEvent's delta is a union and
@@ -124,6 +146,68 @@ function scopeKey(m: {
   return `${m.session_id}:${m.parent_tool_use_id ?? ''}`
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function getPartialAssistantEvent(
+  message: SDKPartialAssistantMessage,
+): Record<string, unknown> | null {
+  const event = (message as { event?: unknown }).event
+  return isRecord(event) ? event : null
+}
+
+function isMessageStartStreamEvent(
+  message: SDKPartialAssistantMessage,
+): message is MessageStartStreamEvent {
+  const event = getPartialAssistantEvent(message)
+  if (!event || event.type !== 'message_start') {
+    return false
+  }
+
+  return isRecord(event.message) && typeof event.message.id === 'string'
+}
+
+function isTextDeltaStreamEvent(
+  message: SDKPartialAssistantMessage,
+): message is TextDeltaStreamEvent {
+  const event = getPartialAssistantEvent(message)
+  if (
+    !event ||
+    event.type !== 'content_block_delta' ||
+    typeof event.index !== 'number' ||
+    !isRecord(event.delta)
+  ) {
+    return false
+  }
+
+  return (
+    event.delta.type === 'text_delta' && typeof event.delta.text === 'string'
+  )
+}
+
+function isAssistantMessageWithId(
+  message: StdoutMessage,
+): message is AssistantMessageWithId {
+  if (message.type !== 'assistant') {
+    return false
+  }
+
+  const candidate = message as {
+    message?: unknown
+    session_id?: unknown
+    parent_tool_use_id?: unknown
+  }
+
+  return (
+    typeof candidate.session_id === 'string' &&
+    (typeof candidate.parent_tool_use_id === 'string' ||
+      candidate.parent_tool_use_id === null) &&
+    isRecord(candidate.message) &&
+    typeof candidate.message.id === 'string'
+  )
+}
+
 /**
  * Accumulate text_delta stream_events into full-so-far snapshots per content
  * block. Each flush emits ONE event per touched block containing the FULL
@@ -148,56 +232,51 @@ export function accumulateStreamEvents(
   // rewrite the same entry instead of emitting one event per delta.
   const touched = new Map<string[], CoalescedStreamEvent>()
   for (const msg of buffer) {
-    switch (msg.event.type) {
-      case 'message_start': {
-        const id = msg.event.message.id
-        const prevId = state.scopeToMessage.get(scopeKey(msg))
-        if (prevId) state.byMessage.delete(prevId)
-        state.scopeToMessage.set(scopeKey(msg), id)
-        state.byMessage.set(id, [])
-        out.push(msg)
-        break
-      }
-      case 'content_block_delta': {
-        if (msg.event.delta.type !== 'text_delta') {
-          out.push(msg)
-          break
-        }
-        const messageId = state.scopeToMessage.get(scopeKey(msg))
-        const blocks = messageId ? state.byMessage.get(messageId) : undefined
-        if (!blocks) {
-          // Delta without a preceding message_start (reconnect mid-stream,
-          // or message_start was in a prior buffer that got dropped). Pass
-          // through raw — can't produce a full-so-far snapshot without the
-          // prior chunks anyway.
-          out.push(msg)
-          break
-        }
-        const chunks = (blocks[msg.event.index] ??= [])
-        chunks.push(msg.event.delta.text)
-        const existing = touched.get(chunks)
-        if (existing) {
-          existing.event.delta.text = chunks.join('')
-          break
-        }
-        const snapshot: CoalescedStreamEvent = {
-          type: 'stream_event',
-          uuid: msg.uuid,
-          session_id: msg.session_id,
-          parent_tool_use_id: msg.parent_tool_use_id,
-          event: {
-            type: 'content_block_delta',
-            index: msg.event.index,
-            delta: { type: 'text_delta', text: chunks.join('') },
-          },
-        }
-        touched.set(chunks, snapshot)
-        out.push(snapshot)
-        break
-      }
-      default:
-        out.push(msg)
+    if (isMessageStartStreamEvent(msg)) {
+      const id = msg.event.message.id
+      const prevId = state.scopeToMessage.get(scopeKey(msg))
+      if (prevId) state.byMessage.delete(prevId)
+      state.scopeToMessage.set(scopeKey(msg), id)
+      state.byMessage.set(id, [])
+      out.push(msg)
+      continue
     }
+
+    if (isTextDeltaStreamEvent(msg)) {
+      const messageId = state.scopeToMessage.get(scopeKey(msg))
+      const blocks = messageId ? state.byMessage.get(messageId) : undefined
+      if (!blocks) {
+        // Delta without a preceding message_start (reconnect mid-stream,
+        // or message_start was in a prior buffer that got dropped). Pass
+        // through raw — can't produce a full-so-far snapshot without the
+        // prior chunks anyway.
+        out.push(msg)
+        continue
+      }
+      const chunks = (blocks[msg.event.index] ??= [])
+      chunks.push(msg.event.delta.text)
+      const existing = touched.get(chunks)
+      if (existing) {
+        existing.event.delta.text = chunks.join('')
+        continue
+      }
+      const snapshot: CoalescedStreamEvent = {
+        type: 'stream_event',
+        uuid: msg.uuid,
+        session_id: msg.session_id,
+        parent_tool_use_id: msg.parent_tool_use_id,
+        event: {
+          type: 'content_block_delta',
+          index: msg.event.index,
+          delta: { type: 'text_delta', text: chunks.join('') },
+        },
+      }
+      touched.set(chunks, snapshot)
+      out.push(snapshot)
+      continue
+    }
+
+    out.push(msg)
   }
   return out
 }
@@ -744,7 +823,7 @@ export class CCRClient {
       return
     }
     await this.flushStreamEventBuffer()
-    if (message.type === 'assistant') {
+    if (isAssistantMessageWithId(message)) {
       clearStreamAccumulatorForMessage(this.streamTextAccumulator, message)
     }
     await this.eventUploader.enqueue(this.toClientEvent(message))

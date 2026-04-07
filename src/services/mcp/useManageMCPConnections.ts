@@ -687,7 +687,7 @@ export function useManageMCPConnections(
                   ])
                   updateServer({
                     ...client,
-                    commands: [...mcpPrompts, ...mcpSkills],
+                    commands: [...mcpPrompts, ...mcpSkills] as Command[],
                   })
                   // MCP skills changed — invalidate skill-search index so
                   // next discovery rebuilds with the new set.
@@ -731,7 +731,7 @@ export function useManageMCPConnections(
                     updateServer({
                       ...client,
                       resources: newResources,
-                      commands: [...mcpPrompts, ...mcpSkills],
+                      commands: [...mcpPrompts, ...mcpSkills] as Command[],
                     })
                     // MCP skills changed — invalidate skill-search index so
                     // next discovery rebuilds with the new set.

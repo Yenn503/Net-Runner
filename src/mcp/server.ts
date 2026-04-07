@@ -2,7 +2,8 @@ import { FastMCP, type Logger } from 'fastmcp'
 import { z } from 'zod'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { readFile } from 'fs/promises'
+import { mkdir, readFile, writeFile } from 'fs/promises'
+import { join, relative, resolve } from 'path'
 import {
   initializeNetRunnerProject,
   readEngagementManifest,
@@ -15,6 +16,7 @@ import {
   readEvidenceEntries,
   countEvidenceEntriesByType,
   type EvidenceSeverity,
+  type FindingEntry,
 } from '../security/evidence.js'
 import {
   getCapabilityReadinessSnapshot,
@@ -24,17 +26,466 @@ import {
 import { IMPORTED_PENTEST_CAPABILITIES } from '../security/pentestToolCatalog.js'
 import { SECURITY_WORKFLOWS } from '../security/workflows.js'
 import { NET_RUNNER_SKILL_DEFINITIONS } from '../security/skillDefinitions.js'
-import { NET_RUNNER_AGENT_TYPES } from '../security/agentTypes.js'
 import {
   getNetRunnerProjectDir,
+  getArtifactsDir,
   getRunStatePath,
 } from '../security/paths.js'
+import {
+  formatIntelligenceContext,
+  planNextActionsWithPersistence,
+  shouldGateBlindFinding,
+} from '../security/intelligenceMiddleware.js'
+import {
+  handleHttpResponse,
+  handleToolFailure,
+  syncEvidenceToKnowledgeGraph,
+} from '../security/runtimeIntegration.js'
+import {
+  ensureIntelligenceState,
+  incrementPendingBlindVerifications,
+} from '../security/intelligenceState.js'
+import {
+  clearAgentDefinitionsCache,
+  getAgentDefinitionsWithOverrides,
+} from '../tools/AgentTool/loadAgentsDir.js'
 
 const execAsync = promisify(exec)
 
 const VERSION = '0.1.6'
 const PORT = parseInt(process.env.NR_PORT ?? '8745', 10)
 const CWD = process.env.NR_CWD || process.cwd()
+
+type SessionBudget = {
+  outputChars: number
+  toolCalls: number
+}
+
+type ParsedHttpResponse = {
+  statusCode: number
+  headers: Record<string, string>
+  body: string
+  cookies?: string
+}
+
+type ExecReturnPayload = {
+  text: string
+  artifactPath?: string
+}
+
+type ExecCommandResult = {
+  command: string
+  ok: boolean
+  exitCode: number | string
+  renderedText: string
+  artifactPath?: string
+  intelligenceContexts: string[]
+}
+
+const READ_ONLY_TOOL_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+} as const
+
+const MUTATING_STATE_TOOL_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+} as const
+
+const OPEN_WORLD_EXEC_TOOL_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const
+
+const EXEC_MAX_BUFFER_BYTES = 10 * 1024 * 1024
+const EXEC_TRUNCATE_THRESHOLD_CHARS = parseInt(
+  process.env.NR_EXEC_MAX_CHARS ?? '8000',
+  10,
+)
+const EXEC_PREVIEW_HEAD_LINES = parseInt(
+  process.env.NR_EXEC_PREVIEW_HEAD_LINES ?? '50',
+  10,
+)
+const EXEC_PREVIEW_TAIL_LINES = parseInt(
+  process.env.NR_EXEC_PREVIEW_TAIL_LINES ?? '50',
+  10,
+)
+const CONTEXT_BUDGET_WARN_TOKENS = parseInt(
+  process.env.NR_CONTEXT_BUDGET_WARN_TOKENS ?? '45000',
+  10,
+)
+
+const sessionBudgets = new Map<string, SessionBudget>()
+
+function getSessionBudgetKey(sid?: string): string {
+  return sid ?? '__default__'
+}
+
+export function resetSessionBudgets(): void {
+  sessionBudgets.clear()
+}
+
+export function estimateTokenCount(text: string): number {
+  return Math.ceil(text.length / 4)
+}
+
+export function getSessionBudgetSnapshot(sid?: string): {
+  outputChars: number
+  toolCalls: number
+  estimatedTokens: number
+} {
+  const snapshot = sessionBudgets.get(getSessionBudgetKey(sid)) ?? {
+    outputChars: 0,
+    toolCalls: 0,
+  }
+  return {
+    ...snapshot,
+    estimatedTokens: Math.ceil(snapshot.outputChars / 4),
+  }
+}
+
+function recordSessionOutput(sid: string | undefined, text: string): {
+  outputChars: number
+  toolCalls: number
+  estimatedTokens: number
+} {
+  const key = getSessionBudgetKey(sid)
+  const current = sessionBudgets.get(key) ?? { outputChars: 0, toolCalls: 0 }
+  const next = {
+    outputChars: current.outputChars + text.length,
+    toolCalls: current.toolCalls + 1,
+  }
+  sessionBudgets.set(key, next)
+  return {
+    ...next,
+    estimatedTokens: Math.ceil(next.outputChars / 4),
+  }
+}
+
+function formatContextBudgetMessage(sid?: string): string | null {
+  const snapshot = getSessionBudgetSnapshot(sid)
+  if (snapshot.estimatedTokens < CONTEXT_BUDGET_WARN_TOKENS) {
+    return null
+  }
+  return `[Context budget] Approx ${snapshot.estimatedTokens} tokens returned across ${snapshot.toolCalls} tool results in this session. Consider summarizing or offloading findings before continuing.`
+}
+
+function sanitizeArtifactStem(command: string): string {
+  const stem = command
+    .trim()
+    .split(/\s+/)
+    .slice(0, 3)
+    .join('-')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48)
+  return stem || 'command-output'
+}
+
+function applyMaxLines(output: string, maxLines?: number): string {
+  if (!maxLines || maxLines < 1) {
+    return output
+  }
+  const lines = output.split(/\r?\n/)
+  if (lines.length <= maxLines) {
+    return output
+  }
+  return [
+    ...lines.slice(0, maxLines),
+    `[truncated ${lines.length - maxLines} additional lines by max_lines=${maxLines}]`,
+  ].join('\n')
+}
+
+export function summarizeOutputPreview(
+  output: string,
+  headLines = EXEC_PREVIEW_HEAD_LINES,
+  tailLines = EXEC_PREVIEW_TAIL_LINES,
+): string {
+  const lines = output.split(/\r?\n/)
+  if (lines.length <= headLines + tailLines) {
+    return output
+  }
+  return [
+    ...lines.slice(0, headLines),
+    `[... ${lines.length - headLines - tailLines} lines omitted ...]`,
+    ...lines.slice(-tailLines),
+  ].join('\n')
+}
+
+function getSafeExecArtifactPath(fileName: string): string {
+  const artifactsDir = resolve(getArtifactsDir(CWD))
+  const artifactPath = resolve(artifactsDir, fileName)
+  const relativePath = relative(artifactsDir, artifactPath)
+  if (relativePath.startsWith('..')) {
+    throw new Error('Resolved artifact path escaped the artifacts directory')
+  }
+  return artifactPath
+}
+
+function summarizeTextBlock(text: string, maxLines = 6): string {
+  const lines = text.split(/\r?\n/)
+  if (lines.length <= maxLines) {
+    return text
+  }
+  return [...lines.slice(0, maxLines), `[... ${lines.length - maxLines} lines omitted ...]`].join('\n')
+}
+
+async function writeExecArtifact(command: string, output: string): Promise<string> {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const stem = sanitizeArtifactStem(command)
+  const fileName = `${stem}-${timestamp}.txt`
+  const artifactPath = getSafeExecArtifactPath(fileName)
+  await mkdir(getArtifactsDir(CWD), { recursive: true })
+  await writeFile(artifactPath, output, 'utf8')
+
+  const relativeArtifactPath = relative(CWD, artifactPath)
+  logRuntimeEvent(
+    'ART',
+    `saved ${relativeArtifactPath} (${output.split(/\r?\n/).length} lines, ${output.length} chars) for ${formatCommandPreview(command)}`,
+    undefined,
+    GREEN,
+  )
+  const manifest = await readEngagementManifest(CWD)
+  if (manifest) {
+    await appendEvidenceEntry(CWD, {
+      type: 'artifact',
+      label: `nr_exec:${stem}`,
+      path: relativeArtifactPath,
+      description: `Raw nr_exec output for: ${command.slice(0, 160)}`,
+    })
+    logRuntimeEvent('EVD', `recorded artifact evidence ${relativeArtifactPath}`, undefined, GREEN)
+  }
+
+  return relativeArtifactPath
+}
+
+async function formatExecOutput(
+  command: string,
+  output: string,
+  maxLines?: number,
+): Promise<ExecReturnPayload> {
+  const rawOutput = output.trim() || '(no output)'
+  const visibleOutput = applyMaxLines(rawOutput, maxLines)
+
+  if (
+    rawOutput.length <= EXEC_TRUNCATE_THRESHOLD_CHARS &&
+    visibleOutput.length <= EXEC_TRUNCATE_THRESHOLD_CHARS
+  ) {
+    return { text: visibleOutput }
+  }
+
+  const artifactPath = await writeExecArtifact(command, rawOutput)
+  return {
+    text: [
+      `[output saved] ${artifactPath} — ${rawOutput.split(/\r?\n/).length} lines, ${rawOutput.length} chars`,
+      `[command] ${command}`,
+      '[preview]',
+      summarizeOutputPreview(visibleOutput),
+    ].join('\n'),
+    artifactPath,
+  }
+}
+
+async function detectHttpIntelligence(output: string): Promise<string[]> {
+  const httpResponse = parseHttpResponseFromOutput(output)
+  if (!httpResponse) {
+    return []
+  }
+
+  const wafResult = await handleHttpResponse(
+    CWD,
+    httpResponse.statusCode,
+    httpResponse.headers,
+    httpResponse.body,
+    httpResponse.cookies,
+  )
+
+  if (wafResult?.isNew && wafResult.detection.detected) {
+    return [wafResult.agentContext]
+  }
+
+  return []
+}
+
+async function executeCommandWithIntelligence(
+  command: string,
+  timeout: number,
+  maxLines?: number,
+): Promise<ExecCommandResult> {
+  logRuntimeEvent(
+    'EXEC',
+    `running ${formatCommandPreview(command)} · timeout=${timeout}ms`,
+  )
+  try {
+    const { stdout, stderr } = await execAsync(command, {
+      cwd: CWD,
+      timeout,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
+      env: { ...process.env, TERM: 'dumb' },
+    })
+    const parts: string[] = []
+    if (stdout.trim()) parts.push(stdout.trim())
+    if (stderr.trim()) parts.push(`[stderr]\n${stderr.trim()}`)
+    const rawOutput = parts.join('\n') || '(no output)'
+    const intelligenceContexts = await detectHttpIntelligence(rawOutput)
+    if (intelligenceContexts.length > 0) {
+      logRuntimeEvent(
+        'INT',
+        `captured ${intelligenceContexts.length} intelligence hint(s) for ${formatCommandPreview(command)}`,
+        undefined,
+        YELLOW,
+      )
+    }
+    const rendered = await formatExecOutput(command, rawOutput, maxLines)
+
+    logRuntimeEvent(
+      'EXEC',
+      `completed exit=0 ${formatCommandPreview(command)}${rendered.artifactPath ? ` · artifact=${rendered.artifactPath}` : ''}`,
+      undefined,
+      GREEN,
+    )
+
+    return {
+      command,
+      ok: true,
+      exitCode: 0,
+      renderedText: rendered.text,
+      artifactPath: rendered.artifactPath,
+      intelligenceContexts,
+    }
+  } catch (err: any) {
+    const parts: string[] = []
+    if (err.stdout?.trim()) parts.push(err.stdout.trim())
+    if (err.stderr?.trim()) parts.push(`[stderr]\n${err.stderr.trim()}`)
+    if (err.killed) parts.push(`[killed] Command timed out after ${timeout}ms`)
+    if (parts.length === 0) parts.push(err.message ?? String(err))
+    const body = parts.join('\n')
+    const rawOutput = `[exit ${err.code ?? '?'}]\n${body}`
+    const intelligenceContexts = await detectHttpIntelligence(body)
+    if (intelligenceContexts.length > 0) {
+      logRuntimeEvent(
+        'INT',
+        `captured ${intelligenceContexts.length} intelligence hint(s) from failed command ${formatCommandPreview(command)}`,
+        undefined,
+        YELLOW,
+      )
+    }
+
+    const httpResponse = parseHttpResponseFromOutput(body)
+    const failureResult = await handleToolFailure(CWD, {
+      attempt: 0,
+      payload: command,
+      error: {
+        message: err.message,
+        code: typeof err.code === 'string' ? err.code : undefined,
+        statusCode: httpResponse?.statusCode,
+      },
+      responseBody: httpResponse?.body ?? body,
+      responseHeaders: httpResponse?.headers,
+      statusCode: httpResponse?.statusCode,
+    })
+
+    if (failureResult) {
+      intelligenceContexts.push(failureResult.agentContext)
+      logRuntimeEvent(
+        'INT',
+        `failure intelligence generated for ${formatCommandPreview(command)}`,
+        undefined,
+        YELLOW,
+      )
+    }
+
+    const rendered = await formatExecOutput(command, rawOutput, maxLines)
+    logRuntimeEvent(
+      'EXEC',
+      `failed exit=${String(err.code ?? '?')} ${formatCommandPreview(command)}${rendered.artifactPath ? ` · artifact=${rendered.artifactPath}` : ''}`,
+      undefined,
+      RED,
+    )
+    return {
+      command,
+      ok: false,
+      exitCode: err.code ?? '?',
+      renderedText: rendered.text,
+      artifactPath: rendered.artifactPath,
+      intelligenceContexts,
+    }
+  }
+}
+
+function renderCompositeExecResult(
+  results: ExecCommandResult[],
+  summaryOnly: boolean,
+  stopOnError: boolean,
+): string {
+  const successCount = results.filter(result => result.ok).length
+  const failureCount = results.length - successCount
+  const lines = [
+    `[composite execution] ${results.length} command(s) completed — ${successCount} ok, ${failureCount} failed`,
+    `[mode] ${summaryOnly ? 'summary-first' : 'full-preview'}${stopOnError ? ' · stop-on-error enabled' : ''}`,
+    '',
+  ]
+
+  results.forEach((result, index) => {
+    lines.push(`${index + 1}. [${result.ok ? 'ok' : `exit ${result.exitCode}`}] ${result.command}`)
+    lines.push(summaryOnly ? summarizeTextBlock(result.renderedText) : result.renderedText)
+    if (result.intelligenceContexts.length > 0) {
+      const intelligenceSummary = result.intelligenceContexts
+        .map(context => summarizeTextBlock(context, 4))
+        .join('\n\n')
+      lines.push(intelligenceSummary)
+    }
+    lines.push('')
+  })
+
+  return lines.join('\n').trim()
+}
+
+export function parseHttpResponseFromOutput(output: string): ParsedHttpResponse | null {
+  const normalized = output.replace(/\r\n/g, '\n')
+  const start = normalized.search(/HTTP\/(?:1\.\d|2)\s+\d{3}\b/)
+  if (start === -1) {
+    return null
+  }
+
+  const candidate = normalized.slice(start)
+  const separatorIndex = candidate.indexOf('\n\n')
+  const head = separatorIndex === -1 ? candidate : candidate.slice(0, separatorIndex)
+  const body = separatorIndex === -1 ? '' : candidate.slice(separatorIndex + 2).trim()
+  const lines = head.split('\n').filter(Boolean)
+  if (lines.length === 0) {
+    return null
+  }
+
+  const statusMatch = lines[0]?.match(/^HTTP\/(?:1\.\d|2)\s+(\d{3})\b/)
+  if (!statusMatch) {
+    return null
+  }
+
+  const headers: Record<string, string> = {}
+  for (const line of lines.slice(1)) {
+    const separator = line.indexOf(':')
+    if (separator <= 0) {
+      continue
+    }
+    const key = line.slice(0, separator).trim().toLowerCase()
+    const value = line.slice(separator + 1).trim()
+    headers[key] = value
+  }
+
+  return {
+    statusCode: Number(statusMatch[1]),
+    headers,
+    body,
+    cookies: headers['set-cookie'],
+  }
+}
 
 // ─── Colors (matching harness StartupScreen.ts) ────────────────────────────
 
@@ -126,18 +577,54 @@ function logToolResult(name: string, ok: boolean, ms: number, bytes: number, sid
   console.error(`${rgb(...ACCENT)}${ts()} [DONE]${RESET} ${name} → ${status}${s} ${DIM}(${ms}ms)${sz}${RESET}`)
 }
 
+function formatCommandPreview(command: string): string {
+  const compact = command.replace(/\s+/g, ' ').trim()
+  return compact.length > 120 ? `${compact.slice(0, 117)}...` : compact
+}
+
+function logRuntimeEvent(
+  tag: string,
+  message: string,
+  sid?: string,
+  colorCode: string = CYAN,
+): void {
+  const session = sid ? ` ${DIM}${rgb(...DIMCOL)}sid:${sid.slice(0, 8)}${RESET}` : ''
+  console.error(`${colorCode}${ts()} [${tag}]${RESET}${session} ${message}`)
+}
+
+function logBudgetSnapshot(
+  name: string,
+  snapshot: { outputChars: number; toolCalls: number; estimatedTokens: number },
+  sid?: string,
+): void {
+  const overBudget = snapshot.estimatedTokens >= CONTEXT_BUDGET_WARN_TOKENS
+  logRuntimeEvent(
+    'CTX',
+    `${name} -> approx ${snapshot.estimatedTokens} tokens across ${snapshot.toolCalls} result(s) (${snapshot.outputChars} chars returned)`,
+    sid,
+    overBudget ? YELLOW : DIM,
+  )
+}
+
 function traced<T extends Record<string, unknown>>(
   name: string,
-  fn: (args: T) => Promise<string>,
+  fn: (args: T, ctx: any) => Promise<string>,
 ): (args: T, ctx: any) => Promise<string> {
   return async (args: T, ctx: any) => {
     const sid = ctx?.sessionId as string | undefined
     logToolCall(name, args, sid)
     const start = Date.now()
     try {
-      const result = await fn(args)
-      logToolResult(name, true, Date.now() - start, result.length, sid)
-      return result
+      const result = await fn(args, ctx)
+      const snapshot = recordSessionOutput(sid, result)
+      logBudgetSnapshot(name, snapshot, sid)
+      const budgetMessage =
+        snapshot.estimatedTokens >= CONTEXT_BUDGET_WARN_TOKENS
+          ? formatContextBudgetMessage(sid)
+          : null
+      const finalResult = budgetMessage ? `${result}\n\n${budgetMessage}` : result
+      logToolResult(name, true, Date.now() - start, finalResult.length, sid)
+      return finalResult
     } catch (err) {
       logToolResult(name, false, Date.now() - start, 0, sid)
       throw err
@@ -187,32 +674,68 @@ const server = new FastMCP({
 
 server.addTool({
   name: 'nr_exec',
-  description: 'Run a shell command. All 153 pentest tools (nmap, sqlmap, nuclei, etc.) are invoked here. Returns stdout+stderr.',
+  description: 'Run one or more shell commands. All 153 pentest tools (nmap, sqlmap, nuclei, etc.) are invoked here. Supports composite execution with summary-first results.',
+  annotations: OPEN_WORLD_EXEC_TOOL_ANNOTATIONS,
   parameters: z.object({
-    command: z.string().describe('Shell command'),
-    timeout_ms: z.number().optional().describe('Timeout in ms (default 120000)'),
+    command: z.string().optional().describe('Single shell command'),
+    commands: z.array(z.string()).optional().describe('Optional batch of shell commands to execute sequentially inside nr_exec'),
+    timeout_ms: z.number().optional().describe('Timeout in ms per command (default 120000)'),
+    max_lines: z.number().optional().describe('Optional line cap for the returned preview'),
+    summary_only: z.boolean().optional().describe('When using commands, return condensed per-command summaries instead of full previews'),
+    stop_on_error: z.boolean().optional().describe('When using commands, stop executing the batch after the first failed command'),
+  }).superRefine((value, ctx) => {
+    const hasCommand = typeof value.command === 'string' && value.command.trim().length > 0
+    const hasCommands = Array.isArray(value.commands) && value.commands.length > 0
+    if (!hasCommand && !hasCommands) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide either command or commands.',
+        path: ['command'],
+      })
+    }
+    if (hasCommand && hasCommands) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide command or commands, not both.',
+        path: ['commands'],
+      })
+    }
   }),
   execute: traced('nr_exec', async (args) => {
     const timeout = args.timeout_ms ?? 120_000
-    try {
-      const { stdout, stderr } = await execAsync(args.command, {
-        cwd: CWD,
+    const batchCommands = args.commands?.length
+      ? args.commands.filter(command => command.trim().length > 0)
+      : null
+
+    if (!batchCommands || batchCommands.length === 0) {
+      const result = await executeCommandWithIntelligence(
+        args.command ?? '',
         timeout,
-        maxBuffer: 10 * 1024 * 1024,
-        env: { ...process.env, TERM: 'dumb' },
-      })
-      const parts: string[] = []
-      if (stdout.trim()) parts.push(stdout.trim())
-      if (stderr.trim()) parts.push(`[stderr]\n${stderr.trim()}`)
-      return parts.join('\n') || '(no output)'
-    } catch (err: any) {
-      const parts: string[] = []
-      if (err.stdout?.trim()) parts.push(err.stdout.trim())
-      if (err.stderr?.trim()) parts.push(`[stderr]\n${err.stderr.trim()}`)
-      if (err.killed) parts.push(`[killed] Command timed out after ${timeout}ms`)
-      if (parts.length === 0) parts.push(err.message ?? String(err))
-      return `[exit ${err.code ?? '?'}]\n${parts.join('\n')}`
+        args.max_lines,
+      )
+      return result.intelligenceContexts.length > 0
+        ? [result.renderedText, ...result.intelligenceContexts].join('\n\n')
+        : result.renderedText
     }
+
+    const stopOnError = args.stop_on_error ?? false
+    const summaryOnly = args.summary_only ?? true
+    const results: ExecCommandResult[] = []
+
+    for (const command of batchCommands) {
+      const result = await executeCommandWithIntelligence(command, timeout, args.max_lines)
+      results.push(result)
+      if (!result.ok && stopOnError) {
+        break
+      }
+    }
+
+    const compositeOutput = renderCompositeExecResult(results, summaryOnly, stopOnError)
+    if (stopOnError && results.some(result => !result.ok) && results.length < batchCommands.length) {
+      return `${compositeOutput}\n\n[halted] Composite execution stopped after the first failed command.`
+    }
+
+    return compositeOutput
   }),
 })
 
@@ -223,6 +746,7 @@ server.addTool({
 server.addTool({
   name: 'nr_engagement_init',
   description: 'Initialize a .netrunner/ engagement. Creates project folder, manifest, evidence ledger, and memory surfaces.',
+  annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
   parameters: z.object({
     name: z.string().optional().describe('Engagement name'),
     workflow: z.enum([
@@ -256,8 +780,9 @@ server.addTool({
 server.addTool({
   name: 'nr_engagement_status',
   description: 'Get engagement manifest, evidence counts, and run state.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
   parameters: z.object({}),
-  execute: traced('nr_engagement_status', async () => {
+  execute: traced('nr_engagement_status', async (_args, ctx) => {
     const manifest = await readEngagementManifest(CWD)
     if (!manifest) return 'No engagement found. Use nr_engagement_init first.'
 
@@ -271,6 +796,9 @@ server.addTool({
     let runState = '(not found)'
     try { runState = await readFile(getRunStatePath(CWD), 'utf8') } catch {}
 
+    const intelligenceState = await ensureIntelligenceState(CWD)
+    const sessionBudget = getSessionBudgetSnapshot(ctx?.sessionId as string | undefined)
+
     return [
       '=== Engagement ===',
       summarizeEngagement(manifest),
@@ -280,6 +808,14 @@ server.addTool({
       '',
       '=== Run State ===',
       runState,
+      '',
+      '=== Intelligence ===',
+      formatIntelligenceContext(intelligenceState),
+      '',
+      '=== Context Budget ===',
+      sessionBudget.toolCalls > 0
+        ? `Approx ${sessionBudget.estimatedTokens} tokens returned across ${sessionBudget.toolCalls} tool results in this session.`
+        : '(no tool output recorded yet)',
     ].join('\n')
   }),
 })
@@ -291,6 +827,7 @@ server.addTool({
 server.addTool({
   name: 'nr_scope_check',
   description: 'Check a planned action against engagement guardrails. Returns allow/review/block with reason.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
   parameters: z.object({
     planned_action: z.string().describe('Action to validate against scope and impact rules'),
   }),
@@ -309,6 +846,7 @@ server.addTool({
 server.addTool({
   name: 'nr_save_finding',
   description: 'Record a security finding with severity, evidence, and optional CWE/recommendation.',
+  annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
   parameters: z.object({
     title: z.string().describe('Finding title'),
     severity: z.enum(['info', 'low', 'medium', 'high', 'critical']),
@@ -325,7 +863,53 @@ server.addTool({
       recommendation: args.recommendation,
       cweIds: args.cwe_ids,
     })
-    return `Finding saved: ${entry.id} (${args.severity}) — ${args.title}`
+    const findingEntry = entry as FindingEntry
+    const details = [`Finding saved: ${entry.id} (${args.severity}) — ${args.title}`]
+    logRuntimeEvent(
+      'EVD',
+      `finding ${entry.id} saved (${args.severity}) ${args.title}`,
+      undefined,
+      GREEN,
+    )
+
+    if (shouldGateBlindFinding(findingEntry)) {
+      await incrementPendingBlindVerifications(CWD)
+      details.push(
+        '[verification required] This finding matches blind or out-of-band patterns. Run statistical or OOB verification before treating it as confirmed.',
+      )
+      logRuntimeEvent(
+        'INT',
+        `finding ${entry.id} queued for blind/OOB verification follow-up`,
+        undefined,
+        YELLOW,
+      )
+    }
+
+    const syncResult = await syncEvidenceToKnowledgeGraph(CWD)
+    if (syncResult && syncResult.imported > 0) {
+      details.push(`[intelligence] Knowledge graph sync completed (${syncResult.imported} entries imported).`)
+      logRuntimeEvent(
+        'INT',
+        `knowledge graph synced ${syncResult.imported} entry(ies) after finding ${entry.id}`,
+        undefined,
+        GREEN,
+      )
+
+      const manifest = await readEngagementManifest(CWD)
+      const target = manifest?.targets[0]
+      if (target) {
+        await planNextActionsWithPersistence(CWD, target)
+        details.push(`[intelligence] Attack-path plan refreshed for ${target}.`)
+        logRuntimeEvent(
+          'INT',
+          `attack-path plan refreshed for ${target}`,
+          undefined,
+          GREEN,
+        )
+      }
+    }
+
+    return details.join('\n\n')
   }),
 })
 
@@ -336,11 +920,13 @@ server.addTool({
 server.addTool({
   name: 'nr_save_note',
   description: 'Append a note to the evidence ledger.',
+  annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
   parameters: z.object({
     note: z.string().describe('Note content'),
   }),
   execute: traced('nr_save_note', async (args) => {
     const entry = await appendEvidenceEntry(CWD, { type: 'note', note: args.note })
+    logRuntimeEvent('EVD', `note ${entry.id} saved`, undefined, GREEN)
     return `Note saved: ${entry.id}`
   }),
 })
@@ -352,6 +938,7 @@ server.addTool({
 server.addTool({
   name: 'nr_list_evidence',
   description: 'List evidence entries with optional type filter.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
   parameters: z.object({
     type: z.enum([
       'finding', 'note', 'artifact', 'execution_step',
@@ -377,34 +964,23 @@ server.addTool({
 // This follows the Anthropic "progressive disclosure" pattern —
 // load only what you need, when you need it.
 
-const AGENT_DESCRIPTIONS: Record<string, string> = {
-  'engagement-lead': 'Coordinates phases, routes tasks, manages scope',
-  'recon-specialist': 'Passive/active recon, OSINT, fingerprinting',
-  'web-testing-specialist': 'Web app vulns — XSS, SQLi, CSRF, auth bypass',
-  'api-testing-specialist': 'API endpoints — REST, GraphQL, auth, injection',
-  'network-testing-specialist': 'Network-layer — ports, services, protocols',
-  'exploit-specialist': 'Exploit validation — PoC, payload craft',
-  'privilege-escalation-specialist': 'Privesc — local, kernel, misconfig',
-  'lateral-movement-specialist': 'Pivot — credential reuse, tunneling',
-  'ad-specialist': 'Active Directory — Kerberos, LDAP, cert abuse',
-  'retest-specialist': 'Remediation verification, regression testing',
-  'evidence-specialist': 'Evidence collection, artifact management',
-  'reporting-specialist': 'Report generation, finding narratives',
-}
-
 server.addTool({
   name: 'nr_discover',
   description: 'Progressive disclosure: list agents, skills, workflows, or capabilities. Load only what you need.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
   parameters: z.object({
     topic: z.enum(['agents', 'skills', 'workflows', 'capabilities']).describe('What to discover'),
     filter: z.string().optional().describe('Optional filter (e.g. capability pack name like "recon" or "web")'),
   }),
   execute: traced('nr_discover', async (args) => {
     switch (args.topic) {
-      case 'agents':
-        return NET_RUNNER_AGENT_TYPES.map(
-          a => `${a}: ${AGENT_DESCRIPTIONS[a] ?? ''}`,
-        ).join('\n')
+      case 'agents': {
+        clearAgentDefinitionsCache()
+        const { activeAgents } = await getAgentDefinitionsWithOverrides(CWD)
+        return activeAgents
+          .map(agent => `${agent.agentType}: ${agent.whenToUse}`)
+          .join('\n')
+      }
 
       case 'skills':
         return NET_RUNNER_SKILL_DEFINITIONS.map(
@@ -547,12 +1123,19 @@ function printBanner(): void {
 
 const USE_STDIO = process.argv.includes('--stdio')
 
-async function main(): Promise<void> {
-  if (!USE_STDIO) {
+export async function startNetRunnerMcpServer(options?: {
+  transportType?: 'stdio' | 'httpStream'
+  printStartupBanner?: boolean
+}): Promise<void> {
+  const transportType = options?.transportType ?? (USE_STDIO ? 'stdio' : 'httpStream')
+  const printStartupBanner =
+    options?.printStartupBanner ?? transportType !== 'stdio'
+
+  if (printStartupBanner) {
     printBanner()
   }
 
-  if (USE_STDIO) {
+  if (transportType === 'stdio') {
     await server.start({ transportType: 'stdio' })
   } else {
     await server.start({
@@ -565,7 +1148,16 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  console.error(`${RED}Fatal: ${err.message ?? err}${RESET}`)
-  process.exit(1)
-})
+async function main(): Promise<void> {
+  await startNetRunnerMcpServer({
+    transportType: USE_STDIO ? 'stdio' : 'httpStream',
+    printStartupBanner: !USE_STDIO,
+  })
+}
+
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error(`${RED}Fatal: ${err.message ?? err}${RESET}`)
+    process.exit(1)
+  })
+}

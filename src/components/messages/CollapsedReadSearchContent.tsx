@@ -1,5 +1,6 @@
 import { c as _c } from "react-compiler-runtime";
 import { feature } from 'bun:bundle';
+import type { ToolUseBlockParam } from '@anthropic-ai/sdk/resources/index.mjs';
 import { basename } from 'path';
 import React, { useRef } from 'react';
 import { useMinDisplayTime } from '../../hooks/useMinDisplayTime.js';
@@ -37,9 +38,33 @@ type Props = {
   /** True if this is the currently active collapsed group (last one, still loading) */
   isActiveGroup?: boolean;
 };
+type VerboseToolUseProps = {
+  content: ToolUseBlockParam;
+  tools: Tools;
+  lookups: ReturnType<typeof buildMessageLookups>;
+  inProgressToolUseIDs: Set<string>;
+  shouldAnimate: boolean;
+  theme: ThemeName;
+};
+type ReplToolCallProgress = {
+  type: 'repl_tool_call';
+  phase?: string;
+  toolInput?: {
+    command?: string;
+    pattern?: string;
+    file_path?: string;
+  };
+  toolName?: string;
+};
+
+function isReplToolCallProgress(data: unknown): data is ReplToolCallProgress {
+  return typeof data === 'object' && data !== null && 'type' in data && (data as {
+    type?: unknown;
+  }).type === 'repl_tool_call';
+}
 
 /** Render a single tool use in verbose mode */
-function VerboseToolUse(t0) {
+function VerboseToolUse(t0: VerboseToolUseProps) {
   const $ = _c(24);
   const {
     content,
@@ -204,13 +229,9 @@ export function CollapsedReadSearchContent({
   if (isActiveGroup) {
     for (const id_0 of toolUseIds) {
       if (!inProgressToolUseIDs.has(id_0)) continue;
-      const latest = lookups.progressMessagesByToolUseID.get(id_0)?.at(-1)?.data;
-      if (latest?.type === 'repl_tool_call' && latest.phase === 'start') {
-        const input = latest.toolInput as {
-          command?: string;
-          pattern?: string;
-          file_path?: string;
-        };
+      const latest: unknown = lookups.progressMessagesByToolUseID.get(id_0)?.at(-1)?.data;
+      if (isReplToolCallProgress(latest) && latest.phase === 'start') {
+        const input = latest.toolInput ?? {};
         incomingHint = input.file_path ?? (input.pattern ? `"${input.pattern}"` : undefined) ?? input.command ?? latest.toolName;
       }
     }
@@ -280,9 +301,12 @@ export function CollapsedReadSearchContent({
       if (data?.type !== 'bash_progress' && data?.type !== 'powershell_progress') {
         continue;
       }
+      if (typeof data.elapsedTimeSeconds !== 'number') {
+        continue;
+      }
       if (elapsed === undefined || data.elapsedTimeSeconds > elapsed) {
         elapsed = data.elapsedTimeSeconds;
-        lines = data.totalLines;
+        lines = data.totalLines ?? 0;
       }
     }
     if (elapsed !== undefined && elapsed >= 2) {
@@ -321,16 +345,16 @@ export function CollapsedReadSearchContent({
     pushPart('push', 'pushed to', <Text bold>{branches.join(', ')}</Text>);
   }
   if (isFullscreenEnvEnabled() && message.branches?.length) {
-    const byAction = {
+    const byAction: Record<'merged' | 'rebased', string> = {
       merged: 'merged',
       rebased: 'rebased onto'
     };
     for (const b of message.branches) {
-      pushPart(`br-${b.action}-${b.ref}`, byAction[b.action], <Text bold>{b.ref}</Text>);
+      pushPart(`br-${b.action}-${b.ref}`, byAction[b.action as keyof typeof byAction], <Text bold>{b.ref}</Text>);
     }
   }
   if (isFullscreenEnvEnabled() && message.prs?.length) {
-    const verbs = {
+    const verbs: Record<'created' | 'edited' | 'merged' | 'commented' | 'closed' | 'ready', string> = {
       created: 'created',
       edited: 'edited',
       merged: 'merged',
@@ -339,7 +363,7 @@ export function CollapsedReadSearchContent({
       ready: 'marked ready'
     };
     for (const pr of message.prs) {
-      pushPart(`pr-${pr.action}-${pr.number}`, verbs[pr.action], pr.url ? <PrBadge number={pr.number} url={pr.url} bold /> : <Text bold>PR #{pr.number}</Text>);
+      pushPart(`pr-${pr.action}-${pr.number}`, verbs[pr.action as keyof typeof verbs], pr.url ? <PrBadge number={pr.number} url={pr.url} bold /> : <Text bold>PR #{pr.number}</Text>);
     }
   }
   if (searchCount > 0) {

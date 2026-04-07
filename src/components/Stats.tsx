@@ -8,6 +8,7 @@ import stripAnsi from 'strip-ansi';
 import type { CommandResultDisplay } from '../commands.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { applyColor } from '../ink/colorize.js';
+import type { Key } from '../ink/events/input-event.js';
 import { stringWidth as getStringWidth } from '../ink/stringWidth.js';
 import type { Color } from '../ink/styles.js';
 // eslint-disable-next-line custom-rules/prefer-use-keybindings -- raw j/k/arrow stats navigation
@@ -45,11 +46,23 @@ type StatsResult = {
 } | {
   type: 'empty';
 };
+type StatsTabId = 'Overview' | 'Models';
+type StatsCache = Partial<Record<StatsDateRange, ClaudeCodeStats>>;
+type DateRangeSelectorProps = {
+  dateRange: StatsDateRange;
+  isLoading: boolean;
+};
+type ModelsTabProps = {
+  stats: ClaudeCodeStats;
+  dateRange: StatsDateRange;
+  isLoading: boolean;
+};
 const DATE_RANGE_LABELS: Record<StatsDateRange, string> = {
   '7d': 'Last 7 days',
   '30d': 'Last 30 days',
   all: 'All time'
 };
+const SPECULATION_ENABLED = feature('SPECULATION') ? true : false;
 const DATE_RANGE_ORDER: StatsDateRange[] = ['all', '7d', '30d'];
 function getNextDateRange(current: StatsDateRange): StatsDateRange {
   const currentIndex = DATE_RANGE_ORDER.indexOf(current);
@@ -79,7 +92,7 @@ function createAllTimeStatsPromise(): Promise<StatsResult> {
     };
   });
 }
-export function Stats(t0) {
+export function Stats(t0: Props) {
   const $ = _c(4);
   const {
     onClose
@@ -118,25 +131,25 @@ type StatsContentProps = {
  * Inner component that uses React 19's use() to read the stats promise.
  * Suspends while loading all-time stats, then handles date range changes without suspending.
  */
-function StatsContent(t0) {
+function StatsContent(t0: StatsContentProps) {
   const $ = _c(34);
   const {
     allTimePromise,
     onClose
   } = t0;
-  const allTimeResult = use(allTimePromise);
-  const [dateRange, setDateRange] = useState("all");
+  const allTimeResult = use(allTimePromise) as StatsResult;
+  const [dateRange, setDateRange] = useState<StatsDateRange>("all");
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = {};
+    t1 = {} as StatsCache;
     $[0] = t1;
   } else {
     t1 = $[0];
   }
-  const [statsCache, setStatsCache] = useState(t1);
+  const [statsCache, setStatsCache] = useState<StatsCache>(t1);
   const [isLoadingFiltered, setIsLoadingFiltered] = useState(false);
-  const [activeTab, setActiveTab] = useState("Overview");
-  const [copyStatus, setCopyStatus] = useState(null);
+  const [activeTab, setActiveTab] = useState<StatsTabId>("Overview");
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   let t2;
   let t3;
   if ($[1] !== dateRange || $[2] !== statsCache) {
@@ -151,7 +164,7 @@ function StatsContent(t0) {
       setIsLoadingFiltered(true);
       aggregateClaudeCodeStatsForRange(dateRange).then(data => {
         if (!cancelled) {
-          setStatsCache(prev => ({
+          setStatsCache((prev: StatsCache) => ({
             ...prev,
             [dateRange]: data
           }));
@@ -203,7 +216,7 @@ function StatsContent(t0) {
   useKeybinding("confirm:no", handleClose, t5);
   let t6;
   if ($[8] !== activeTab || $[9] !== dateRange || $[10] !== displayStats || $[11] !== onClose) {
-    t6 = (input, key) => {
+    t6 = (input: string, key: Key) => {
       if (key.ctrl && (input === "c" || input === "d")) {
         onClose("Stats dialog dismissed", {
           display: "system"
@@ -309,10 +322,10 @@ function StatsContent(t0) {
   }
   return t12;
 }
-function _temp(prev_0) {
+function _temp(prev_0: StatsTabId): StatsTabId {
   return prev_0 === "Overview" ? "Models" : "Overview";
 }
-function DateRangeSelector(t0) {
+function DateRangeSelector(t0: DateRangeSelectorProps) {
   const $ = _c(9);
   const {
     dateRange,
@@ -512,7 +525,7 @@ function OverviewTab({
       </Box>
 
       {/* Speculation time saved (ant-only) */}
-      {"external" === 'ant' && stats.totalSpeculationTimeSavedMs > 0 && <Box flexDirection="row" gap={4}>
+      {SPECULATION_ENABLED && stats.totalSpeculationTimeSavedMs > 0 && <Box flexDirection="row" gap={4}>
             <Box flexDirection="column" width={28}>
               <Text wrap="truncate">
                 Speculation saved:{' '}
@@ -713,7 +726,7 @@ function generateFunFactoid(stats: ClaudeCodeStats, totalTokens: number): string
   const randomIndex = Math.floor(Math.random() * factoids.length);
   return factoids[randomIndex]!;
 }
-function ModelsTab(t0) {
+function ModelsTab(t0: ModelsTabProps) {
   const $ = _c(15);
   const {
     stats,
@@ -740,9 +753,9 @@ function ModelsTab(t0) {
   } else {
     t2 = $[1];
   }
-  useInput((_input, key) => {
+  useInput((_input: string, key: Key) => {
     if (key.downArrow && scrollOffset < modelEntries.length - 4) {
-      setScrollOffset(prev => Math.min(prev + 2, modelEntries.length - 4));
+      setScrollOffset((prev: number) => Math.min(prev + 2, modelEntries.length - 4));
     }
     if (key.upArrow) {
       if (scrollOffset > 0) {
@@ -813,21 +826,21 @@ function ModelsTab(t0) {
           return <ModelEntry key={model_0} model={model_0} usage={usage_0} totalTokens={totalTokens} />;
         })}</Box>{t9}</Box>{t10}</Box>;
 }
-function _temp1(item, i) {
+function _temp1(item: ChartLegend, i: number) {
   return <Text key={item.model}>{i > 0 ? " \xB7 " : ""}<Ansi>{item.coloredBullet}</Ansi> {item.model}</Text>;
 }
-function _temp0(t0) {
+function _temp0(t0: [string, ClaudeCodeStats['modelUsage'][string]]) {
   const [model] = t0;
   return model;
 }
-function _temp9(sum, t0) {
+function _temp9(sum: number, t0: [string, ClaudeCodeStats['modelUsage'][string]]) {
   const [, usage] = t0;
   return sum + usage.inputTokens + usage.outputTokens;
 }
-function _temp8(prev_0) {
+function _temp8(prev_0: number) {
   return Math.max(prev_0 - 2, 0);
 }
-function _temp7(t0, t1) {
+function _temp7(t0: [string, ClaudeCodeStats['modelUsage'][string]], t1: [string, ClaudeCodeStats['modelUsage'][string]]) {
   const [, a] = t0;
   const [, b] = t1;
   return b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens);
@@ -841,7 +854,7 @@ type ModelEntryProps = {
   };
   totalTokens: number;
 };
-function ModelEntry(t0) {
+function ModelEntry(t0: ModelEntryProps) {
   const $ = _c(21);
   const {
     model,
@@ -1095,7 +1108,7 @@ function renderStatsToAnsi(stats: ClaudeCodeStats, activeTab: 'Overview' | 'Mode
 function renderOverviewToAnsi(stats: ClaudeCodeStats): string[] {
   const lines: string[] = [];
   const theme = getTheme(resolveThemeSetting(getGlobalConfig().theme));
-  const h = (text: string) => applyColor(text, theme.netrunner as Color);
+  const h = (text: string) => applyColor(text, theme.claude as Color);
 
   // Two-column helper with fixed spacing
   // Column 1: label (18 chars) + value + padding to reach col 2
@@ -1151,7 +1164,7 @@ function renderOverviewToAnsi(stats: ClaudeCodeStats): string[] {
   lines.push(row('Active days', activeDaysVal, 'Peak hour', peakHourVal));
 
   // Speculation time saved (ant-only)
-  if ("external" === 'ant' && stats.totalSpeculationTimeSavedMs > 0) {
+  if (SPECULATION_ENABLED && stats.totalSpeculationTimeSavedMs > 0) {
     const label = 'Speculation saved:'.padEnd(COL1_LABEL_WIDTH);
     lines.push(label + h(formatDuration(stats.totalSpeculationTimeSavedMs)));
   }

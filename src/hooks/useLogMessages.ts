@@ -1,4 +1,3 @@
-import type { UUID } from 'crypto'
 import { useEffect, useRef } from 'react'
 import { useAppState } from '../state/AppState.js'
 import type { Message } from '../types/message.js'
@@ -8,6 +7,22 @@ import {
   isChainParticipant,
   recordTranscript,
 } from '../utils/sessionStorage.js'
+
+type UUID = string
+
+function findLastMatching<T>(
+  items: readonly T[],
+  predicate: (item: T) => boolean,
+): T | undefined {
+  for (let index = items.length - 1; index >= 0; index--) {
+    const item = items[index]
+    if (item !== undefined && predicate(item)) {
+      return item
+    }
+  }
+
+  return undefined
+}
 
 /**
  * Hook that logs messages to the transcript
@@ -107,7 +122,8 @@ export function useLogMessages(messages: Message[], ignore: boolean = false) {
       // pointing at a message that never reached disk. Pass full messages as
       // replId context — REPL tool_use and its tool_result land in separate
       // render cycles, so the slice alone can't pair them.
-      const last = cleanMessagesForLogging(slice, messages).findLast(
+      const last = findLastMatching(
+        cleanMessagesForLogging(slice, messages),
         isChainParticipant,
       )
       if (last) lastParentUuidRef.current = last.uuid as UUID

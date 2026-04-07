@@ -130,7 +130,7 @@ export function useSSHSession({
               q.filter(i => i.toolUseID !== request.tool_use_id),
             )
           },
-          onAllow(updatedInput) {
+          onAllow(updatedInput, _permissionUpdates, _feedback) {
             manager.respondToPermissionRequest(requestId, {
               behavior: 'allow',
               updatedInput,

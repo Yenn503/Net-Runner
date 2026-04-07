@@ -2,6 +2,13 @@
 
 Net-Runner runs assessments through a project-scoped runtime. Workflow state, guardrails, evidence, findings, and reporting sit inside `.netrunner/`. Persistent memory, session summaries, and optional shared team memory sit outside that project folder and feed context back into later runs.
 
+The strongest supported path in the OSS build is the local workflow runtime. Experimental coordinator-mode and agent-team surfaces still exist, but they should be treated as pilot functionality rather than the default execution path.
+
+That local runtime can be driven in two seamless ways:
+
+- through the Net-Runner CLI with direct provider credentials or local runtimes
+- through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 8 `nr_*` tools
+
 ## Workflow registry
 
 - `web-app-testing`
@@ -35,11 +42,13 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 1. The operator gives a plain-language instruction with a target.
 2. Net-Runner initializes `.netrunner/engagement.json` if needed.
 3. The runtime injects workflow, scope, impact, and retrieved context into the session.
-4. The main agent uses built-in tools directly, or optional coordinator mode delegates bounded tool work to workers.
-5. Guardrails review or block higher-impact actions.
-6. Evidence, artifacts, findings, and execution notes are written into the same project state.
-7. Background memory consolidation can update persistent memory between runs.
-8. Reports are generated from the evidence chain in `.netrunner/`.
+4. The operator or external MCP client drives execution through the shared harness runtime.
+5. The main agent uses built-in tools directly. Experimental coordinator-mode paths may delegate bounded tool work to workers where that surface is available.
+6. Guardrails review or block higher-impact actions.
+7. Evidence, artifacts, findings, and execution notes are written into the same project state.
+8. Runtime intelligence can react to HTTP responses, failures, and blind-finding patterns while the session is still active.
+9. Background memory consolidation can update persistent memory between runs.
+10. Reports are generated from the evidence chain in `.netrunner/`.
 
 ## Specialist agents
 
@@ -81,3 +90,5 @@ Before a deeper run:
 
 - use `/engagement capabilities [workflow]` to check missing commands or env requirements
 - use `/engagement alignment` to inspect workflow and agent coverage in the current build
+
+If you want to test agent teams in the OSS build, enable them explicitly through `agentTeamsEnabled`, `NETRUNNER_EXPERIMENTAL_AGENT_TEAMS=1`, or `--agent-teams`.

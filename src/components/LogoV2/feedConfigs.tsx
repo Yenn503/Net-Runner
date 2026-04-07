@@ -25,8 +25,9 @@ export function createRecentActivityFeed(activities: LogOption[]): FeedConfig {
   };
 }
 export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
+  const isAntUser = process.env.USER_TYPE === 'ant';
   const lines: FeedLine[] = releaseNotes.map(note => {
-    if ("external" === 'ant') {
+    if (isAntUser) {
       const match = note.match(/^(\d+\s+\w+\s+ago)\s+(.+)$/);
       if (match) {
         return {
@@ -39,9 +40,9 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
       text: note
     };
   });
-  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest net-runner-internal commits' : 'Check /release-notes for recent updates';
+  const emptyMessage = isAntUser ? 'Unable to fetch latest net-runner-internal commits' : 'Check /release-notes for recent updates';
   return {
-    title: "external" === 'ant' ? "Net-Runner Updates [ANT-ONLY: Latest CC commits]" : "Net-Runner Updates",
+    title: isAntUser ? "Net-Runner Updates [ANT-ONLY: Latest CC commits]" : "Net-Runner Updates",
     lines,
     footer: lines.length > 0 ? '/release-notes for more' : undefined,
     emptyMessage

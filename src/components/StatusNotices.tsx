@@ -30,7 +30,7 @@ async function loadMemoryFiles(): Promise<void> {
  * moved neutral or positive status to src/components/Status.tsx instead, which
  * users can access through /status.
  */
-export function StatusNotices(t0) {
+export function StatusNotices(t0: Props = {}) {
   const $ = _c(8);
   const {
     agentDefinitions
@@ -53,7 +53,7 @@ export function StatusNotices(t0) {
   }
   React.useEffect(t1, [t1]);
   const t2 = getGlobalConfig();
-  const context = {
+  const context: StatusNoticeContext = {
     config: t2,
     agentDefinitions,
     memoryFiles

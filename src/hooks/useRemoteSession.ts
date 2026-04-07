@@ -40,6 +40,48 @@ const RESPONSE_TIMEOUT_MS = 60000 // 60 seconds
 // compaction itself runs close to the edge.
 const COMPACTION_TIMEOUT_MS = 180000 // 3 minutes
 
+type SDKUserMessageContentBlock = {
+  type?: string
+  tool_use_id?: string
+}
+
+function getSDKUserMessageContent(sdkMessage: {
+  type: string
+  message?: unknown
+}): unknown {
+  if (sdkMessage.type !== 'user') {
+    return undefined
+  }
+  if (
+    typeof sdkMessage.message !== 'object' ||
+    sdkMessage.message === null ||
+    !('content' in sdkMessage.message)
+  ) {
+    return undefined
+  }
+  return sdkMessage.message.content
+}
+
+function getContentBlockType(block: unknown): string {
+  if (typeof block !== 'object' || block === null || !('type' in block)) {
+    return 'unknown'
+  }
+  return typeof block.type === 'string' ? block.type : 'unknown'
+}
+
+function isToolResultBlock(block: unknown): block is SDKUserMessageContentBlock & {
+  type: 'tool_result'
+  tool_use_id: string
+} {
+  if (typeof block !== 'object' || block === null) {
+    return false
+  }
+  if (!('type' in block) || !('tool_use_id' in block)) {
+    return false
+  }
+  return block.type === 'tool_result' && typeof block.tool_use_id === 'string'
+}
+
 type UseRemoteSessionProps = {
   config: RemoteSessionConfig | undefined
   setMessages: React.Dispatch<React.SetStateAction<MessageType[]>>
@@ -158,9 +200,9 @@ export function useRemoteSession({
         const parts = [`type=${sdkMessage.type}`]
         if ('subtype' in sdkMessage) parts.push(`subtype=${sdkMessage.subtype}`)
         if (sdkMessage.type === 'user') {
-          const c = sdkMessage.message?.content
+          const c = getSDKUserMessageContent(sdkMessage)
           parts.push(
-            `content=${Array.isArray(c) ? c.map(b => b.type).join(',') : typeof c}`,
+            `content=${Array.isArray(c) ? c.map(getContentBlockType).join(',') : typeof c}`,
           )
         }
         logForDebugging(`[useRemoteSession] Received ${parts.join(' ')}`)
@@ -248,11 +290,11 @@ export function useRemoteSession({
         // and inProcessRunner.ts; without this the set grows unbounded for the
         // session lifetime (BQ: CCR cohort shows 5.2x higher RSS slope).
         if (setInProgressToolUseIDs && sdkMessage.type === 'user') {
-          const content = sdkMessage.message?.content
+          const content = getSDKUserMessageContent(sdkMessage)
           if (Array.isArray(content)) {
             const resultIds: string[] = []
             for (const block of content) {
-              if (block.type === 'tool_result') {
+              if (isToolResultBlock(block)) {
                 resultIds.push(block.tool_use_id)
               }
             }

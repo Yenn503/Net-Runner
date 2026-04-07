@@ -889,9 +889,13 @@ export async function handleSpeculationAccept(
     // reject conversations ending with an assistant turn. The model will
     // regenerate this content in the follow-up query.
     if (!isComplete) {
-      const lastNonAssistant = cleanMessages.findLastIndex(
-        m => m.type !== 'assistant',
-      )
+      let lastNonAssistant = -1
+      for (let i = cleanMessages.length - 1; i >= 0; i--) {
+        if (cleanMessages[i]?.type !== 'assistant') {
+          lastNonAssistant = i
+          break
+        }
+      }
       cleanMessages = cleanMessages.slice(0, lastNonAssistant + 1)
     }
 

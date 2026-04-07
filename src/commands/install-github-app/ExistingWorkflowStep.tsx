@@ -2,11 +2,12 @@ import { c as _c } from "react-compiler-runtime";
 import React from 'react';
 import { Select } from 'src/components/CustomSelect/index.js';
 import { Box, Text } from '../../ink.js';
+import type { WorkflowAction } from './types.js';
 interface ExistingWorkflowStepProps {
   repoName: string;
-  onSelectAction: (action: 'update' | 'skip' | 'exit') => void;
+  onSelectAction: (action: WorkflowAction) => void;
 }
-export function ExistingWorkflowStep(t0) {
+export function ExistingWorkflowStep(t0: ExistingWorkflowStepProps) {
   const $ = _c(16);
   const {
     repoName,
@@ -31,8 +32,8 @@ export function ExistingWorkflowStep(t0) {
   const options = t1;
   let t2;
   if ($[1] !== onSelectAction) {
-    t2 = value => {
-      onSelectAction(value as 'update' | 'skip' | 'exit');
+    t2 = (value: WorkflowAction) => {
+      onSelectAction(value);
     };
     $[1] = onSelectAction;
     $[2] = t2;

@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
-import { coerce } from 'semver'
 import { getIsNonInteractiveSession } from '../bootstrap/state.js'
 import { getGlobalConfig, saveGlobalConfig } from './config.js'
 import { getNetRunnerConfigHomeDir } from './envUtils.js'
@@ -29,6 +28,18 @@ export const CHANGELOG_URL =
   'https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md'
 const RAW_CHANGELOG_URL =
   'https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md'
+
+type CoercedVersion = {
+  version: string
+}
+
+function coerceVersion(version: string | null | undefined): CoercedVersion | null {
+  if (!version) {
+    return null
+  }
+  const match = version.match(/\d+\.\d+\.\d+/)
+  return match?.[0] ? { version: match[0] } : null
+}
 
 /**
  * Get the path for the cached changelog file.
@@ -213,8 +224,8 @@ export function getRecentReleaseNotes(
     const releaseNotes = parseChangelog(changelogContent)
 
     // Strip SHA from both versions to compare only the base versions
-    const baseCurrentVersion = coerce(currentVersion)
-    const basePreviousVersion = previousVersion ? coerce(previousVersion) : null
+    const baseCurrentVersion = coerceVersion(currentVersion)
+    const basePreviousVersion = coerceVersion(previousVersion)
 
     if (
       !basePreviousVersion ||

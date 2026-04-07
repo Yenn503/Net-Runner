@@ -17,11 +17,12 @@ import { logForDebugging } from '../utils/debug.js';
 import { disableHintRecommendations, markHintPluginShown, type PluginHintRecommendation, resolvePluginHint } from '../utils/plugins/hintRecommendation.js';
 import { installPluginFromMarketplace } from '../utils/plugins/pluginInstallationHelpers.js';
 import { installPluginAndNotify, usePluginRecommendationBase } from './usePluginRecommendationBase.js';
+type NetRunnerHintResponse = 'yes' | 'no' | 'disable';
 type UseClaudeCodeHintRecommendationResult = {
   recommendation: PluginHintRecommendation | null;
-  handleResponse: (response: 'yes' | 'no' | 'disable') => void;
+  handleResponse: (response: NetRunnerHintResponse) => void;
 };
-export function useNetRunnerHintRecommendation() {
+export function useNetRunnerHintRecommendation(): UseClaudeCodeHintRecommendationResult {
   const $ = _c(11);
   const pendingHint = React.useSyncExternalStore(subscribeToPendingHint, getPendingHintSnapshot);
   const {
@@ -31,7 +32,7 @@ export function useNetRunnerHintRecommendation() {
     recommendation,
     clearRecommendation,
     tryResolve
-  } = usePluginRecommendationBase();
+  } = usePluginRecommendationBase<PluginHintRecommendation>();
   let t0;
   let t1;
   if ($[0] !== pendingHint || $[1] !== tryResolve) {
@@ -63,7 +64,7 @@ export function useNetRunnerHintRecommendation() {
   React.useEffect(t0, t1);
   let t2;
   if ($[4] !== addNotification || $[5] !== clearRecommendation || $[6] !== recommendation) {
-    t2 = response => {
+    t2 = (response: NetRunnerHintResponse) => {
       if (!recommendation) {
         return;
       }

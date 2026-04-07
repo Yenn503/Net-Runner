@@ -119,7 +119,7 @@ export async function* handleStopHooks(
     )
     const p = jobClassifierModule!
       .classifyAndWriteState(process.env.CLAUDE_JOB_DIR, turnAssistantMessages)
-      .catch(err => {
+      .catch((err: unknown) => {
         logForDebugging(`[job] classifier error: ${errorMessage(err)}`, {
           level: 'error',
         })
@@ -303,7 +303,7 @@ export async function* handleStopHooks(
         preventedContinuation,
         stopReason,
         hasOutput,
-        'suggestion',
+        hookErrors.length > 0 || preventedContinuation ? 'warning' : 'info',
         stopHookToolUseID,
       )
 

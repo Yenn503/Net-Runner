@@ -21,7 +21,14 @@ type Props = {
   style?: 'condensed';
   verbose: boolean;
 };
-export function FileEditToolUseRejectedMessage(t0) {
+type HighlightedCodeComponentProps = {
+  code: string;
+  filePath: string;
+  width?: number;
+  dim?: boolean;
+};
+const TypedHighlightedCode = HighlightedCode as React.ComponentType<HighlightedCodeComponentProps>;
+export function FileEditToolUseRejectedMessage(t0: Props) {
   const $ = _c(38);
   const {
     file_path,
@@ -103,7 +110,7 @@ export function FileEditToolUseRejectedMessage(t0) {
     const t7 = columns - 12;
     let t8;
     if ($[16] !== file_path || $[17] !== t6 || $[18] !== t7) {
-      t8 = <HighlightedCode code={t6} filePath={file_path} width={t7} dim={true} />;
+      t8 = <TypedHighlightedCode code={t6} filePath={file_path} width={t7} dim={true} />;
       $[16] = file_path;
       $[17] = t6;
       $[18] = t7;

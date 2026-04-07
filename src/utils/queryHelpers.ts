@@ -4,7 +4,10 @@ import {
   getSessionId,
   isSessionPersistenceDisabled,
 } from 'src/bootstrap/state.js'
-import type { SDKMessage } from 'src/entrypoints/agentSdkTypes.js'
+import type {
+  SDKAssistantMessageError,
+  SDKMessage,
+} from 'src/entrypoints/agentSdkTypes.js'
 import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
 import { runTools } from '../services/tools/toolOrchestration.js'
 import { findToolByName, type Tool, type Tools } from '../Tool.js'
@@ -99,6 +102,23 @@ const MAX_TOOL_PROGRESS_TRACKING_ENTRIES = 100
 const TOOL_PROGRESS_THROTTLE_MS = 30000
 const toolProgressLastSentTime = new Map<string, number>()
 
+function toSdkAssistantError(
+  value: unknown,
+): SDKAssistantMessageError | undefined {
+  switch (value) {
+    case 'unknown':
+    case 'authentication_failed':
+    case 'billing_error':
+    case 'rate_limit':
+    case 'invalid_request':
+    case 'server_error':
+    case 'max_output_tokens':
+      return value
+    default:
+      return undefined
+  }
+}
+
 export function* normalizeMessage(message: Message): Generator<SDKMessage> {
   switch (message.type) {
     case 'assistant':
@@ -113,7 +133,7 @@ export function* normalizeMessage(message: Message): Generator<SDKMessage> {
           parent_tool_use_id: null,
           session_id: getSessionId(),
           uuid: _.uuid,
-          error: _.error,
+          error: toSdkAssistantError(_.error),
         }
       }
       return
@@ -135,7 +155,7 @@ export function* normalizeMessage(message: Message): Generator<SDKMessage> {
                 parent_tool_use_id: message.parentToolUseID,
                 session_id: getSessionId(),
                 uuid: _.uuid,
-                error: _.error,
+                error: toSdkAssistantError(_.error),
               }
               break
             case 'user':
@@ -174,7 +194,10 @@ export function* normalizeMessage(message: Message): Generator<SDKMessage> {
         const timeSinceLastSent = now - lastSent
 
         // Send if at least 30 seconds have passed since last update
-        if (timeSinceLastSent >= TOOL_PROGRESS_THROTTLE_MS) {
+        if (
+          timeSinceLastSent >= TOOL_PROGRESS_THROTTLE_MS &&
+          message.data.elapsedTimeSeconds !== undefined
+        ) {
           // Remove oldest entry if we're at capacity (LRU eviction)
           if (
             toolProgressLastSentTime.size >= MAX_TOOL_PROGRESS_TRACKING_ENTRIES
@@ -193,7 +216,9 @@ export function* normalizeMessage(message: Message): Generator<SDKMessage> {
               message.data.type === 'bash_progress' ? 'Bash' : 'PowerShell',
             parent_tool_use_id: message.parentToolUseID,
             elapsed_time_seconds: message.data.elapsedTimeSeconds,
-            task_id: message.data.taskId,
+            ...(message.data.taskId !== undefined
+              ? { task_id: message.data.taskId }
+              : {}),
             session_id: getSessionId(),
             uuid: message.uuid,
           }

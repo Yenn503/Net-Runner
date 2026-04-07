@@ -11,7 +11,16 @@ type Props = {
   files: DiffFile[];
   selectedIndex: number;
 };
-export function DiffFileList(t0) {
+type FileItemProps = {
+  file: DiffFile;
+  isSelected: boolean;
+  maxPathWidth: number;
+};
+type FileStatsProps = {
+  file: DiffFile;
+  isSelected: boolean;
+};
+export function DiffFileList(t0: Props) {
   const $ = _c(36);
   const {
     files,
@@ -96,7 +105,7 @@ export function DiffFileList(t0) {
     }
     let t5;
     if ($[21] !== maxPathWidth || $[22] !== selectedIndex || $[23] !== startIndex) {
-      t5 = (file, index) => <FileItem key={file.path} file={file} isSelected={startIndex + index === selectedIndex} maxPathWidth={maxPathWidth} />;
+      t5 = (file: DiffFile, index: number) => <FileItem key={file.path} file={file} isSelected={startIndex + index === selectedIndex} maxPathWidth={maxPathWidth} />;
       $[21] = maxPathWidth;
       $[22] = selectedIndex;
       $[23] = startIndex;
@@ -149,7 +158,7 @@ export function DiffFileList(t0) {
   }
   return t6;
 }
-function FileItem(t0) {
+function FileItem(t0: FileItemProps) {
   const $ = _c(14);
   const {
     file,
@@ -206,7 +215,7 @@ function FileItem(t0) {
   }
   return t6;
 }
-function FileStats(t0) {
+function FileStats(t0: FileStatsProps) {
   const $ = _c(20);
   const {
     file,

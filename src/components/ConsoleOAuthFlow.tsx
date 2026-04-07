@@ -227,6 +227,9 @@ export function ConsoleOAuthFlow({
       if (mode === 'setup-token') {
         // For setup-token mode, return the OAuth access token directly (it can be used as an API key)
         // Don't save to keychain - the token is displayed for manual use with NETRUNNER_OAUTH_TOKEN
+        if (!result.accessToken) {
+          throw new Error('OAuth login did not return an access token.');
+        }
         setOAuthStatus({
           state: 'success',
           token: result.accessToken
@@ -344,7 +347,7 @@ type OAuthStatusMessageProps = {
   setOAuthStatus: (status: OAuthStatus) => void;
   setLoginWithClaudeAi: (value: boolean) => void;
 };
-function OAuthStatusMessage(t0) {
+function OAuthStatusMessage(t0: OAuthStatusMessageProps) {
   const $ = _c(51);
   const {
     oauthStatus,

@@ -16,7 +16,7 @@ import type {
   SDKControlRequest,
   SDKControlResponse,
 } from '../entrypoints/sdk/controlTypes.js'
-import type { SDKResultSuccess } from '../entrypoints/sdk/coreTypes.js'
+import type { SDKResultMessage } from '../entrypoints/sdk/coreTypes.js'
 import { logEvent } from '../services/analytics/index.js'
 import { EMPTY_USAGE } from '../services/api/emptyUsage.js'
 import type { Message } from '../types/message.js'
@@ -393,10 +393,10 @@ export function handleServerControlRequest(
 // ─── Result message (for session archival on teardown) ───────────────────────
 
 /**
- * Build a minimal `SDKResultSuccess` message for session archival.
+ * Build a minimal successful SDK result message for session archival.
  * The server needs this event before a WS close to trigger archival.
  */
-export function makeResultMessage(sessionId: string): SDKResultSuccess {
+export function makeResultMessage(sessionId: string): SDKResultMessage {
   return {
     type: 'result',
     subtype: 'success',

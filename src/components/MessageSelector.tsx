@@ -57,7 +57,7 @@ export function MessageSelector({
   const isFileHistoryEnabled = fileHistoryEnabled();
 
   // Add current prompt as a virtual message
-  const currentUUID = useMemo(randomUUID, []);
+  const currentUUID = useMemo(() => randomUUID() as UUID, []);
   const messageOptions = useMemo(() => [...messages.filter(selectableUserMessagesFilter), {
     ...createUserMessage({
       content: ''
@@ -74,7 +74,7 @@ export function MessageSelector({
   useEffect(() => {
     if (!preselectedMessage || !isFileHistoryEnabled) return;
     let cancelled = false;
-    void fileHistoryGetDiffStats(fileHistory, preselectedMessage.uuid).then(stats => {
+    void fileHistoryGetDiffStats(fileHistory, preselectedMessage.uuid as UUID).then(stats => {
       if (!cancelled) setDiffStatsForRestore(stats);
     });
     return () => {
@@ -118,7 +118,7 @@ export function MessageSelector({
       ...summarizeInputProps,
       onChange: setSummarizeFromFeedback
     });
-    if ("external" === 'ant') {
+    if (process.env.USER_TYPE === 'ant') {
       baseOptions.push({
         value: 'summarize_up_to',
         label: 'Summarize up to here',
@@ -170,7 +170,7 @@ export function MessageSelector({
       await restoreConversationDirectly(message_0);
       return;
     }
-    const diffStats = await fileHistoryGetDiffStats(fileHistory, message_0.uuid);
+    const diffStats = await fileHistoryGetDiffStats(fileHistory, message_0.uuid as UUID);
     setMessageToRestore(message_0);
     setDiffStatsForRestore(diffStats);
   }
@@ -291,9 +291,9 @@ export function MessageSelector({
       // Load file snapshot metadata
       void Promise.all(messageOptions.map(async (userMessage, itemIndex) => {
         if (userMessage.uuid !== currentUUID) {
-          const canRestore = fileHistoryCanRestore(fileHistory, userMessage.uuid);
+          const canRestore = fileHistoryCanRestore(fileHistory, userMessage.uuid as UUID);
           const nextUserMessage = messageOptions.at(itemIndex + 1);
-          const diffStats_0 = canRestore ? computeDiffStatsBetweenMessages(messages, userMessage.uuid, nextUserMessage?.uuid !== currentUUID ? nextUserMessage?.uuid : undefined) : undefined;
+          const diffStats_0 = canRestore ? computeDiffStatsBetweenMessages(messages, userMessage.uuid as UUID, nextUserMessage?.uuid !== currentUUID ? nextUserMessage?.uuid as UUID : undefined) : undefined;
           if (diffStats_0 !== undefined) {
             setFileHistoryMetadata(prev_1 => ({
               ...prev_1,
@@ -413,7 +413,13 @@ function getRestoreOptionConversationText(option: RestoreOption): string {
       return 'The conversation will be unchanged.';
   }
 }
-function RestoreOptionDescription(t0) {
+type RestoreOptionDescriptionProps = {
+  selectedRestoreOption: RestoreOption;
+  canRestoreCode: boolean;
+  diffStatsForRestore?: DiffStats;
+};
+
+function RestoreOptionDescription(t0: RestoreOptionDescriptionProps) {
   const $ = _c(11);
   const {
     selectedRestoreOption,
@@ -458,13 +464,15 @@ function RestoreOptionDescription(t0) {
   }
   return t4;
 }
-function RestoreCodeConfirmation(t0) {
+function RestoreCodeConfirmation(t0: {
+  diffStatsForRestore?: DiffStats;
+}) {
   const $ = _c(14);
   const {
     diffStatsForRestore
   } = t0;
   if (diffStatsForRestore === undefined) {
-    return;
+    return null;
   }
   if (!diffStatsForRestore.filesChanged || !diffStatsForRestore.filesChanged[0]) {
     let t1;
@@ -541,13 +549,15 @@ function RestoreCodeConfirmation(t0) {
   }
   return t2;
 }
-function DiffStatsText(t0) {
+function DiffStatsText(t0: {
+  diffStats?: DiffStats;
+}) {
   const $ = _c(7);
   const {
     diffStats
   } = t0;
   if (!diffStats || !diffStats.filesChanged) {
-    return;
+    return null;
   }
   let t1;
   if ($[0] !== diffStats.insertions) {
@@ -576,7 +586,13 @@ function DiffStatsText(t0) {
   }
   return t3;
 }
-function UserMessageOption(t0) {
+function UserMessageOption(t0: {
+  userMessage: UserMessage;
+  color?: React.ComponentProps<typeof Text>['color'];
+  dimColor?: boolean;
+  isCurrent: boolean;
+  paddingRight?: number;
+}) {
   const $ = _c(31);
   const {
     userMessage,

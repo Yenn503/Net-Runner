@@ -1,7 +1,16 @@
-import { join } from 'path'
+import { resolve, sep, win32 } from 'path'
 import { pathToFileURL } from 'url'
 
+function isWindowsAbsolutePath(value) {
+  return /^[A-Za-z]:\\/.test(value)
+}
+
 export function getDistImportSpecifier(baseDir) {
-  const distPath = join(baseDir, '..', 'dist', 'cli.mjs')
-  return pathToFileURL(distPath).href
+  if (isWindowsAbsolutePath(baseDir)) {
+    const normalizedBaseDir = win32.resolve(baseDir).replace(/\\/g, '/')
+    return new URL('../dist/cli.mjs', pathToFileURL(`/${normalizedBaseDir}/`)).href
+  }
+
+  const normalizedBaseDir = resolve(baseDir)
+  return new URL('../dist/cli.mjs', pathToFileURL(`${normalizedBaseDir}${sep}`)).href
 }

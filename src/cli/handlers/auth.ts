@@ -19,7 +19,7 @@ import {
 } from '../../services/oauth/client.js'
 import { getOauthProfileFromOauthToken } from '../../services/oauth/getOauthProfile.js'
 import { OAuthService } from '../../services/oauth/index.js'
-import type { OAuthTokens } from '../../services/oauth/types.js'
+import type { OAuthTokens } from '../../services/oauth/types.ts'
 import {
   clearOAuthTokenCache,
   getAnthropicApiKeyWithSource,
@@ -51,9 +51,14 @@ export async function installOAuthTokens(tokens: OAuthTokens): Promise<void> {
   // Clear old state before saving new credentials
   await performLogout({ clearOnboarding: false })
 
+  const accessToken = tokens.accessToken
+  if (!accessToken) {
+    throw new Error('OAuth login did not return an access token.')
+  }
+
   // Reuse pre-fetched profile if available, otherwise fetch fresh
   const profile =
-    tokens.profile ?? (await getOauthProfileFromOauthToken(tokens.accessToken))
+    tokens.profile ?? (await getOauthProfileFromOauthToken(accessToken))
   if (profile) {
     storeOAuthAccountInfo({
       accountUuid: profile.account.uuid,
@@ -88,7 +93,7 @@ export async function installOAuthTokens(tokens: OAuthTokens): Promise<void> {
 
   // Roles and first-token-date may fail for limited-scope tokens (e.g.
   // inference-only from setup-token). They're not required for core auth.
-  await fetchAndStoreUserRoles(tokens.accessToken).catch(err =>
+  await fetchAndStoreUserRoles(accessToken).catch(err =>
     logForDebugging(String(err), { level: 'error' }),
   )
 
@@ -98,7 +103,7 @@ export async function installOAuthTokens(tokens: OAuthTokens): Promise<void> {
     )
   } else {
     // API key creation is critical for Console users — let it throw.
-    const apiKey = await createAndStoreApiKey(tokens.accessToken)
+    const apiKey = await createAndStoreApiKey(accessToken)
     if (!apiKey) {
       throw new Error(
         'Unable to create API key. The server accepted the request but did not return a key.',

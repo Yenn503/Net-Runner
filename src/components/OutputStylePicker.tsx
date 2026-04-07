@@ -26,7 +26,7 @@ export type OutputStylePickerProps = {
   onCancel: () => void;
   isStandaloneCommand?: boolean;
 };
-export function OutputStylePicker(t0) {
+export function OutputStylePicker(t0: OutputStylePickerProps) {
   const $ = _c(16);
   const {
     initialStyle,
@@ -36,7 +36,7 @@ export function OutputStylePicker(t0) {
   } = t0;
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = [];
+    t1 = [] as OptionWithDescription[];
     $[0] = t1;
   } else {
     t1 = $[0];
@@ -57,7 +57,7 @@ export function OutputStylePicker(t0) {
         setIsLoading(false);
       });
     };
-    t3 = [];
+    t3 = [] as React.DependencyList;
     $[1] = t2;
     $[2] = t3;
   } else {
@@ -67,7 +67,7 @@ export function OutputStylePicker(t0) {
   useEffect(t2, t3);
   let t4;
   if ($[3] !== onComplete) {
-    t4 = style => {
+    t4 = (style: string) => {
       const outputStyle = style as OutputStyle;
       onComplete(outputStyle);
     };

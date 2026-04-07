@@ -1,8 +1,8 @@
 import { c as _c } from "react-compiler-runtime";
 import { marked, type Token, type Tokens } from 'marked';
-import React, { Suspense, use, useMemo, useRef } from 'react';
+import React, { Suspense, use, useRef } from 'react';
 import { useSettings } from '../hooks/useSettings.js';
-import { Ansi, Box, useTheme } from '../ink.js';
+import { Ansi, Box, Text, useTheme } from '../ink.js';
 import { type CliHighlight, getCliHighlightPromise } from '../utils/cliHighlight.js';
 import { hashContent } from '../utils/hash.js';
 import { configureMarked, formatToken } from '../utils/markdown.js';
@@ -13,6 +13,10 @@ type Props = {
   /** When true, render all text content as dim */
   dimColor?: boolean;
 };
+const AnsiRenderer = Ansi as React.ComponentType<{
+  children: string;
+  dimColor?: boolean;
+}>;
 
 // Module-level token cache — marked.lexer is the hot cost on virtual-scroll
 // remounts (~3ms per message). useMemo doesn't survive unmount→remount, so
@@ -75,7 +79,7 @@ function cachedLexer(content: string): Token[] {
  * - Tables are rendered as React components with proper flexbox layout
  * - Other content is rendered as ANSI strings via formatToken
  */
-export function Markdown(props) {
+export function Markdown(props: Props) {
   const $ = _c(4);
   const settings = useSettings();
   if (settings.syntaxHighlightingDisabled) {
@@ -99,7 +103,7 @@ export function Markdown(props) {
   }
   return t0;
 }
-function MarkdownWithHighlight(props) {
+function MarkdownWithHighlight(props: Props) {
   const $ = _c(4);
   let t0;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
@@ -108,7 +112,7 @@ function MarkdownWithHighlight(props) {
   } else {
     t0 = $[0];
   }
-  const highlight = use(t0);
+  const highlight = use(t0) as CliHighlight;
   let t1;
   if ($[1] !== highlight || $[2] !== props) {
     t1 = <MarkdownBody {...props} highlight={highlight} />;
@@ -120,7 +124,9 @@ function MarkdownWithHighlight(props) {
   }
   return t1;
 }
-function MarkdownBody(t0) {
+function MarkdownBody(t0: Props & {
+  highlight: CliHighlight | null;
+}) {
   const $ = _c(7);
   const {
     children,
@@ -132,11 +138,12 @@ function MarkdownBody(t0) {
   let elements;
   if ($[0] !== children || $[1] !== dimColor || $[2] !== highlight || $[3] !== theme) {
     const tokens = cachedLexer(stripPromptXMLTags(children));
-    elements = [];
+    elements = [] as React.ReactNode[];
     let nonTableContent = "";
     const flushNonTableContent = function flushNonTableContent() {
       if (nonTableContent) {
-        elements.push(<Ansi key={elements.length} dimColor={dimColor}>{nonTableContent.trim()}</Ansi>);
+        const content = nonTableContent.trim();
+        elements.push(dimColor ? <Text key={elements.length} dimColor={true}><AnsiRenderer>{content}</AnsiRenderer></Text> : <AnsiRenderer key={elements.length}>{content}</AnsiRenderer>);
         nonTableContent = "";
       }
     };

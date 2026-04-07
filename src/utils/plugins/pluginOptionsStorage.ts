@@ -28,6 +28,16 @@ import {
 } from './mcpbHandler.js'
 import { getPluginDataDir } from './pluginDirectories.js'
 
+type PluginSecretsMap = Record<string, Record<string, string>>
+
+function getPluginSecretsMap(): PluginSecretsMap {
+  const secrets = getSecureStorage().read()?.pluginSecrets
+  if (!secrets || typeof secrets !== 'object') {
+    return {}
+  }
+  return secrets as PluginSecretsMap
+}
+
 export type PluginOptionValues = UserConfigValues
 export type PluginOptionSchema = UserConfigSchema
 
@@ -65,9 +75,7 @@ export const loadPluginOptions = memoize(
     // per session per plugin-with-options. /reload-plugins clears the memoize
     // and the next hook/MCP-load after that eats a fresh spawn.
     const storage = getSecureStorage()
-    const sensitive =
-      storage.read()?.pluginSecrets?.[pluginId] ??
-      ({} as Record<string, string>)
+    const sensitive = getPluginSecretsMap()[pluginId] ?? {}
 
     // secureStorage wins on collision — schema determines destination so
     // collision shouldn't happen, but if a user hand-edits settings.json we
@@ -112,8 +120,7 @@ export function savePluginOptions(
   // secureStorage FIRST — if keychain fails, throw before touching
   // settings.json so old plaintext (if any) stays as fallback.
   const storage = getSecureStorage()
-  const existingInSecureStorage =
-    storage.read()?.pluginSecrets?.[pluginId] ?? undefined
+  const existingInSecureStorage = getPluginSecretsMap()[pluginId] ?? undefined
   const secureScrubbed = existingInSecureStorage
     ? Object.fromEntries(
         Object.entries(existingInSecureStorage).filter(
@@ -128,14 +135,18 @@ export function savePluginOptions(
       Object.keys(existingInSecureStorage).length
   if (Object.keys(sensitive).length > 0 || needSecureScrub) {
     const existing = storage.read() ?? {}
-    if (!existing.pluginSecrets) {
-      existing.pluginSecrets = {}
-    }
-    existing.pluginSecrets[pluginId] = {
+    const pluginSecrets: PluginSecretsMap =
+      existing.pluginSecrets && typeof existing.pluginSecrets === 'object'
+        ? (existing.pluginSecrets as PluginSecretsMap)
+        : {}
+    pluginSecrets[pluginId] = {
       ...secureScrubbed,
       ...sensitive,
     }
-    const result = storage.update(existing)
+    const result = storage.update({
+      ...existing,
+      pluginSecrets,
+    })
     if (!result.success) {
       const err = new Error(
         `Failed to save sensitive plugin options for ${pluginId} to secure storage`,

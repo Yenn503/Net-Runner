@@ -6,7 +6,7 @@ Product name: `Net-Runner`
 
 ## Goal
 
-Keep `Net-Runner` as a security-first agentic testing framework that preserves its core orchestration, MCP, skills, memory, provider portability, and remote session capabilities while orienting the default product around authorized security testing workflows.
+Keep `Net-Runner` as a security-first agentic testing framework that preserves its core orchestration, MCP, skills, memory, and provider portability while orienting the default product around authorized security testing workflows. Where remote-session concepts exist in inherited code, they should be treated as optional or future-facing unless they are explicitly shipped and working in the OSS runtime.
 
 The result should be an operator-grade framework for running structured testing engagements against authorized targets such as labs, CTFs, HTB environments, internal test systems, and customer-approved scopes. It must remain extensible enough to support broader workflows without hard-coding itself to a single benchmark or platform.
 
@@ -41,7 +41,7 @@ Relevant existing foundations:
 - Shell, file, search, and web capabilities: `src/tools/*`
 - Skill loading and bundled skill infrastructure: `src/skills/*`
 - MCP auth and transport integration: `src/services/mcp/*`
-- Remote sessions and permission bridging: `src/remote/*`
+- Local-first session/runtime management, plus inherited experimental remote-session surfaces in `src/main.tsx` and related modules
 - Session memory and background consolidation: `src/services/SessionMemory/*`, `src/services/autoDream/*`, `src/services/teamMemorySync/*`
 - Provider transport abstraction and Codex/OpenAI shims: `src/services/api/*`
 
@@ -61,7 +61,7 @@ Responsibilities:
 - Tool schema and tool execution
 - Agent spawning, continuation, and stop controls
 - MCP connection and tool exposure
-- Session state, resumability, and remote transport
+- Session state and resumability, with local-first transport as the default supported OSS path
 - Provider portability
 
 This layer should be changed only where required for renaming, packaging, policy hooks, workflow registration, and security-specific defaults.
@@ -242,7 +242,7 @@ Requirements:
 - preserve local-model compatibility where current code allows it
 - allow workflow or agent role defaults to recommend models without hard-binding the product to one vendor
 
-This keeps `Net-Runner` usable across hosted and local setups.
+This keeps `Net-Runner` usable across local-first and provider-backed setups without requiring hosted Net-Runner infrastructure.
 
 ## Reporting and Artifacts
 

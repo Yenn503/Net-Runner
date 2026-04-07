@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "types": ["bun", "node"],
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "jsx": "react-jsx",
@@ -13,12 +14,13 @@
     "resolveJsonModule": true,
     "declaration": false,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
+    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "src/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "dist"]
 }

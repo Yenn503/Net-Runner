@@ -78,8 +78,6 @@ const coordinatorModeModule = feature('COORDINATOR_MODE') ? require('./coordinat
 /* eslint-enable @typescript-eslint/no-require-imports */
 // Dead code elimination: conditional import for KAIROS (assistant mode)
 /* eslint-disable @typescript-eslint/no-require-imports */
-const assistantModule = feature('KAIROS') ? require('./assistant/index.js') as typeof import('./assistant/index.js') : null;
-const kairosGate = feature('KAIROS') ? require('./assistant/gate.js') as typeof import('./assistant/gate.js') : null;
 import { relative, resolve } from 'path';
 import { isAnalyticsDisabled } from 'src/services/analytics/config.js';
 import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js';
@@ -100,7 +98,7 @@ import { initBundledSkills } from './skills/bundled/index.js';
 import type { AgentColorName } from './tools/AgentTool/agentColorManager.js';
 import { getActiveAgentsFromList, getAgentDefinitionsWithOverrides, isBuiltInAgent, isCustomAgent, parseAgentsFromJson } from './tools/AgentTool/loadAgentsDir.js';
 import type { LogOption } from './types/logs.js';
-import type { Message as MessageType } from './types/message.js';
+import type { Message as MessageType } from './types/message.ts';
 import { assertMinVersion } from './utils/autoUpdater.js';
 import { CLAUDE_IN_CHROME_SKILL_HINT, CLAUDE_IN_CHROME_SKILL_HINT_WITH_WEBBROWSER } from './utils/claudeInChrome/prompt.js';
 import { setupClaudeInChrome, shouldAutoEnableClaudeInChrome, shouldEnableClaudeInChrome } from './utils/claudeInChrome/setup.js';
@@ -186,6 +184,7 @@ import { resetProToOpusDefault } from './migrations/resetProToOpusDefault.js';
 import { createRemoteSessionConfig } from './remote/RemoteSessionManager.js';
 /* eslint-enable @typescript-eslint/no-require-imports */
 // teleportWithProgress dynamically imported at call site
+import type { DirectConnectConfig } from './server/directConnectManager.js';
 import { createDirectConnectSession, DirectConnectError } from './server/createDirectConnectSession.js';
 import { initializeLspServerManager } from './services/lsp/manager.js';
 import { shouldEnablePromptSuggestion } from './services/PromptSuggestion/promptSuggestion.js';
@@ -208,6 +207,47 @@ import { getTmuxInstallInstructions, isTmuxAvailable, parsePRReference } from '.
 
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
 profileCheckpoint('main_tsx_imports_loaded');
+
+declare const MACRO: {
+  VERSION: string;
+  DISPLAY_VERSION?: string;
+};
+type AssistantTeamContext = ReturnType<typeof computeInitialTeamContext>;
+type AssistantModule = {
+  markAssistantForced(): void;
+  isAssistantForced(): boolean;
+  isAssistantMode(): boolean;
+  initializeAssistantTeam(): Promise<AssistantTeamContext>;
+  getAssistantSystemPromptAddendum(): string;
+  getAssistantActivationPath?(): string | undefined;
+};
+type KairosGateModule = {
+  isKairosEnabled(): Promise<boolean>;
+};
+type SessionTurnUploader = (messages: MessageType[]) => unknown | Promise<unknown>;
+type SessionUploaderModule = {
+  createSessionTurnUploader(): SessionTurnUploader;
+};
+function tryRequire<T>(modulePath: string): T | null {
+  try {
+    return require(modulePath) as T;
+  } catch {
+    return null;
+  }
+}
+async function importOptional<T>(modulePath: string): Promise<T | null> {
+  try {
+    return (await import(modulePath)) as T;
+  } catch {
+    return null;
+  }
+}
+function buildSnapshotMergePrompt(agentType: string, scope: string): string {
+  return `Merge the pending ${scope} memory snapshot for agent "${agentType}" into the current conversation before continuing.`;
+}
+const isAntBuild = false;
+const assistantModule = feature('KAIROS') ? tryRequire<AssistantModule>('./assistant/index.js') : null;
+const kairosGate = feature('KAIROS') ? tryRequire<KairosGateModule>('./assistant/gate.js') : null;
 
 /**
  * Log managed settings keys to Statsig for analytics.
@@ -264,7 +304,7 @@ function isBeingDebugged() {
 }
 
 // Exit if we detect node debugging or inspection
-if ("external" !== 'ant' && isBeingDebugged()) {
+if (!isAntBuild && isBeingDebugged()) {
   // Use process.exit directly here since we're in the top-level code before imports
   // and gracefulShutdown is not yet available
   // eslint-disable-next-line custom-rules/no-top-level-side-effects
@@ -338,7 +378,7 @@ function runMigrations(): void {
     if (feature('TRANSCRIPT_CLASSIFIER')) {
       resetAutoModeOptInForDefaultOffer();
     }
-    if ("external" === 'ant') {
+    if (isAntBuild) {
       migrateFennecToOpus();
     }
     saveGlobalConfig(prev => prev.migrationVersion === CURRENT_MIGRATION_VERSION ? prev : {
@@ -426,8 +466,10 @@ export function startDeferredPrefetches(): void {
   }
 
   // Event loop stall detector — logs when the main thread is blocked >500ms
-  if ("external" === 'ant') {
-    void import('./utils/eventLoopStallDetector.js').then(m => m.startEventLoopStallDetector());
+  if (isAntBuild) {
+    void importOptional<{
+      startEventLoopStallDetector(): void;
+    }>('./utils/eventLoopStallDetector.js').then(m => m?.startEventLoopStallDetector());
   }
 }
 function loadSettingsFromFlag(settingsFile: string): void {
@@ -617,7 +659,7 @@ export async function main() {
       const ccUrl = rawCliArgs[ccIdx]!;
       const {
         parseConnectUrl
-      } = await import('./server/parseConnectUrl.js');
+      } = await import('./server/parseConnectUrl.ts');
       const parsed = parseConnectUrl(ccUrl);
       _pendingConnect.dangerouslySkipPermissions = rawCliArgs.includes('--dangerously-skip-permissions');
       if (rawCliArgs.includes('-p') || rawCliArgs.includes('--print')) {
@@ -1135,11 +1177,11 @@ async function run(): Promise<CommanderCommand> {
     const disableSlashCommands = options.disableSlashCommands || false;
 
     // Extract tasks mode options (ant-only)
-    const tasksOption = "external" === 'ant' && (options as {
+    const tasksOption = isAntBuild && (options as {
       tasks?: boolean | string;
     }).tasks;
     const taskListId = tasksOption ? typeof tasksOption === 'string' ? tasksOption : DEFAULT_TASKS_MODE_TASK_LIST_ID : undefined;
-    if ("external" === 'ant' && taskListId) {
+    if (isAntBuild && taskListId) {
       process.env.NETRUNNER_TASK_LIST_ID = taskListId;
     }
 
@@ -1529,7 +1571,7 @@ async function run(): Promise<CommanderCommand> {
     };
     // Store the explicit CLI flag so teammates can inherit it
     setChromeFlagOverride(chromeOpts.chrome);
-    const enableClaudeInChrome = shouldEnableClaudeInChrome(chromeOpts.chrome) && ("external" === 'ant' || isClaudeAISubscriber());
+    const enableClaudeInChrome = shouldEnableClaudeInChrome(chromeOpts.chrome) && (isAntBuild || isClaudeAISubscriber());
     const autoEnableClaudeInChrome = !enableClaudeInChrome && shouldAutoEnableClaudeInChrome();
     if (enableClaudeInChrome) {
       const platform = getPlatform();
@@ -1761,7 +1803,7 @@ async function run(): Promise<CommanderCommand> {
     } = initResult;
 
     // Handle overly broad shell allow rules for ant users (Bash(*), PowerShell(*))
-    if ("external" === 'ant' && overlyBroadBashPermissions.length > 0) {
+    if (isAntBuild && overlyBroadBashPermissions.length > 0) {
       for (const permission of overlyBroadBashPermissions) {
         logForDebugging(`Ignoring overly broad shell permission ${permission.ruleDisplay} from ${permission.sourceDisplay}`);
       }
@@ -2011,7 +2053,7 @@ async function run(): Promise<CommanderCommand> {
     //  - no env override (which short-circuits _CACHED_MAY_BE_STALE before disk)
     //  - flag absent from disk (== null also catches pre-#22279 poisoned null)
     const explicitModel = options.model || process.env.ANTHROPIC_MODEL;
-    if ("external" === 'ant' && explicitModel && explicitModel !== 'default' && !hasGrowthBookEnvOverride('tengu_ant_model_override') && getGlobalConfig().cachedGrowthBookFeatures?.['tengu_ant_model_override'] == null) {
+    if (isAntBuild && explicitModel && explicitModel !== 'default' && !hasGrowthBookEnvOverride('tengu_ant_model_override') && getGlobalConfig().cachedGrowthBookFeatures?.['tengu_ant_model_override'] == null) {
       await initializeGrowthBook();
     }
 
@@ -2157,9 +2199,9 @@ async function run(): Promise<CommanderCommand> {
         // Log agent memory loaded event for tmux teammates
         if (customAgent.memory) {
           logEvent('tengu_agent_memory_loaded', {
-            ...("external" === 'ant' && {
+            ...(isAntBuild ? {
               agent_type: customAgent.agentType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
-            }),
+            } : {}),
             scope: customAgent.memory as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
             source: 'teammate' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
           });
@@ -2221,7 +2263,7 @@ async function run(): Promise<CommanderCommand> {
       getFpsMetrics = ctx.getFpsMetrics;
       stats = ctx.stats;
       // Install asciicast recorder before Ink mounts (ant-only, opt-in via NETRUNNER_TERMINAL_RECORDING=1)
-      if ("external" === 'ant') {
+      if (isAntBuild) {
         installAsciicastRecorder();
       }
       const {
@@ -2262,10 +2304,7 @@ async function run(): Promise<CommanderCommand> {
           snapshotTimestamp: agentDef.pendingSnapshotUpdate!.snapshotTimestamp
         });
         if (choice === 'merge') {
-          const {
-            buildMergePrompt
-          } = await import('./components/agents/SnapshotUpdateDialog.js');
-          const mergePrompt = buildMergePrompt(agentDef.agentType, agentDef.memory!);
+          const mergePrompt = buildSnapshotMergePrompt(agentDef.agentType, agentDef.memory!);
           inputPrompt = inputPrompt ? `${mergePrompt}\n\n${inputPrompt}` : mergePrompt;
         }
         agentDef.pendingSnapshotUpdate = undefined;
@@ -2505,7 +2544,7 @@ async function run(): Promise<CommanderCommand> {
       systemPromptFlag: systemPrompt ? options.systemPromptFile ? 'file' : 'flag' : undefined,
       appendSystemPromptFlag: appendSystemPrompt ? options.appendSystemPromptFile ? 'file' : 'flag' : undefined,
       thinkingConfig,
-      assistantActivationPath: feature('KAIROS') && kairosEnabled ? assistantModule?.getAssistantActivationPath() : undefined
+      assistantActivationPath: feature('KAIROS') && kairosEnabled ? assistantModule?.getAssistantActivationPath?.() : undefined
     });
 
     // Log context metrics once at initialization
@@ -2700,7 +2739,7 @@ async function run(): Promise<CommanderCommand> {
             ...prev,
             mcp: {
               ...prev.mcp,
-              clients: prev.mcp.clients.some(c => c.name === client.name) ? prev.mcp.clients.map(c => c.name === client.name ? client : c) : [...prev.mcp.clients, client],
+              clients: prev.mcp.clients.some((c: (typeof prev.mcp.clients)[number]) => c.name === client.name) ? prev.mcp.clients.map((c: (typeof prev.mcp.clients)[number]) => c.name === client.name ? client : c) : [...prev.mcp.clients, client],
               tools: uniqBy([...prev.mcp.tools, ...tools], 'name'),
               commands: uniqBy([...prev.mcp.commands, ...commands], 'name')
             }
@@ -2757,8 +2796,8 @@ async function run(): Promise<CommanderCommand> {
                 commands,
                 resources
               } = prev.mcp;
-              clients = clients.filter(c => !suppressed.has(c.name));
-              tools = tools.filter(t => !t.mcpInfo || !suppressed.has(t.mcpInfo.serverName));
+              clients = clients.filter((c: { name: string }) => !suppressed.has(c.name));
+              tools = tools.filter((t: { mcpInfo?: { serverName: string } }) => !t.mcpInfo || !suppressed.has(t.mcpInfo.serverName));
               for (const name of suppressed) {
                 commands = excludeCommandsByServer(commands, name);
                 resources = excludeResourcesByServer(resources, name);
@@ -2806,8 +2845,10 @@ async function run(): Promise<CommanderCommand> {
       if (!isBareMode()) {
         startDeferredPrefetches();
         void import('./utils/backgroundHousekeeping.js').then(m => m.startBackgroundHousekeeping());
-        if ("external" === 'ant') {
-          void import('./utils/sdkHeapDumpMonitor.js').then(m => m.startSdkMemoryMonitor());
+        if (isAntBuild) {
+          void importOptional<{
+            startSdkMemoryMonitor(): void;
+          }>('./utils/sdkHeapDumpMonitor.js').then(m => m?.startSdkMemoryMonitor());
         }
       }
       logSessionTelemetry();
@@ -3050,13 +3091,13 @@ async function run(): Promise<CommanderCommand> {
     //   - Runtime: uploader checks github.com/anthropics/* remote + gcloud auth.
     //   - Safety: NETRUNNER_DISABLE_SESSION_DATA_UPLOAD=1 bypasses (tests set this).
     // Import is dynamic + async to avoid adding startup latency.
-    const sessionUploaderPromise = "external" === 'ant' ? import('./utils/sessionDataUploader.js') : null;
+    const sessionUploaderPromise = isAntBuild ? importOptional<SessionUploaderModule>('./utils/sessionDataUploader.js') : null;
 
     // Defer session uploader resolution to the onTurnComplete callback to avoid
     // adding a new top-level await in main.tsx (performance-critical path).
     // The per-turn auth logic in sessionDataUploader.ts handles unauthenticated
     // state gracefully (re-checks each turn, so auth recovery mid-session works).
-    const uploaderReady = sessionUploaderPromise ? sessionUploaderPromise.then(mod => mod.createSessionTurnUploader()).catch(() => null) : null;
+    const uploaderReady = sessionUploaderPromise ? sessionUploaderPromise.then(mod => mod?.createSessionTurnUploader() ?? null).catch(() => null) : null;
     const sessionConfig = {
       debug: debug || debugToStderr,
       commands: [...commands, ...mcpCommands],
@@ -3189,7 +3230,7 @@ async function run(): Promise<CommanderCommand> {
         createSSHSession,
         createLocalSSHSession,
         SSHSessionError
-      } = await import('./ssh/createSSHSession.js');
+      } = await import('./ssh/createSSHSession.ts');
       let sshSession;
       try {
         if (_pendingSSH.local) {
@@ -3214,7 +3255,7 @@ async function run(): Promise<CommanderCommand> {
             dangerouslySkipPermissions: _pendingSSH.dangerouslySkipPermissions,
             extraCliArgs: _pendingSSH.extraCliArgs
           }, isTTY ? {
-            onProgress: msg => {
+            onProgress: (msg: string) => {
               hadProgress = true;
               process.stderr.write(`\r  ${msg}\x1b[K`);
             }
@@ -3225,7 +3266,7 @@ async function run(): Promise<CommanderCommand> {
         setCwdState(sshSession.remoteCwd);
         setDirectConnectServerUrl(_pendingSSH.local ? 'local' : _pendingSSH.host);
       } catch (err) {
-        return await exitWithError(root, err instanceof SSHSessionError ? err.message : String(err), () => gracefulShutdown(1));
+        return await exitWithError(root, err instanceof SSHSessionError ? err.message : errorMessage(err), () => gracefulShutdown(1));
       }
       const sshInfoMessage = createSystemMessage(_pendingSSH.local ? `Local ssh-proxy test session\ncwd: ${sshSession.remoteCwd}\nAuth: unix socket → local proxy` : `SSH session to ${_pendingSSH.host}\nRemote cwd: ${sshSession.remoteCwd}\nAuth: unix socket -R → local proxy`, 'info');
       await launchRepl(root, {
@@ -3250,97 +3291,7 @@ async function run(): Promise<CommanderCommand> {
       // of a remote assistant session. The agentic loop runs remotely; this
       // process streams live events and POSTs messages. History is lazy-
       // loaded by useAssistantHistory on scroll-up (no blocking fetch here).
-      const {
-        discoverAssistantSessions
-      } = await import('./assistant/sessionDiscovery.js');
-      let targetSessionId = _pendingAssistantChat.sessionId;
-
-      // Discovery flow — list bridge environments, filter sessions
-      if (!targetSessionId) {
-        let sessions;
-        try {
-          sessions = await discoverAssistantSessions();
-        } catch (e) {
-          return await exitWithError(root, `Failed to discover sessions: ${e instanceof Error ? e.message : e}`, () => gracefulShutdown(1));
-        }
-        if (sessions.length === 0) {
-          let installedDir: string | null;
-          try {
-            installedDir = await launchAssistantInstallWizard(root);
-          } catch (e) {
-            return await exitWithError(root, `Assistant installation failed: ${e instanceof Error ? e.message : e}`, () => gracefulShutdown(1));
-          }
-          if (installedDir === null) {
-            await gracefulShutdown(0);
-            process.exit(0);
-          }
-          // The daemon needs a few seconds to spin up its worker and
-          // establish a bridge session before discovery will find it.
-          return await exitWithMessage(root, `Assistant installed in ${installedDir}. The daemon is starting up — run \`claude assistant\` again in a few seconds to connect.`, {
-            exitCode: 0,
-            beforeExit: () => gracefulShutdown(0)
-          });
-        }
-        if (sessions.length === 1) {
-          targetSessionId = sessions[0]!.id;
-        } else {
-          const picked = await launchAssistantSessionChooser(root, {
-            sessions
-          });
-          if (!picked) {
-            await gracefulShutdown(0);
-            process.exit(0);
-          }
-          targetSessionId = picked;
-        }
-      }
-
-      // Auth — call prepareApiRequest() once for orgUUID, but use a
-      // getAccessToken closure for the token so reconnects get fresh tokens.
-      const {
-        checkAndRefreshOAuthTokenIfNeeded,
-        getClaudeAIOAuthTokens
-      } = await import('./utils/auth.js');
-      await checkAndRefreshOAuthTokenIfNeeded();
-      let apiCreds;
-      try {
-        apiCreds = await prepareApiRequest();
-      } catch (e) {
-        return await exitWithError(root, `Error: ${e instanceof Error ? e.message : 'Failed to authenticate'}`, () => gracefulShutdown(1));
-      }
-      const getAccessToken = (): string => getClaudeAIOAuthTokens()?.accessToken ?? apiCreds.accessToken;
-
-      // Brief mode activation: setKairosActive(true) satisfies BOTH opt-in
-      // and entitlement for isBriefEnabled() (BriefTool.ts:124-132).
-      setKairosActive(true);
-      setUserMsgOptIn(true);
-      setIsRemoteMode(true);
-      const remoteSessionConfig = createRemoteSessionConfig(targetSessionId, getAccessToken, apiCreds.orgUUID, /* hasInitialPrompt */false, /* viewerOnly */true);
-      const infoMessage = createSystemMessage(`Attached to assistant session ${targetSessionId.slice(0, 8)}…`, 'info');
-      const assistantInitialState: AppState = {
-        ...initialState,
-        isBriefOnly: true,
-        kairosEnabled: false,
-        replBridgeEnabled: false
-      };
-      const remoteCommands = filterCommandsForRemoteMode(commands);
-      await launchRepl(root, {
-        getFpsMetrics,
-        stats,
-        initialState: assistantInitialState
-      }, {
-        debug: debug || debugToStderr,
-        commands: remoteCommands,
-        initialTools: [],
-        initialMessages: [infoMessage],
-        mcpClients: [],
-        autoConnectIdeFlag: ide,
-        mainThreadAgentDefinition,
-        disableSlashCommands,
-        remoteSessionConfig,
-        thinkingConfig
-      }, renderAndRun);
-      return;
+      return await exitWithError(root, 'Assistant remote sessions are not supported in this OSS build.', () => gracefulShutdown(1));
     } else if (options.resume || options.fromPr || teleport || remote !== null) {
       // Handle resume flow - from file (ant-only), session ID, or interactive selector
 
@@ -3379,7 +3330,8 @@ async function run(): Promise<CommanderCommand> {
           if (matches.length === 1) {
             // Exact match found - store full LogOption for cross-worktree resume
             matchedLog = matches[0]!;
-            maybeSessionId = getSessionIdFromLog(matchedLog) ?? null;
+            const matchedSessionId = getSessionIdFromLog(matchedLog);
+            maybeSessionId = matchedSessionId ? validateUuid(matchedSessionId) : null;
           } else {
             // No match or multiple matches - use as search term for picker
             searchTerm = trimmedValue;
@@ -3567,48 +3519,9 @@ async function run(): Promise<CommanderCommand> {
           }
         }
       }
-      if ("external" === 'ant') {
+      if (isAntBuild) {
         if (options.resume && typeof options.resume === 'string' && !maybeSessionId) {
-          // Check for ccshare URL (e.g. https://go/ccshare/boris-20260311-211036)
-          const {
-            parseCcshareId,
-            loadCcshare
-          } = await import('./utils/ccshareResume.js');
-          const ccshareId = parseCcshareId(options.resume);
-          if (ccshareId) {
-            try {
-              const resumeStart = performance.now();
-              const logOption = await loadCcshare(ccshareId);
-              const result = await loadConversationForResume(logOption, undefined);
-              if (result) {
-                processedResume = await processResumedConversation(result, {
-                  forkSession: true,
-                  transcriptPath: result.fullPath
-                }, resumeContext);
-                if (processedResume.restoredAgentDef) {
-                  mainThreadAgentDefinition = processedResume.restoredAgentDef;
-                }
-                logEvent('tengu_session_resumed', {
-                  entrypoint: 'ccshare' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-                  success: true,
-                  resume_duration_ms: Math.round(performance.now() - resumeStart)
-                });
-              } else {
-                logEvent('tengu_session_resumed', {
-                  entrypoint: 'ccshare' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-                  success: false
-                });
-              }
-            } catch (error) {
-              logEvent('tengu_session_resumed', {
-                entrypoint: 'ccshare' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-                success: false
-              });
-              logError(error);
-              await exitWithError(root, `Unable to resume from ccshare: ${errorMessage(error)}`, () => gracefulShutdown(1));
-            }
-          } else {
-            const resolvedPath = resolve(options.resume);
+          const resolvedPath = resolve(options.resume);
             try {
               const resumeStart = performance.now();
               let logOption;
@@ -3650,7 +3563,6 @@ async function run(): Promise<CommanderCommand> {
               await exitWithError(root, `Unable to load transcript from file: ${options.resume}`, () => gracefulShutdown(1));
             }
           }
-        }
       }
 
       // If not loaded as a file, try as session ID
@@ -3798,7 +3710,7 @@ async function run(): Promise<CommanderCommand> {
   if (canUserConfigureAdvisor()) {
     program.addOption(new Option('--advisor <model>', 'Enable the server-side advisor tool with the specified model (alias or full ID).').hideHelp());
   }
-  if ("external" === 'ant') {
+  if (isAntBuild) {
     program.addOption(new Option('--delegate-permissions', '[ANT-ONLY] Alias for --permission-mode auto.').implies({
       permissionMode: 'auto'
     }));
@@ -3809,8 +3721,8 @@ async function run(): Promise<CommanderCommand> {
       permissionMode: 'auto'
     }));
     program.addOption(new Option('--tasks [id]', '[ANT-ONLY] Tasks mode: watch for tasks and auto-process them. Optional id is used as both the task list ID and agent ID (defaults to "tasklist").').argParser(String).hideHelp());
-    program.option('--agent-teams', '[ANT-ONLY] Force Net-Runner to use multi-agent mode for solving problems', () => true);
   }
+  program.option('--agent-teams', 'Enable agent teams (swarm) pilot mode', () => true);
   if (feature('TRANSCRIPT_CLASSIFIER')) {
     program.addOption(new Option('--enable-auto-mode', 'Opt in to auto mode').hideHelp());
   }
@@ -3944,81 +3856,9 @@ async function run(): Promise<CommanderCommand> {
 
   // claude server
   if (feature('DIRECT_CONNECT')) {
-    program.command('server').description('Start a Net-Runner session server').option('--port <number>', 'HTTP port', '0').option('--host <string>', 'Bind address', '0.0.0.0').option('--auth-token <token>', 'Bearer token for auth').option('--unix <path>', 'Listen on a unix domain socket').option('--workspace <dir>', 'Default working directory for sessions that do not specify cwd').option('--idle-timeout <ms>', 'Idle timeout for detached sessions in ms (0 = never expire)', '600000').option('--max-sessions <n>', 'Maximum concurrent sessions (0 = unlimited)', '32').action(async (opts: {
-      port: string;
-      host: string;
-      authToken?: string;
-      unix?: string;
-      workspace?: string;
-      idleTimeout: string;
-      maxSessions: string;
-    }) => {
-      const {
-        randomBytes
-      } = await import('crypto');
-      const {
-        startServer
-      } = await import('./server/server.js');
-      const {
-        SessionManager
-      } = await import('./server/sessionManager.js');
-      const {
-        DangerousBackend
-      } = await import('./server/backends/dangerousBackend.js');
-      const {
-        printBanner
-      } = await import('./server/serverBanner.js');
-      const {
-        createServerLogger
-      } = await import('./server/serverLog.js');
-      const {
-        writeServerLock,
-        removeServerLock,
-        probeRunningServer
-      } = await import('./server/lockfile.js');
-      const existing = await probeRunningServer();
-      if (existing) {
-        process.stderr.write(`A claude server is already running (pid ${existing.pid}) at ${existing.httpUrl}\n`);
-        process.exit(1);
-      }
-      const authToken = opts.authToken ?? `sk-ant-cc-${randomBytes(16).toString('base64url')}`;
-      const config = {
-        port: parseInt(opts.port, 10),
-        host: opts.host,
-        authToken,
-        unix: opts.unix,
-        workspace: opts.workspace,
-        idleTimeoutMs: parseInt(opts.idleTimeout, 10),
-        maxSessions: parseInt(opts.maxSessions, 10)
-      };
-      const backend = new DangerousBackend();
-      const sessionManager = new SessionManager(backend, {
-        idleTimeoutMs: config.idleTimeoutMs,
-        maxSessions: config.maxSessions
-      });
-      const logger = createServerLogger();
-      const server = startServer(config, sessionManager, logger);
-      const actualPort = server.port ?? config.port;
-      printBanner(config, authToken, actualPort);
-      await writeServerLock({
-        pid: process.pid,
-        port: actualPort,
-        host: config.host,
-        httpUrl: config.unix ? `unix:${config.unix}` : `http://${config.host}:${actualPort}`,
-        startedAt: Date.now()
-      });
-      let shuttingDown = false;
-      const shutdown = async () => {
-        if (shuttingDown) return;
-        shuttingDown = true;
-        // Stop accepting new connections before tearing down sessions.
-        server.stop(true);
-        await sessionManager.destroyAll();
-        await removeServerLock();
-        process.exit(0);
-      };
-      process.once('SIGINT', () => void shutdown());
-      process.once('SIGTERM', () => void shutdown());
+    program.command('server').description('Start a Net-Runner session server').option('--port <number>', 'HTTP port', '0').option('--host <string>', 'Bind address', '0.0.0.0').option('--auth-token <token>', 'Bearer token for auth').option('--unix <path>', 'Listen on a unix domain socket').option('--workspace <dir>', 'Default working directory for sessions that do not specify cwd').option('--idle-timeout <ms>', 'Idle timeout for detached sessions in ms (0 = never expire)', '600000').option('--max-sessions <n>', 'Maximum concurrent sessions (0 = unlimited)', '32').action(async () => {
+      process.stderr.write('Direct-connect server mode is not included in this OSS build.\n');
+      process.exit(1);
     });
   }
 
@@ -4047,12 +3887,12 @@ async function run(): Promise<CommanderCommand> {
     }) => {
       const {
         parseConnectUrl
-      } = await import('./server/parseConnectUrl.js');
+      } = await import('./server/parseConnectUrl.ts');
       const {
         serverUrl,
         authToken
       } = parseConnectUrl(ccUrl);
-      let connectConfig;
+      let connectConfig: DirectConnectConfig;
       try {
         const session = await createDirectConnectSession({
           serverUrl,
@@ -4071,12 +3911,16 @@ async function run(): Promise<CommanderCommand> {
         console.error(err instanceof DirectConnectError ? err.message : String(err));
         process.exit(1);
       }
-      const {
-        runConnectHeadless
-      } = await import('./server/connectHeadless.js');
+      const connectHeadlessModule = await importOptional<{
+        runConnectHeadless: (config: typeof connectConfig, prompt: string, outputFormat: string, interactive: boolean) => Promise<void>;
+      }>('./server/connectHeadless.js');
+      if (!connectHeadlessModule) {
+        console.error('Headless direct-connect is not supported in this OSS build.');
+        process.exit(1);
+      }
       const prompt = typeof opts.print === 'string' ? opts.print : '';
       const interactive = opts.print === true;
-      await runConnectHeadless(connectConfig, prompt, opts.outputFormat, interactive);
+      await connectHeadlessModule.runConnectHeadless(connectConfig, prompt, opts.outputFormat, interactive);
     });
   }
 
@@ -4352,28 +4196,12 @@ async function run(): Promise<CommanderCommand> {
   });
 
   // claude up — run the project's NETRUNNER.md "# net-runner up" setup instructions.
-  if ("external" === 'ant') {
-    program.command('up').description('[ANT-ONLY] Initialize or upgrade the local dev environment using the "# net-runner up" section of the nearest NETRUNNER.md').action(async () => {
-      const {
-        up
-      } = await import('src/cli/up.js');
-      await up();
-    });
+  if (isAntBuild) {
   }
 
   // claude rollback (ant-only)
   // Rolls back to previous releases
-  if ("external" === 'ant') {
-    program.command('rollback [target]').description('[ANT-ONLY] Roll back to a previous release\n\nExamples:\n  net-runner rollback                                Go 1 version back from current\n  net-runner rollback 3                              Go 3 versions back from current\n  net-runner rollback 2.0.73-dev.20251217.t190658    Roll back to a specific version').option('-l, --list', 'List recent published versions with ages').option('--dry-run', 'Show what would be installed without installing').option('--safe', 'Roll back to the server-pinned safe version (set by oncall during incidents)').action(async (target?: string, options?: {
-      list?: boolean;
-      dryRun?: boolean;
-      safe?: boolean;
-    }) => {
-      const {
-        rollback
-      } = await import('src/cli/rollback.js');
-      await rollback(target, options);
-    });
+  if (isAntBuild) {
   }
 
   // claude install
@@ -4387,103 +4215,7 @@ async function run(): Promise<CommanderCommand> {
   });
 
   // ant-only commands
-  if ("external" === 'ant') {
-    const validateLogId = (value: string) => {
-      const maybeSessionId = validateUuid(value);
-      if (maybeSessionId) return maybeSessionId;
-      return Number(value);
-    };
-    // claude log
-    program.command('log').description('[ANT-ONLY] Manage conversation logs.').argument('[number|sessionId]', 'A number (0, 1, 2, etc.) to display a specific log, or the sesssion ID (uuid) of a log', validateLogId).action(async (logId: string | number | undefined) => {
-      const {
-        logHandler
-      } = await import('./cli/handlers/ant.js');
-      await logHandler(logId);
-    });
-
-    // claude error
-    program.command('error').description('[ANT-ONLY] View error logs. Optionally provide a number (0, -1, -2, etc.) to display a specific log.').argument('[number]', 'A number (0, 1, 2, etc.) to display a specific log', parseInt).action(async (number: number | undefined) => {
-      const {
-        errorHandler
-      } = await import('./cli/handlers/ant.js');
-      await errorHandler(number);
-    });
-
-    // claude export
-    program.command('export').description('[ANT-ONLY] Export a conversation to a text file.').usage('<source> <outputFile>').argument('<source>', 'Session ID, log index (0, 1, 2...), or path to a .json/.jsonl log file').argument('<outputFile>', 'Output file path for the exported text').addHelpText('after', `
-Examples:
-  $ net-runner export 0 conversation.txt                Export conversation at log index 0
-  $ net-runner export <uuid> conversation.txt           Export conversation by session ID
-  $ net-runner export input.json output.txt             Render JSON log file to text
-  $ net-runner export <uuid>.jsonl output.txt           Render JSONL session file to text`).action(async (source: string, outputFile: string) => {
-      const {
-        exportHandler
-      } = await import('./cli/handlers/ant.js');
-      await exportHandler(source, outputFile);
-    });
-    if ("external" === 'ant') {
-      const taskCmd = program.command('task').description('[ANT-ONLY] Manage task list tasks');
-      taskCmd.command('create <subject>').description('Create a new task').option('-d, --description <text>', 'Task description').option('-l, --list <id>', 'Task list ID (defaults to "tasklist")').action(async (subject: string, opts: {
-        description?: string;
-        list?: string;
-      }) => {
-        const {
-          taskCreateHandler
-        } = await import('./cli/handlers/ant.js');
-        await taskCreateHandler(subject, opts);
-      });
-      taskCmd.command('list').description('List all tasks').option('-l, --list <id>', 'Task list ID (defaults to "tasklist")').option('--pending', 'Show only pending tasks').option('--json', 'Output as JSON').action(async (opts: {
-        list?: string;
-        pending?: boolean;
-        json?: boolean;
-      }) => {
-        const {
-          taskListHandler
-        } = await import('./cli/handlers/ant.js');
-        await taskListHandler(opts);
-      });
-      taskCmd.command('get <id>').description('Get details of a task').option('-l, --list <id>', 'Task list ID (defaults to "tasklist")').action(async (id: string, opts: {
-        list?: string;
-      }) => {
-        const {
-          taskGetHandler
-        } = await import('./cli/handlers/ant.js');
-        await taskGetHandler(id, opts);
-      });
-      taskCmd.command('update <id>').description('Update a task').option('-l, --list <id>', 'Task list ID (defaults to "tasklist")').option('-s, --status <status>', `Set status (${TASK_STATUSES.join(', ')})`).option('--subject <text>', 'Update subject').option('-d, --description <text>', 'Update description').option('--owner <agentId>', 'Set owner').option('--clear-owner', 'Clear owner').action(async (id: string, opts: {
-        list?: string;
-        status?: string;
-        subject?: string;
-        description?: string;
-        owner?: string;
-        clearOwner?: boolean;
-      }) => {
-        const {
-          taskUpdateHandler
-        } = await import('./cli/handlers/ant.js');
-        await taskUpdateHandler(id, opts);
-      });
-      taskCmd.command('dir').description('Show the tasks directory path').option('-l, --list <id>', 'Task list ID (defaults to "tasklist")').action(async (opts: {
-        list?: string;
-      }) => {
-        const {
-          taskDirHandler
-        } = await import('./cli/handlers/ant.js');
-        await taskDirHandler(opts);
-      });
-    }
-
-    // claude completion <shell>
-    program.command('completion <shell>', {
-      hidden: true
-    }).description('Generate shell completion script (bash, zsh, or fish)').option('--output <file>', 'Write completion script directly to a file instead of stdout').action(async (shell: string, opts: {
-      output?: string;
-    }) => {
-      const {
-        completionHandler
-      } = await import('./cli/handlers/ant.js');
-      await completionHandler(shell, opts, program);
-    });
+  if (isAntBuild) {
   }
   profileCheckpoint('run_before_parse');
   await program.parseAsync(process.argv);
@@ -4580,7 +4312,7 @@ async function logTenguInit({
         assistantActivationPath: assistantActivationPath as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       }),
       autoUpdatesChannel: (getInitialSettings().autoUpdatesChannel ?? 'latest') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-      ...("external" === 'ant' ? (() => {
+      ...(isAntBuild ? (() => {
         const cwd = getCwd();
         const gitRoot = findGitRoot(cwd);
         const rp = gitRoot ? relative(gitRoot, cwd) || '.' : undefined;

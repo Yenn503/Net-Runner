@@ -1,5 +1,5 @@
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
 import { isEnvTruthy } from './envUtils.js'
+import { getInitialSettings } from './settings/settings.js'
 
 /**
  * Check if --agent-teams flag is provided via CLI.
@@ -11,15 +11,24 @@ function isAgentTeamsFlagSet(): boolean {
   return process.argv.includes('--agent-teams')
 }
 
+function isAgentTeamsSettingEnabled(): boolean {
+  try {
+    return getInitialSettings().agentTeamsEnabled === true
+  } catch {
+    return false
+  }
+}
+
 /**
  * Centralized runtime check for agent teams/teammate features.
  * This is the single gate that should be checked everywhere teammates
  * are referenced (prompts, code, tools isEnabled, UI, etc.).
  *
  * Ant builds: always enabled.
- * External builds require both:
- * 1. Opt-in via NETRUNNER_EXPERIMENTAL_AGENT_TEAMS env var OR --agent-teams flag
- * 2. GrowthBook gate 'tengu_amber_flint' enabled (killswitch)
+ * External builds are pilot-enabled via any of:
+ * 1. agentTeamsEnabled setting
+ * 2. NETRUNNER_EXPERIMENTAL_AGENT_TEAMS env var
+ * 3. --agent-teams flag
  */
 export function isAgentSwarmsEnabled(): boolean {
   // Ant: always on
@@ -27,18 +36,9 @@ export function isAgentSwarmsEnabled(): boolean {
     return true
   }
 
-  // External: require opt-in via env var or --agent-teams flag
-  if (
-    !isEnvTruthy(process.env.NETRUNNER_EXPERIMENTAL_AGENT_TEAMS) &&
-    !isAgentTeamsFlagSet()
-  ) {
-    return false
-  }
-
-  // Killswitch — always respected for external users
-  if (!getFeatureValue_CACHED_MAY_BE_STALE('tengu_amber_flint', true)) {
-    return false
-  }
-
-  return true
+  return (
+    isAgentTeamsSettingEnabled() ||
+    isEnvTruthy(process.env.NETRUNNER_EXPERIMENTAL_AGENT_TEAMS) ||
+    isAgentTeamsFlagSet()
+  )
 }

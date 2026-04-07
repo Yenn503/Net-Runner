@@ -6,6 +6,7 @@ import { ModelPicker } from '../../components/ModelPicker.js';
 import { COMMON_HELP_ARGS, COMMON_INFO_ARGS } from '../../constants/xml.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from '../../services/analytics/index.js';
 import { useAppState, useSetAppState } from '../../state/AppState.js';
+import type { AppState } from '../../state/AppState.js';
 import type { LocalJSXCommandCall } from '../../types/command.js';
 import type { EffortLevel } from '../../utils/effort.js';
 import { isBilledAsExtraUsage } from '../../utils/extraUsage.js';
@@ -15,7 +16,14 @@ import { checkOpus1mAccess, checkSonnet1mAccess } from '../../utils/model/check1
 import { getDefaultMainLoopModelSetting, isOpus1mMergeEnabled, renderDefaultModelSetting } from '../../utils/model/model.js';
 import { isModelAllowed } from '../../utils/model/modelAllowlist.js';
 import { validateModel } from '../../utils/model/validateModel.js';
-function ModelPickerWrapper(t0) {
+
+type ModelCommandProps = {
+  onDone: (result?: string, options?: {
+    display?: CommandResultDisplay;
+  }) => void;
+};
+
+function ModelPickerWrapper(t0: ModelCommandProps) {
   const $ = _c(17);
   const {
     onDone
@@ -44,7 +52,7 @@ function ModelPickerWrapper(t0) {
   const handleCancel = t1;
   let t2;
   if ($[3] !== isFastMode || $[4] !== mainLoopModel || $[5] !== onDone || $[6] !== setAppState) {
-    t2 = function handleSelect(model, effort) {
+    t2 = function handleSelect(model: string | null, effort: EffortLevel | undefined) {
       logEvent("tengu_model_command_menu", {
         action: model as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         from_model: mainLoopModel as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -112,19 +120,19 @@ function ModelPickerWrapper(t0) {
   }
   return t4;
 }
-function _temp4(prev_0) {
+function _temp4(prev_0: AppState): AppState {
   return {
     ...prev_0,
     fastMode: false
   };
 }
-function _temp3(s_1) {
+function _temp3(s_1: AppState) {
   return s_1.fastMode;
 }
-function _temp2(s_0) {
+function _temp2(s_0: AppState) {
   return s_0.mainLoopModelForSession;
 }
-function _temp(s) {
+function _temp(s: AppState) {
   return s.mainLoopModel;
 }
 function SetModelAndClose({
@@ -243,7 +251,7 @@ function isSonnet1mUnavailable(model: string): boolean {
   // a different access criteria.
   return !checkSonnet1mAccess() && (m.includes('sonnet[1m]') || m.includes('sonnet-4-6[1m]'));
 }
-function ShowModelAndClose(t0) {
+function ShowModelAndClose(t0: ModelCommandProps) {
   const {
     onDone
   } = t0;
@@ -259,13 +267,13 @@ function ShowModelAndClose(t0) {
   }
   return null;
 }
-function _temp9(s_1) {
+function _temp9(s_1: AppState) {
   return s_1.effortValue;
 }
-function _temp8(s_0) {
+function _temp8(s_0: AppState) {
   return s_0.mainLoopModelForSession;
 }
-function _temp7(s) {
+function _temp7(s: AppState) {
   return s.mainLoopModel;
 }
 export const call: LocalJSXCommandCall = async (onDone, _context, args) => {

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import type { CommandResultDisplay } from '../../commands.js';
 import { Box, color, Text, useTheme } from '../../ink.js';
 import { useMcpReconnect } from '../../services/mcp/MCPConnectionManager.js';
+import type { MCPServerConnection } from '../../services/mcp/types.js';
 import { useAppStateStore } from '../../state/AppState.js';
 import { Spinner } from '../Spinner.js';
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
     display?: CommandResultDisplay;
   }) => void;
 };
-export function MCPReconnect(t0) {
+export function MCPReconnect(t0: Props) {
   const $ = _c(25);
   const {
     serverName,
@@ -22,7 +23,7 @@ export function MCPReconnect(t0) {
   const store = useAppStateStore();
   const reconnectMcpServer = useMcpReconnect();
   const [isReconnecting, setIsReconnecting] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   let t1;
   let t2;
   if ($[0] !== onComplete || $[1] !== reconnectMcpServer || $[2] !== serverName || $[3] !== store) {
@@ -30,7 +31,7 @@ export function MCPReconnect(t0) {
       const attemptReconnect = async function attemptReconnect() {
         ;
         try {
-          const server = store.getState().mcp.clients.find(c => c.name === serverName);
+          const server = store.getState().mcp.clients.find((c: MCPServerConnection) => c.name === serverName);
           if (!server) {
             setError(`MCP server "${serverName}" not found`);
             setIsReconnecting(false);

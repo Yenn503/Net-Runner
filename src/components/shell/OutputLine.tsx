@@ -1,6 +1,5 @@
 import { c as _c } from "react-compiler-runtime";
 import * as React from 'react';
-import { useMemo } from 'react';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { Ansi, Text } from '../../ink.js';
 import { createHyperlink } from '../../utils/hyperlink.js';
@@ -44,7 +43,13 @@ const URL_IN_JSON = /https?:\/\/[^\s"'<>\\]+/g;
 export function linkifyUrlsInText(content: string): string {
   return content.replace(URL_IN_JSON, url => createHyperlink(url));
 }
-export function OutputLine(t0) {
+export function OutputLine(t0: {
+  content: string;
+  verbose: boolean;
+  isError?: boolean;
+  isWarning?: boolean;
+  linkifyUrls?: boolean;
+}) {
   const $ = _c(11);
   const {
     content,

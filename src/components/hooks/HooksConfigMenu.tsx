@@ -12,15 +12,17 @@ import { c as _c } from "react-compiler-runtime";
  * in-menu for all four types would be a maintenance burden.
  */
 import * as React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { HookEvent } from 'src/entrypoints/agentSdkTypes.js';
 import { useAppState, useAppStateStore } from 'src/state/AppState.js';
+import type { AppState } from 'src/state/AppState.js';
 import type { CommandResultDisplay } from '../../commands.js';
 import { useSettingsChange } from '../../hooks/useSettingsChange.js';
 import { Box, Text } from '../../ink.js';
 import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import { getHookEventMetadata, getHooksForMatcher, getMatcherMetadata, getSortedMatchersForEvent, groupHooksByEventAndMatcher } from '../../utils/hooks/hooksConfigManager.js';
 import type { IndividualHookConfig } from '../../utils/hooks/hooksSettings.js';
+import type { SettingSource } from '../../utils/settings/constants.js';
 import { getSettings_DEPRECATED, getSettingsForSource } from '../../utils/settings/settings.js';
 import { plural } from '../../utils/stringUtils.js';
 import { Dialog } from '../design-system/Dialog.js';
@@ -48,7 +50,9 @@ type ModeState = {
   event: HookEvent;
   hook: IndividualHookConfig;
 };
-export function HooksConfigMenu(t0) {
+type HooksByEvent = Partial<Record<HookEvent, number>>;
+type HooksByEventAndMatcher = Record<HookEvent, Record<string, IndividualHookConfig[]>>;
+export function HooksConfigMenu(t0: Props) {
   const $ = _c(100);
   const {
     toolNames,
@@ -68,7 +72,7 @@ export function HooksConfigMenu(t0) {
   const [restrictedByPolicy, setRestrictedByPolicy] = useState(_temp2);
   let t2;
   if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = source => {
+    t2 = (source: SettingSource) => {
       if (source === "policySettings") {
         const settings_0 = getSettings_DEPRECATED();
         const hooksDisabled_0 = settings_0?.disableAllHooks === true;
@@ -258,11 +262,11 @@ export function HooksConfigMenu(t0) {
   const hooksDisabled_1 = settings_1?.disableAllHooks === true;
   let t20;
   if ($[33] !== hooksByEventAndMatcher) {
-    const byEvent = {};
+    const byEvent: HooksByEvent = {};
     let total = 0;
-    for (const [event_0, matchers] of Object.entries(hooksByEventAndMatcher)) {
+    for (const [event_0, matchers] of Object.entries(hooksByEventAndMatcher) as [HookEvent, Record<string, IndividualHookConfig[]>][]) {
       const eventCount = Object.values(matchers).reduce(_temp5, 0);
-      byEvent[event_0 as HookEvent] = eventCount;
+      byEvent[event_0] = eventCount;
       total = total + eventCount;
     }
     t20 = {
@@ -382,7 +386,7 @@ export function HooksConfigMenu(t0) {
       {
         let t21;
         if ($[61] !== combinedToolNames) {
-          t21 = event_2 => {
+          t21 = (event_2: HookEvent) => {
             if (getMatcherMetadata(event_2, combinedToolNames) !== undefined) {
               setModeState({
                 mode: "select-matcher",
@@ -421,7 +425,7 @@ export function HooksConfigMenu(t0) {
         const t21 = hookEventMetadata[modeState.event];
         let t22;
         if ($[70] !== modeState.event) {
-          t22 = matcher => {
+          t22 = (matcher: string) => {
             setModeState({
               mode: "select-hook",
               event: modeState.event,
@@ -463,7 +467,7 @@ export function HooksConfigMenu(t0) {
         const t21 = hookEventMetadata[modeState.event];
         let t22;
         if ($[79] !== modeState.event) {
-          t22 = hook_1 => {
+          t22 = (hook_1: IndividualHookConfig) => {
             setModeState({
               mode: "view-hook",
               event: modeState.event,
@@ -558,13 +562,13 @@ export function HooksConfigMenu(t0) {
 function _temp6() {
   return <Text>Esc to close</Text>;
 }
-function _temp5(sum, hooks) {
+function _temp5(sum: number, hooks: IndividualHookConfig[]) {
   return sum + hooks.length;
 }
-function _temp4(tool) {
+function _temp4(tool: { name: string }) {
   return tool.name;
 }
-function _temp3(s) {
+function _temp3(s: AppState) {
   return s.mcp;
 }
 function _temp2() {

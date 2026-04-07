@@ -14,7 +14,47 @@ import {
   NET_RUNNER_FEATURE_FLAGS,
 } from './buildFeatureFlags.ts'
 
-const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
+type BunResolveArgs = {
+  path: string
+}
+
+type BunResolveResult =
+  | {
+      path: string
+      namespace?: string
+    }
+  | null
+
+type BunLoadResult = {
+  contents: string
+  loader: 'js'
+}
+
+type BunPluginBuilder = {
+  onResolve(
+    options: { filter: RegExp; namespace?: string },
+    callback: (args: BunResolveArgs) => BunResolveResult,
+  ): void
+  onLoad(
+    options: { filter: RegExp; namespace?: string },
+    callback: (args: BunResolveArgs) => BunLoadResult,
+  ): void
+}
+
+type BunBuildResult = {
+  success: boolean
+  logs: unknown[]
+}
+
+type BunRuntime = {
+  build(options: Record<string, unknown>): Promise<BunBuildResult>
+}
+
+const BunApi = (globalThis as typeof globalThis & { Bun: BunRuntime }).Bun
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8')) as {
+  version: string
+}
 const version = pkg.version
 
 // Feature flags for the public Net-Runners build.
@@ -22,7 +62,7 @@ const version = pkg.version
 // useful in this local-first red-team runtime.
 const featureFlags = NET_RUNNER_FEATURE_FLAGS
 
-const result = await Bun.build({
+const result = await BunApi.build({
   entrypoints: ['./src/entrypoints/cli.tsx'],
   outdir: './dist',
   target: 'node',
@@ -47,8 +87,8 @@ const result = await Bun.build({
   plugins: [
     {
       name: 'bun-bundle-shim',
-      setup(build) {
-        const internalFeatureStubModules = new Map([
+      setup(build: BunPluginBuilder) {
+        const internalFeatureStubModules = new Map<string, string>([
           [
             '../daemon/workerRegistry.js',
             'export async function runDaemonWorker() { throw new Error("Daemon worker is unavailable in the open build."); }',
@@ -79,7 +119,7 @@ export async function handleBgFlag() { throw new Error("Background sessions are 
             '../self-hosted-runner/main.js',
             'export async function selfHostedRunnerMain() { throw new Error("Self-hosted runner is unavailable in the open build."); }',
           ],
-        ] as const)
+        ])
 
         // Resolve `import { feature } from 'bun:bundle'` to a shim
         build.onResolve({ filter: /^bun:bundle$/ }, () => ({
@@ -96,7 +136,7 @@ export async function handleBgFlag() { throw new Error("Background sessions are 
 
         build.onResolve(
           { filter: /^\.\.\/(daemon\/workerRegistry|daemon\/main|cli\/bg|cli\/handlers\/templateJobs|environment-runner\/main|self-hosted-runner\/main)\.js$/ },
-          args => {
+          (args: BunResolveArgs) => {
             if (!internalFeatureStubModules.has(args.path)) return null
             return {
               path: args.path,
@@ -106,7 +146,7 @@ export async function handleBgFlag() { throw new Error("Background sessions are 
         )
         build.onLoad(
           { filter: /.*/, namespace: 'internal-feature-stub' },
-          args => ({
+          (args: BunResolveArgs) => ({
             contents:
               internalFeatureStubModules.get(args.path) ??
               'export {}',
@@ -219,7 +259,7 @@ export const SeverityNumber = {};
         )
 
         // Resolve .md and .txt file imports to empty string stubs
-        build.onResolve({ filter: /\.(md|txt)$/ }, (args) => ({
+        build.onResolve({ filter: /\.(md|txt)$/ }, (args: BunResolveArgs) => ({
           path: args.path,
           namespace: 'text-stub',
         }))
@@ -238,6 +278,11 @@ export const SeverityNumber = {};
     '@anthropic-ai/bedrock-sdk',
     '@anthropic-ai/foundry-sdk',
     '@anthropic-ai/vertex-sdk',
+    // xsschema optional adapters — keep external so Bun doesn't fail resolving
+    // schema-conversion backends that are only imported behind runtime probes.
+    'sury',
+    '@valibot/to-json-schema',
+    'effect',
     // OpenTelemetry — too many named exports to stub, kept external
     '@opentelemetry/api',
     '@opentelemetry/api-logs',

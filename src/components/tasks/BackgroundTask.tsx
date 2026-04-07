@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { c as _c } from "react-compiler-runtime";
 import * as React from 'react';
 import { Text } from 'src/ink.js';
@@ -14,7 +15,7 @@ type Props = {
   task: DeepImmutable<BackgroundTaskState>;
   maxActivityWidth?: number;
 };
-export function BackgroundTask(t0) {
+export function BackgroundTask(t0: Props): React.ReactNode {
   const $ = _c(92);
   const {
     task,

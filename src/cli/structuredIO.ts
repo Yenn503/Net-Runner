@@ -448,12 +448,17 @@ export class StructuredIO {
       if (message.type === 'assistant' || message.type === 'system') {
         return message
       }
-      if (message.message.role !== 'user') {
+      const sdkUserMessage = message as SDKUserMessage & {
+        message: {
+          role: string
+        }
+      }
+      if (sdkUserMessage.message.role !== 'user') {
         exitWithMessage(
-          `Error: Expected message role 'user', got '${message.message.role}'`,
+          `Error: Expected message role 'user', got '${sdkUserMessage.message.role}'`,
         )
       }
-      return message
+      return sdkUserMessage
     } catch (error) {
       // biome-ignore lint/suspicious/noConsole:: intentional console output
       console.error(`Error parsing streaming input line: ${line}: ${error}`)

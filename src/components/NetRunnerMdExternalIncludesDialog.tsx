@@ -1,7 +1,8 @@
 import { c as _c } from "react-compiler-runtime";
-import React, { useCallback } from 'react';
+import React from 'react';
 import { logEvent } from 'src/services/analytics/index.js';
 import { Box, Link, Text } from '../ink.js';
+import type { ProjectConfig } from '../utils/config.js';
 import type { ExternalNetRunnerMdInclude } from '../utils/netRunnerMd.js';
 import { saveCurrentProjectConfig } from '../utils/config.js';
 import { Select } from './CustomSelect/index.js';
@@ -11,7 +12,7 @@ type Props = {
   isStandaloneDialog?: boolean;
   externalIncludes?: ExternalNetRunnerMdInclude[];
 };
-export function NetRunnerMdExternalIncludesDialog(t0) {
+export function NetRunnerMdExternalIncludesDialog(t0: Props) {
   const $ = _c(18);
   const {
     onDone,
@@ -20,7 +21,7 @@ export function NetRunnerMdExternalIncludesDialog(t0) {
   } = t0;
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = [];
+    t1 = [] as React.DependencyList;
     $[0] = t1;
   } else {
     t1 = $[0];
@@ -28,7 +29,7 @@ export function NetRunnerMdExternalIncludesDialog(t0) {
   React.useEffect(_temp, t1);
   let t2;
   if ($[1] !== onDone) {
-    t2 = value => {
+    t2 = (value: 'yes' | 'no') => {
       if (value === "no") {
         logEvent("tengu_claude_md_external_includes_dialog_declined", {});
         saveCurrentProjectConfig(_temp2);
@@ -94,7 +95,7 @@ export function NetRunnerMdExternalIncludesDialog(t0) {
   }
   let t10;
   if ($[10] !== handleSelection) {
-    t10 = <Select options={t9} onChange={value_0 => handleSelection(value_0 as 'yes' | 'no')} />;
+    t10 = <Select options={t9} onChange={(value_0: string) => handleSelection(value_0 as 'yes' | 'no')} />;
     $[10] = handleSelection;
     $[11] = t10;
   } else {
@@ -114,17 +115,17 @@ export function NetRunnerMdExternalIncludesDialog(t0) {
   }
   return t11;
 }
-function _temp4(include, i) {
+function _temp4(include: ExternalNetRunnerMdInclude, i: number) {
   return <Text key={i} dimColor={true}>{"  "}{include.path}</Text>;
 }
-function _temp3(current_0) {
+function _temp3(current_0: ProjectConfig): ProjectConfig {
   return {
     ...current_0,
     hasNetRunnerMdExternalIncludesApproved: true,
     hasNetRunnerMdExternalIncludesWarningShown: true
   };
 }
-function _temp2(current) {
+function _temp2(current: ProjectConfig): ProjectConfig {
   return {
     ...current,
     hasNetRunnerMdExternalIncludesApproved: false,

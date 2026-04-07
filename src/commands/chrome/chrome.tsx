@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { type OptionWithDescription, Select } from '../../components/CustomSelect/select.js';
 import { Dialog } from '../../components/design-system/Dialog.js';
 import { Box, Text } from '../../ink.js';
+import type { MCPServerConnection } from '../../services/mcp/types.js';
+import type { AppState } from '../../state/AppState.js';
 import { useAppState } from '../../state/AppState.js';
 import { isClaudeAISubscriber } from '../../utils/auth.js';
 import { openBrowser } from '../../utils/browser.js';
@@ -23,7 +25,7 @@ type Props = {
   isClaudeAISubscriber: boolean;
   isWSL: boolean;
 };
-function ClaudeInChromeMenu(t0) {
+function ClaudeInChromeMenu(t0: Props) {
   const $ = _c(41);
   const {
     onDone,
@@ -57,7 +59,7 @@ function ClaudeInChromeMenu(t0) {
   const isConnected = chromeClient?.type === "connected";
   let t3;
   if ($[3] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = function openUrl(url) {
+    t3 = function openUrl(url: string) {
       if (isHomespace) {
         openBrowser(url);
       } else {
@@ -71,7 +73,7 @@ function ClaudeInChromeMenu(t0) {
   const openUrl = t3;
   let t4;
   if ($[4] !== enabledByDefault) {
-    t4 = function handleAction(action) {
+    t4 = function handleAction(action: MenuAction) {
       bb22: switch (action) {
         case "install-extension":
           {
@@ -115,7 +117,7 @@ function ClaudeInChromeMenu(t0) {
     t4 = $[5];
   }
   const handleAction = t4;
-  let options;
+  let options: OptionWithDescription<MenuAction>[];
   if ($[6] !== enabledByDefault || $[7] !== isExtensionInstalled) {
     options = [];
     const requiresExtensionSuffix = isExtensionInstalled ? "" : " (requires extension)";
@@ -261,19 +263,19 @@ function ClaudeInChromeMenu(t0) {
   }
   return t12;
 }
-function _temp5(k) {
+function _temp5(k: number): number {
   return k + 1;
 }
-function _temp4(k_0) {
+function _temp4(k_0: number): number {
   return k_0 + 1;
 }
-function _temp3(k_1) {
+function _temp3(k_1: number): number {
   return k_1 + 1;
 }
-function _temp2(c) {
+function _temp2(c: MCPServerConnection): boolean {
   return c.name === CLAUDE_IN_CHROME_MCP_SERVER_NAME;
 }
-function _temp(s) {
+function _temp(s: AppState): MCPServerConnection[] {
   return s.mcp.clients;
 }
 export const call = async function (onDone: (result?: string) => void): Promise<React.ReactNode> {

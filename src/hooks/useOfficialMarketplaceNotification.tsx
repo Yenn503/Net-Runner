@@ -12,15 +12,16 @@ import { useStartupNotification } from './notifs/useStartupNotification.js';
 export function useOfficialMarketplaceNotification() {
   useStartupNotification(_temp);
 }
-async function _temp() {
+async function _temp(): Promise<Notification[]> {
   const result = await checkAndInstallOfficialMarketplace();
-  const notifs = [];
+  const notifs: Notification[] = [];
+  const immediatePriority: Notification['priority'] = 'immediate';
   if (result.configSaveFailed) {
     logForDebugging("Showing marketplace config save failure notification");
     notifs.push({
       key: "marketplace-config-save-failed",
       jsx: <Text color="error">Failed to save marketplace retry info · Check ~/.netrunner.json permissions</Text>,
-      priority: "immediate",
+      priority: immediatePriority,
       timeoutMs: 10000
     });
   }
@@ -29,7 +30,7 @@ async function _temp() {
     notifs.push({
       key: "marketplace-installed",
       jsx: <Text color="success">✓ First-party marketplace installed · /plugin to see available plugins</Text>,
-      priority: "immediate",
+      priority: immediatePriority,
       timeoutMs: 7000
     });
   } else {
@@ -38,7 +39,7 @@ async function _temp() {
       notifs.push({
         key: "marketplace-install-failed",
         jsx: <Text color="warning">Failed to install first-party marketplace · Will retry on next startup</Text>,
-        priority: "immediate",
+        priority: immediatePriority,
         timeoutMs: 8000
       });
     }

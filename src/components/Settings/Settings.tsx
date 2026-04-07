@@ -19,7 +19,7 @@ type Props = {
   context: LocalJSXCommandContext;
   defaultTab: 'Status' | 'Config' | 'Usage' | 'Gates';
 };
-export function Settings(t0) {
+export function Settings(t0: Props) {
   const $ = _c(25);
   const {
     onClose,
@@ -93,9 +93,9 @@ export function Settings(t0) {
   } else {
     t6 = $[12];
   }
-  let t7;
+  let t7: React.ReactNode[];
   if ($[13] !== contentHeight) {
-    t7 = false ? [<Tab key="gates" title="Gates"><Gates onOwnsEscChange={setGatesOwnsEsc} contentHeight={contentHeight} /></Tab>] : [];
+    t7 = [];
     $[13] = contentHeight;
     $[14] = t7;
   } else {
@@ -114,9 +114,12 @@ export function Settings(t0) {
   const tabs = t8;
   const t9 = defaultTab !== "Config" && defaultTab !== "Gates";
   const t10 = tabsHidden || insideModal ? undefined : contentHeight;
+  const handleTabChange = (tabId: string) => {
+    setSelectedTab(tabId as Props['defaultTab']);
+  };
   let t11;
   if ($[19] !== selectedTab || $[20] !== t10 || $[21] !== t9 || $[22] !== tabs || $[23] !== tabsHidden) {
-    t11 = <Pane color="permission"><Tabs color="permission" selectedTab={selectedTab} onTabChange={setSelectedTab} hidden={tabsHidden} initialHeaderFocused={t9} contentHeight={t10}>{tabs}</Tabs></Pane>;
+    t11 = <Pane color="permission"><Tabs color="permission" selectedTab={selectedTab} onTabChange={handleTabChange} hidden={tabsHidden} initialHeaderFocused={t9} contentHeight={t10}>{tabs}</Tabs></Pane>;
     $[19] = selectedTab;
     $[20] = t10;
     $[21] = t9;

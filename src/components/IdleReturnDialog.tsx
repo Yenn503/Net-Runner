@@ -3,6 +3,7 @@ import React from 'react';
 import { Box, Text } from '../ink.js';
 import { formatTokens } from '../utils/format.js';
 import { Select } from './CustomSelect/index.js';
+import type { OptionWithDescription } from './CustomSelect/select.js';
 import { Dialog } from './design-system/Dialog.js';
 type IdleReturnAction = 'continue' | 'clear' | 'dismiss' | 'never';
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
   totalInputTokens: number;
   onDone: (action: IdleReturnAction) => void;
 };
-export function IdleReturnDialog(t0) {
+export function IdleReturnDialog(t0: Props) {
   const $ = _c(16);
   const {
     idleMinutes,
@@ -76,14 +77,14 @@ export function IdleReturnDialog(t0) {
     t8 = [t6, t7, {
       value: "never" as const,
       label: "Don't ask me again"
-    }];
+    }] as OptionWithDescription<IdleReturnAction>[];
     $[9] = t8;
   } else {
     t8 = $[9];
   }
   let t9;
   if ($[10] !== onDone) {
-    t9 = <Select options={t8} onChange={value => onDone(value)} />;
+    t9 = <Select options={t8} onChange={(value: IdleReturnAction) => onDone(value)} />;
     $[10] = onDone;
     $[11] = t9;
   } else {

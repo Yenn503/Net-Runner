@@ -1,21 +1,23 @@
 import { c as _c } from "react-compiler-runtime";
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Text } from '../ink.js';
 import { getGlobalConfig, saveGlobalConfig } from '../utils/config.js';
+import type { GlobalConfig } from '../utils/config.js';
 import { isSupportedTerminal } from '../utils/ide.js';
 import { Select } from './CustomSelect/index.js';
+import type { OptionWithDescription } from './CustomSelect/select.js';
 import { Dialog } from './design-system/Dialog.js';
 type IdeAutoConnectDialogProps = {
   onComplete: () => void;
 };
-export function IdeAutoConnectDialog(t0) {
+export function IdeAutoConnectDialog(t0: IdeAutoConnectDialogProps) {
   const $ = _c(9);
   const {
     onComplete
   } = t0;
   let t1;
   if ($[0] !== onComplete) {
-    t1 = async value => {
+    t1 = async (value: string) => {
       const autoConnect = value === "yes";
       saveGlobalConfig(current => ({
         ...current,
@@ -38,7 +40,7 @@ export function IdeAutoConnectDialog(t0) {
     }, {
       label: "No",
       value: "no"
-    }];
+    }] as OptionWithDescription<string>[];
     $[2] = t2;
   } else {
     t2 = $[2];
@@ -77,14 +79,14 @@ export function shouldShowAutoConnectDialog(): boolean {
 type IdeDisableAutoConnectDialogProps = {
   onComplete: (disableAutoConnect: boolean) => void;
 };
-export function IdeDisableAutoConnectDialog(t0) {
+export function IdeDisableAutoConnectDialog(t0: IdeDisableAutoConnectDialogProps) {
   const $ = _c(10);
   const {
     onComplete
   } = t0;
   let t1;
   if ($[0] !== onComplete) {
-    t1 = value => {
+    t1 = (value: string) => {
       const disableAutoConnect = value === "yes";
       if (disableAutoConnect) {
         saveGlobalConfig(_temp);
@@ -116,7 +118,7 @@ export function IdeDisableAutoConnectDialog(t0) {
     }, {
       label: "Yes",
       value: "yes"
-    }];
+    }] as OptionWithDescription<string>[];
     $[4] = t3;
   } else {
     t3 = $[4];
@@ -141,7 +143,7 @@ export function IdeDisableAutoConnectDialog(t0) {
   }
   return t5;
 }
-function _temp(current) {
+function _temp(current: GlobalConfig) {
   return {
     ...current,
     autoConnectIde: false

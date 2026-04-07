@@ -17,10 +17,10 @@ export function PromptStep() {
     goBack,
     updateWizardData,
     wizardData
-  } = useWizard();
+  } = useWizard<AgentWizardData>();
   const [systemPrompt, setSystemPrompt] = useState(wizardData.systemPrompt || "");
   const [cursorOffset, setCursorOffset] = useState(systemPrompt.length);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   let t0;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t0 = {
@@ -58,7 +58,7 @@ export function PromptStep() {
   useKeybinding("chat:externalEditor", handleExternalEditor, t2);
   let t3;
   if ($[4] !== goNext || $[5] !== systemPrompt || $[6] !== updateWizardData) {
-    t3 = () => {
+    t3 = (): void => {
       const trimmedPrompt = systemPrompt.trim();
       if (!trimmedPrompt) {
         setError("System prompt is required");

@@ -73,14 +73,18 @@ export async function launchAssistantSessionChooser(root: Root, props: {
 export async function launchAssistantInstallWizard(root: Root): Promise<string | null> {
   const {
     NewInstallWizard,
-    computeDefaultInstallDir
+    computeDefaultInstallDir,
+    isAssistantInstallerAvailable
   } = await import('./commands/assistant/assistant.js');
+  if (!isAssistantInstallerAvailable) {
+    return null;
+  }
   const defaultDir = await computeDefaultInstallDir();
-  let rejectWithError: (reason: Error) => void;
+  let rejectWithError!: (reason: Error) => void;
   const errorPromise = new Promise<never>((_, reject) => {
     rejectWithError = reject;
   });
-  const resultPromise = showSetupDialog<string | null>(root, done => <NewInstallWizard defaultDir={defaultDir} onInstalled={dir => done(dir)} onCancel={() => done(null)} onError={message => rejectWithError(new Error(`Installation failed: ${message}`))} />);
+  const resultPromise = showSetupDialog<string | null>(root, done => <NewInstallWizard defaultDir={defaultDir} onInstalled={(dir: string) => done(dir)} onCancel={() => done(null)} onError={(message: string) => rejectWithError(new Error(`Installation failed: ${message}`))} />);
   return Promise.race([resultPromise, errorPromise]);
 }
 

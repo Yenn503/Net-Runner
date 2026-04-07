@@ -46,9 +46,9 @@ export function LocationStep() {
   }
   let t3;
   if ($[3] !== goNext || $[4] !== updateWizardData) {
-    t3 = value => {
+    t3 = (value: SettingSource) => {
       updateWizardData({
-        location: value as SettingSource
+        location: value
       });
       goNext();
     };

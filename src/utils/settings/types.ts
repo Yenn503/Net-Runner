@@ -953,6 +953,12 @@ export const SettingsSchema = lazySchema(() =>
         .describe(
           'Enable background memory consolidation (auto-dream). When set, overrides the server-side default.',
         ),
+      agentTeamsEnabled: z
+        .boolean()
+        .optional()
+        .describe(
+          'Enable agent teams (swarm) for this project or user profile. Default: false unless enabled via CLI or env.',
+        ),
       showThinkingSummaries: z
         .boolean()
         .optional()

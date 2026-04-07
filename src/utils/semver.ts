@@ -6,12 +6,21 @@
  * The npm semver fallback always uses { loose: true }.
  */
 
-let _npmSemver: typeof import('semver') | undefined
+type LooseSemverModule = {
+  gt(a: string, b: string, options: { loose: true }): boolean
+  gte(a: string, b: string, options: { loose: true }): boolean
+  lt(a: string, b: string, options: { loose: true }): boolean
+  lte(a: string, b: string, options: { loose: true }): boolean
+  satisfies(version: string, range: string, options: { loose: true }): boolean
+  compare(a: string, b: string, options: { loose: true }): -1 | 0 | 1
+}
 
-function getNpmSemver(): typeof import('semver') {
+let _npmSemver: LooseSemverModule | undefined
+
+function getNpmSemver(): LooseSemverModule {
   if (!_npmSemver) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    _npmSemver = require('semver') as typeof import('semver')
+    _npmSemver = require('semver') as LooseSemverModule
   }
   return _npmSemver
 }
