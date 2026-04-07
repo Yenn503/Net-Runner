@@ -17,7 +17,7 @@ type Props = {
   showSuccessMessage: boolean;
   verbose: boolean;
 };
-export function PackageManagerAutoUpdater(t0) {
+export function PackageManagerAutoUpdater(t0: Props) {
   const $ = _c(10);
   const {
     verbose
@@ -27,7 +27,9 @@ export function PackageManagerAutoUpdater(t0) {
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = async () => {
-      false || false;
+      if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+        return;
+      }
       if (isAutoUpdaterDisabled()) {
         return;
       }

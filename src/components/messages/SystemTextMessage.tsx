@@ -21,6 +21,7 @@ import { SystemAPIErrorMessage } from './SystemAPIErrorMessage.js';
 import { formatDuration, formatNumber, formatSecondsShort } from '../../utils/format.js';
 import { getGlobalConfig } from '../../utils/config.js';
 import Link from '../../ink/components/Link.js';
+import { HOOK_TIMING_DISPLAY_THRESHOLD_MS } from '../../services/tools/toolExecution.js';
 import ThemedText from '../design-system/ThemedText.js';
 import { CtrlOToExpand } from '../CtrlOToExpand.js';
 import { useAppStateStore } from '../../state/AppState.js';
@@ -33,7 +34,39 @@ type Props = {
   verbose: boolean;
   isTranscriptMode?: boolean;
 };
-export function SystemTextMessage(t0) {
+type StopHookSummaryProps = {
+  message: SystemStopHookSummaryMessage;
+  addMargin: boolean;
+  verbose: boolean;
+  isTranscriptMode?: boolean;
+};
+type SystemTextMessageInnerProps = {
+  content: string;
+  addMargin: boolean;
+  dot: boolean;
+  color?: TextProps['color'];
+  dimColor: boolean;
+};
+type TurnDurationMessageProps = {
+  message: SystemTurnDurationMessage;
+  addMargin: boolean;
+};
+type MemorySavedMessageProps = {
+  message: SystemMemorySavedMessage;
+  addMargin: boolean;
+};
+type MemoryFileRowProps = {
+  path: string;
+};
+type ThinkingMessageProps = {
+  message: SystemThinkingMessage;
+  addMargin: boolean;
+};
+type BridgeStatusMessageProps = {
+  message: SystemBridgeStatusMessage;
+  addMargin: boolean;
+};
+export function SystemTextMessage(t0: Props) {
   const $ = _c(51);
   const {
     message,
@@ -248,7 +281,7 @@ export function SystemTextMessage(t0) {
   }
   return t4;
 }
-function StopHookSummaryMessage(t0) {
+function StopHookSummaryMessage(t0: StopHookSummaryProps) {
   const $ = _c(47);
   const {
     message,
@@ -415,18 +448,24 @@ function StopHookSummaryMessage(t0) {
   }
   return t15;
 }
-function _temp3(info_0, idx_0) {
-  const durationStr_0 = false && info_0.durationMs !== undefined ? ` (${formatSecondsShort(info_0.durationMs)})` : "";
+function _temp3(
+  info_0: SystemStopHookSummaryMessage['hookInfos'][number],
+  idx_0: number,
+) {
+  const durationStr_0 = "";
   return <Text key={`cmd-${idx_0}`} dimColor={true}>⎿  {info_0.command === "prompt" ? `prompt: ${info_0.promptText || ""}` : info_0.command}{durationStr_0}</Text>;
 }
-function _temp2(info, idx) {
-  const durationStr = false && info.durationMs !== undefined ? ` (${formatSecondsShort(info.durationMs)})` : "";
+function _temp2(
+  info: SystemStopHookSummaryMessage['hookInfos'][number],
+  idx: number,
+) {
+  const durationStr = "";
   return <Text key={`cmd-${idx}`} dimColor={true}>{"     \u23BF "}{info.command === "prompt" ? `prompt: ${info.promptText || ""}` : info.command}{durationStr}</Text>;
 }
-function _temp(sum, h) {
+function _temp(sum: number, h: SystemStopHookSummaryMessage['hookInfos'][number]) {
   return sum + (h.durationMs ?? 0);
 }
-function SystemTextMessageInner(t0) {
+function SystemTextMessageInner(t0: SystemTextMessageInnerProps) {
   const $ = _c(18);
   const {
     content,
@@ -491,7 +530,7 @@ function SystemTextMessageInner(t0) {
   }
   return t7;
 }
-function TurnDurationMessage(t0) {
+function TurnDurationMessage(t0: TurnDurationMessageProps) {
   const $ = _c(17);
   const {
     message,
@@ -530,15 +569,16 @@ function TurnDurationMessage(t0) {
     t3 = $[4];
   }
   const duration = t3;
-  const hasBudget = message.budgetLimit !== undefined;
+  const hasBudget =
+    message.budgetTokens !== undefined && message.budgetLimit !== undefined;
   let t4;
   bb0: {
     if (!hasBudget) {
       t4 = "";
       break bb0;
     }
-    const tokens = message.budgetTokens;
-    const limit = message.budgetLimit;
+    const tokens = message.budgetTokens!;
+    const limit = message.budgetLimit!;
     let t5;
     if ($[5] !== limit || $[6] !== tokens) {
       t5 = tokens >= limit ? `${formatNumber(tokens)} used (${formatNumber(limit)} min ${figures.tick})` : `${formatNumber(tokens)} / ${formatNumber(limit)} (${Math.round(tokens / limit * 100)}%)`;
@@ -549,7 +589,8 @@ function TurnDurationMessage(t0) {
       t5 = $[7];
     }
     const usage = t5;
-    const nudges = message.budgetNudges > 0 ? ` \u00B7 ${message.budgetNudges} ${message.budgetNudges === 1 ? "nudge" : "nudges"}` : "";
+    const budgetNudges = message.budgetNudges ?? 0;
+    const nudges = budgetNudges > 0 ? ` \u00B7 ${budgetNudges} ${budgetNudges === 1 ? "nudge" : "nudges"}` : "";
     t4 = `${showTurnDuration ? " \xB7 " : ""}${usage}${nudges}`;
   }
   const budgetSuffix = t4;
@@ -591,7 +632,7 @@ function TurnDurationMessage(t0) {
 function _temp4() {
   return sample(TURN_COMPLETION_VERBS) ?? "Worked";
 }
-function MemorySavedMessage(t0) {
+function MemorySavedMessage(t0: MemorySavedMessageProps) {
   const $ = _c(16);
   const {
     message,
@@ -603,7 +644,7 @@ function MemorySavedMessage(t0) {
   } = message;
   let t1;
   if ($[0] !== message) {
-    t1 = feature("TEAMMEM") ? teamMemSaved.teamMemSavedPart(message) : null;
+    t1 = feature("TEAMMEM") && teamMemSaved ? teamMemSaved.teamMemSavedPart(message) : null;
     $[0] = message;
     $[1] = t1;
   } else {
@@ -631,7 +672,7 @@ function MemorySavedMessage(t0) {
   } else {
     t6 = $[5];
   }
-  const t7 = message.verb ?? "Saved";
+  const t7 = "Saved";
   const t8 = parts.join(" \xB7 ");
   let t9;
   if ($[6] !== t7 || $[7] !== t8) {
@@ -663,10 +704,10 @@ function MemorySavedMessage(t0) {
   }
   return t11;
 }
-function _temp5(p) {
+function _temp5(p: string) {
   return <MemoryFileRow key={p} path={p} />;
 }
-function MemoryFileRow(t0) {
+function MemoryFileRow(t0: MemoryFileRowProps) {
   const $ = _c(16);
   const {
     path
@@ -730,7 +771,7 @@ function MemoryFileRow(t0) {
   }
   return t8;
 }
-function ThinkingMessage(t0) {
+function ThinkingMessage(t0: ThinkingMessageProps) {
   const $ = _c(7);
   const {
     message,
@@ -765,7 +806,7 @@ function ThinkingMessage(t0) {
   }
   return t4;
 }
-function BridgeStatusMessage(t0) {
+function BridgeStatusMessage(t0: BridgeStatusMessageProps) {
   const $ = _c(13);
   const {
     message,

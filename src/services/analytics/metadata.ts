@@ -619,12 +619,16 @@ const buildEnvContext = memoize(async (): Promise<EnvContext> => {
     isClaudeAiAuth: isClaudeAISubscriber(),
     version: MACRO.VERSION,
     versionBase: getVersionBase(),
-    buildTime: MACRO.BUILD_TIME,
+    buildTime: MACRO.BUILD_TIME ?? '',
     deploymentEnvironment: env.detectDeploymentEnvironment(),
     ...(isEnvTruthy(process.env.GITHUB_ACTIONS) && {
       githubEventName: process.env.GITHUB_EVENT_NAME,
-      githubActionsRunnerEnvironment: process.env.RUNNER_ENVIRONMENT,
-      githubActionsRunnerOs: process.env.RUNNER_OS,
+      ...(process.env.RUNNER_ENVIRONMENT && {
+        githubActionsRunnerEnvironment: process.env.RUNNER_ENVIRONMENT,
+      }),
+      ...(process.env.RUNNER_OS && {
+        githubActionsRunnerOs: process.env.RUNNER_OS,
+      }),
       githubActionRef: process.env.GITHUB_ACTION_PATH?.includes(
         'claude-code-action/',
       )

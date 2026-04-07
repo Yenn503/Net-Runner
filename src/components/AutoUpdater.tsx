@@ -28,6 +28,7 @@ export function AutoUpdater({
   showSuccessMessage,
   verbose
 }: Props): React.ReactNode {
+  const nodeEnv = process.env.NODE_ENV as string | undefined;
   const [versions, setVersions] = useState<{
     global?: string | null;
     latest?: string | null;
@@ -49,7 +50,7 @@ export function AutoUpdater({
     if (isUpdatingRef.current) {
       return;
     }
-    if ("production" === 'test' || "production" === 'development') {
+    if (nodeEnv === 'test' || nodeEnv === 'development') {
       logForDebugging('AutoUpdater: Skipping update check in test/dev environment');
       return;
     }
@@ -158,7 +159,7 @@ export function AutoUpdater({
     // identity (which would re-trigger the initial-check useEffect below).
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // biome-ignore lint/correctness/useExhaustiveDependencies: isUpdating read via ref
-  }, [onAutoUpdaterResult]);
+  }, [nodeEnv, onAutoUpdaterResult]);
 
   // Initial check
   useEffect(() => {

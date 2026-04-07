@@ -2,6 +2,21 @@
 
 Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat. It also acts as an MCP **client**, connecting to external MCP servers for additional capabilities.
 
+For the open-source repository, the default supported path is local-first:
+
+- run the FastMCP server directly from `src/mcp/server.ts`
+- connect it to an external MCP client over stdio or httpStream
+- or run the Net-Runner CLI and configure outbound MCP servers yourself
+
+Some Claude-Code-derived hosted integrations still exist in the codebase, including OAuth-backed connector discovery and `claudeai-proxy` flows. Those are optional hosted dependencies, not required for the local OSS MCP workflow described in this guide.
+
+This guide covers the paths that are actually usable in the current OSS repository:
+
+- **Inbound MCP** — external client to `src/mcp/server.ts`
+- **Outbound MCP** — Net-Runner to external MCP servers via `.mcp.json` or `net-runner mcp ...`
+
+It does **not** document hosted assistant-session flows or the unsupported `net-runner server` direct-connect session server path.
+
 ---
 
 ## Architecture Overview
@@ -52,6 +67,10 @@ Two directions:
 
 The external LLM treats Net-Runner as an MCP tool server with 8 `nr_*` tools. `nr_exec` is the workhorse — all 153 pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
 
+`nr_exec` now also supports **composite execution inside the existing tool boundary**. Instead of adding more MCP tools, the client can pass a batch of commands through `nr_exec` and receive a summary-first per-command result. Oversized output is offloaded to `.netrunner/artifacts/`, logged into the evidence ledger, and referenced back in the tool result.
+
+This means the MCP server is not a thin demo wrapper around the CLI. It is a real local harness surface with the same engagement state, evidence ledger, artifacts folder, workflow discovery, and intelligence hooks that the CLI runtime uses.
+
 ### Prerequisites
 
 ```bash
@@ -59,6 +78,8 @@ bun install
 ```
 
 No build step needed — the FastMCP server runs directly from TypeScript source via `bun`.
+
+If you are only exposing Net-Runner as an inbound MCP server, you do not need a separate Net-Runner-hosted login flow just to make the 8-tool harness available. Provider credentials matter when Net-Runner itself is acting as the LLM runtime; the inbound MCP server can be launched directly from source for local red-team usage.
 
 ### Tool surface (8 tools)
 
@@ -72,6 +93,32 @@ No build step needed — the FastMCP server runs directly from TypeScript source
 | `nr_save_note` | Append note to evidence ledger |
 | `nr_list_evidence` | Query evidence entries with optional type filter |
 | `nr_discover` | Progressive disclosure — list agents, skills, workflows, or capabilities on demand |
+
+### `nr_exec` execution modes
+
+`nr_exec` remains the one workhorse execution tool, but it now has two modes:
+
+- **Single command** — pass `command` for the normal one-shot shell execution path
+- **Composite execution** — pass `commands` to run a sequential batch inside the same MCP call
+
+Useful parameters:
+
+| Parameter | Purpose |
+|---|---|
+| `command` | Execute one shell command |
+| `commands` | Execute a batch of shell commands sequentially |
+| `timeout_ms` | Per-command timeout |
+| `max_lines` | Cap the returned preview lines |
+| `summary_only` | Return condensed per-command summaries for batch runs |
+| `stop_on_error` | Halt a batch after the first failed command |
+
+Runtime behavior:
+
+- **Artifact offload** — oversized output is written to `.netrunner/artifacts/` and linked in evidence
+- **Automatic intelligence hooks** — HTTP-looking output triggers WAF detection; failures trigger retry guidance
+- **Context budget tracking** — cumulative returned output is tracked per MCP session and warns when the transcript becomes expensive
+- **No tool-surface bloat** — composite execution is implemented inside `nr_exec`, not as extra MCP tools
+- **Operator-grade runtime logs** — the MCP server terminal shows command execution, artifact persistence, evidence saves, intelligence triggers, and session-budget snapshots in real time
 
 ### Client configurations
 
@@ -188,11 +235,20 @@ NR_PORT=9000 bun run mcp:server # custom port
 
 The terminal shows a sunset gradient banner, all 8 registered tools, and live activity logs with session IDs, durations, and result sizes.
 
+You should now expect to see:
+
+- command start / completion logs for `nr_exec`
+- explicit artifact-save and evidence-write logs when output is offloaded
+- intelligence logs when WAF/failure/blind-finding middleware triggers
+- per-session context-budget snapshots as tool output accumulates
+
 ---
 
 ## Direction 2: Net-Runner → External MCP Servers (Outbound)
 
 Net-Runner can connect to external MCP servers for additional tools. These tools become available to the LLM and all specialist agents during engagements.
+
+This outbound path is fully usable without first-party hosted Net-Runner services. The hosted-only connector surfaces in the runtime are separate from the `.mcp.json` and CLI-managed server configuration shown below.
 
 ### Project-level config (`.mcp.json`)
 
@@ -271,7 +327,7 @@ node dist/cli.mjs
 bun run dev
 ```
 
-Net-Runner's LLM can then use tools from any connected MCP servers alongside its built-in 153 tools.
+Net-Runner's LLM can then use tools from any connected MCP servers alongside its built-in pentest tool catalog.
 
 ### Both directions simultaneously
 
@@ -287,8 +343,16 @@ Through 8 MCP tools + its own built-in file/edit tools:
 - **Engagement lifecycle** (`nr_engagement_init`, `nr_engagement_status`) — initialize and track assessments
 - **Guardrails** (`nr_scope_check`) — verify actions are in scope before execution
 - **Evidence** (`nr_save_finding`, `nr_save_note`, `nr_list_evidence`) — capture findings and notes
-- **Discovery** (`nr_discover`) — explore 12 agents, 11 skills, 7+ workflows, and 153 capabilities on demand
+- **Discovery** (`nr_discover`) — explore agents, skills, workflows, and capability readiness data on demand
 - **File access** — the LLM reads agent prompts, skill definitions, intelligence state, and evidence files using its own file tools (no MCP duplication needed)
+
+The important part is that the external LLM gets a coherent harness loop, not disconnected point tools:
+
+- initialize scope
+- run commands through one workhorse execution surface
+- save artifacts and findings into the same project ledger
+- query engagement/evidence state when planning the next move
+- keep working inside one `.netrunner/` project runtime
 
 The external LLM becomes the "brain" and Net-Runner becomes the "hands."
 
@@ -318,4 +382,4 @@ The external LLM becomes the "brain" and Net-Runner becomes the "hands."
 10. Type: "Now run nuclei against the open web ports"
 11. LLM calls `nr_exec` → nuclei runs → findings captured
 
-You stay in your IDE the whole time. Net-Runner handles tool execution, evidence capture, and guardrail enforcement.
+You stay in your IDE the whole time. Net-Runner handles tool execution, evidence capture, guardrail enforcement, artifact persistence, runtime intelligence, and live MCP-side operator logging.

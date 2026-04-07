@@ -8,7 +8,6 @@
  * - Strips tool list and model info from init messages
  */
 
-import type { SDKAssistantMessage } from 'src/entrypoints/agentSdkTypes.js'
 import type { StdoutMessage } from 'src/entrypoints/sdk/controlTypes.js'
 import { FILE_EDIT_TOOL_NAME } from 'src/tools/FileEditTool/constants.js'
 import { FILE_READ_TOOL_NAME } from 'src/tools/FileReadTool/prompt.js'
@@ -30,6 +29,14 @@ type ToolCounts = {
   writes: number
   commands: number
   other: number
+}
+
+type AssistantStdoutMessage = {
+  message: {
+    content: unknown
+  }
+  session_id: string
+  uuid: string
 }
 
 /**
@@ -107,7 +114,7 @@ function getToolSummaryText(counts: ToolCounts): string | undefined {
  * Count tool uses in an assistant message and add to existing counts.
  */
 function accumulateToolUses(
-  message: SDKAssistantMessage,
+  message: AssistantStdoutMessage,
   counts: ToolCounts,
 ): void {
   const content = message.message.content
@@ -137,13 +144,14 @@ export function createStreamlinedTransformer(): (
   ): StdoutMessage | null {
     switch (message.type) {
       case 'assistant': {
-        const content = message.message.content
+        const assistantMessage = message as AssistantStdoutMessage
+        const content = assistantMessage.message.content
         const text = Array.isArray(content)
           ? extractTextContent(content, '\n').trim()
           : ''
 
         // Accumulate tool counts from this message
-        accumulateToolUses(message, cumulativeCounts)
+        accumulateToolUses(assistantMessage, cumulativeCounts)
 
         if (text.length > 0) {
           // Text message: emit text only, reset counts
@@ -151,8 +159,8 @@ export function createStreamlinedTransformer(): (
           return {
             type: 'streamlined_text',
             text,
-            session_id: message.session_id,
-            uuid: message.uuid,
+            session_id: assistantMessage.session_id,
+            uuid: assistantMessage.uuid,
           }
         }
 
@@ -165,8 +173,8 @@ export function createStreamlinedTransformer(): (
         return {
           type: 'streamlined_tool_use_summary',
           tool_summary: toolSummary,
-          session_id: message.session_id,
-          uuid: message.uuid,
+          session_id: assistantMessage.session_id,
+          uuid: assistantMessage.uuid,
         }
       }
 

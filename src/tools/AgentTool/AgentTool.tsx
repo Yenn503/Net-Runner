@@ -17,7 +17,6 @@ import {
   recordSubagentExecution,
 } from '../../security/runtimeIntegration.js';
 import { completeAgentTask as completeAsyncAgent, createActivityDescriptionResolver, createProgressTracker, enqueueAgentNotification, failAgentTask as failAsyncAgent, getProgressUpdate, getTokenCountFromTracker, isLocalAgentTask, killAsyncAgent, registerAgentForeground, registerAsyncAgent, unregisterAgentForeground, updateAgentProgress as updateAsyncAgentProgress, updateProgressFromMessage } from '../../tasks/LocalAgentTask/LocalAgentTask.js';
-import { checkRemoteAgentEligibility, formatPreconditionError, getRemoteTaskSessionUrl, registerRemoteAgentTask } from '../../tasks/RemoteAgentTask/RemoteAgentTask.js';
 import { assembleToolPool } from '../../tools.js';
 import { asAgentId } from '../../types/ids.js';
 import { runWithAgentContext } from '../../utils/agentContext.js';
@@ -61,8 +60,9 @@ import { runAgent } from './runAgent.js';
 import { renderGroupedAgentToolUse, renderToolResultMessage, renderToolUseErrorMessage, renderToolUseMessage, renderToolUseProgressMessage, renderToolUseRejectedMessage, renderToolUseTag, userFacingName, userFacingNameBackgroundColor } from './UI.js';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-const proactiveModule = feature('PROACTIVE') || feature('KAIROS') ? require('../../proactive/index.js') as typeof import('../../proactive/index.js') : null;
+const proactiveModule = null;
 /* eslint-enable @typescript-eslint/no-require-imports */
+const isProactiveActive = (): boolean => false;
 
 // Progress display constants (for showing background hint)
 const PROGRESS_THRESHOLD_MS = 2000; // Show background hint after 2 seconds
@@ -107,7 +107,7 @@ const fullInputSchema = lazySchema(() => {
     mode: permissionModeSchema().optional().describe('Permission mode for spawned teammate (e.g., "plan" to require plan approval).')
   });
   return baseInputSchema().merge(multiAgentInputSchema).extend({
-    isolation: ("external" === 'ant' ? z.enum(['worktree', 'remote']) : z.enum(['worktree'])).optional().describe("external" === 'ant' ? 'Isolation mode. "worktree" creates a temporary git worktree so the agent works on an isolated copy of the repo. "remote" launches the agent in a remote CCR environment (always runs in background).' : 'Isolation mode. "worktree" creates a temporary git worktree so the agent works on an isolated copy of the repo.'),
+    isolation: z.enum(['worktree']).optional().describe('Isolation mode. "worktree" creates a temporary git worktree so the agent works on an isolated copy of the repo.'),
     cwd: z.string().optional().describe('Absolute path to run the agent in. Overrides the working directory for all filesystem and shell operations within this agent. Mutually exclusive with isolation: "worktree".')
   });
 });
@@ -144,7 +144,7 @@ type AgentToolInput = z.infer<ReturnType<typeof baseInputSchema>> & {
   name?: string;
   team_name?: string;
   mode?: z.infer<ReturnType<typeof permissionModeSchema>>;
-  isolation?: 'worktree' | 'remote';
+  isolation?: 'worktree';
   cwd?: string;
 };
 
@@ -200,10 +200,10 @@ export type RemoteLaunchedOutput = {
   outputFile: string;
 };
 type InternalOutput = Output | TeammateSpawnedOutput | RemoteLaunchedOutput;
-import type { AgentToolProgress, ShellProgress } from '../../types/tools.js';
+import type { AgentToolProgress, BashProgress, PowerShellProgress } from '../../types/tools.js';
 // AgentTool forwards both its own progress events and shell progress
 // events from the sub-agent so the SDK receives tool_progress updates during bash/powershell runs.
-export type Progress = AgentToolProgress | ShellProgress;
+export type Progress = AgentToolProgress | BashProgress | PowerShellProgress;
 export const AgentTool = buildTool({
   async prompt({
     agents,
@@ -452,58 +452,9 @@ export const AgentTool = buildTool({
     });
 
     // Resolve effective isolation mode (explicit param overrides agent def)
-    const effectiveIsolation = isolation ?? selectedAgent.isolation;
+    const selectedAgentIsolation = selectedAgent.isolation === 'remote' ? undefined : selectedAgent.isolation;
+    const effectiveIsolation = isolation ?? selectedAgentIsolation;
 
-    // Remote isolation: delegate to CCR. Gated ant-only — the guard enables
-    // dead code elimination of the entire block for external builds.
-    if ("external" === 'ant' && effectiveIsolation === 'remote') {
-      const eligibility = await checkRemoteAgentEligibility();
-      if (!eligibility.eligible) {
-        const reasons = eligibility.errors.map(formatPreconditionError).join('\n');
-        throw new Error(`Cannot launch remote agent:\n${reasons}`);
-      }
-      let bundleFailHint: string | undefined;
-      const session = await teleportToRemote({
-        initialMessage: prompt,
-        description,
-        signal: toolUseContext.abortController.signal,
-        onBundleFail: msg => {
-          bundleFailHint = msg;
-        }
-      });
-      if (!session) {
-        throw new Error(bundleFailHint ?? 'Failed to create remote session');
-      }
-      const {
-        taskId,
-        sessionId
-      } = registerRemoteAgentTask({
-        remoteTaskType: 'remote-agent',
-        session: {
-          id: session.id,
-          title: session.title || description
-        },
-        command: prompt,
-        context: toolUseContext,
-        toolUseId: toolUseContext.toolUseId
-      });
-      logEvent('tengu_agent_tool_remote_launched', {
-        agent_type: selectedAgent.agentType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
-      });
-      const remoteResult: RemoteLaunchedOutput = {
-        status: 'remote_launched',
-        taskId,
-        sessionUrl: getRemoteTaskSessionUrl(sessionId),
-        description,
-        prompt,
-        outputFile: getTaskOutputPath(taskId)
-      };
-      return {
-        data: remoteResult
-      } as unknown as {
-        data: Output;
-      };
-    }
     // System prompt + prompt messages: branch on fork path.
     //
     // Fork path: child inherits the PARENT's system prompt (not FORK_AGENT's)
@@ -551,9 +502,7 @@ export const AgentTool = buildTool({
         // Log agent memory loaded event for subagents
         if (selectedAgent.memory) {
           logEvent('tengu_agent_memory_loaded', {
-            ...("external" === 'ant' && {
-              agent_type: selectedAgent.agentType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
-            }),
+            agent_type: selectedAgent.agentType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
             scope: selectedAgent.memory as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
             source: 'subagent' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
           });
@@ -598,7 +547,7 @@ export const AgentTool = buildTool({
     // <task-notification> re-entry there is handled by the else branch
     // below (registerAsyncAgentTask + notifyOnCompletion).
     const assistantForceAsync = feature('KAIROS') ? appState.kairosEnabled : false;
-    const shouldRunAsync = (run_in_background === true || selectedAgent.background === true || isCoordinator || forceAsync || assistantForceAsync || (proactiveModule?.isProactiveActive() ?? false)) && !isBackgroundTasksDisabled;
+    const shouldRunAsync = (run_in_background === true || selectedAgent.background === true || isCoordinator || forceAsync || assistantForceAsync || isProactiveActive()) && !isBackgroundTasksDisabled;
     // Assemble the worker's tool pool independently of the parent's.
     // Workers always get their tools from assembleToolPool with their own
     // permission mode, so they aren't affected by the parent's tool
@@ -641,7 +590,7 @@ export const AgentTool = buildTool({
       canUseTool,
       isAsync: shouldRunAsync,
       querySource: toolUseContext.options.querySource ?? getQuerySourceForAgent(selectedAgent.agentType, isBuiltInAgent(selectedAgent)),
-      model: isForkPath ? undefined : model,
+      model: isForkPath ? undefined : model ? getAgentModel(undefined, toolUseContext.options.mainLoopModel, model, permissionMode) : undefined,
       // Fork path: pass parent's system prompt AND parent's exact tool
       // array (cache-identical prefix). workerTools is rebuilt under
       // permissionMode 'bubble' which differs from the parent's mode, so
@@ -1284,7 +1233,14 @@ export const AgentTool = buildTool({
 
         // Re-throw abort errors
         // TODO: Find a cleaner way to express this
-        const lastMessage = agentMessages.findLast(_ => _.type !== 'system' && _.type !== 'progress');
+        let lastMessage: MessageType | undefined;
+        for (let i = agentMessages.length - 1; i >= 0; i--) {
+          const candidate = agentMessages[i];
+          if (candidate && candidate.type !== 'system' && candidate.type !== 'progress') {
+            lastMessage = candidate;
+            break;
+          }
+        }
         if (lastMessage && isSyntheticMessage(lastMessage)) {
           logEvent('tengu_agent_tool_terminated', {
             agent_type: metadata.agentType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -1383,8 +1339,7 @@ export const AgentTool = buildTool({
 
     // Only route through auto mode classifier when in auto mode
     // In all other modes, auto-approve sub-agent generation
-    // Note: "external" === 'ant' guard enables dead code elimination for external builds
-    if ("external" === 'ant' && appState.toolPermissionContext.mode === 'auto') {
+    if (appState.toolPermissionContext.mode === 'auto') {
       return {
         behavior: 'passthrough',
         message: 'Agent tool requires permission to spawn sub-agents.'
@@ -1483,7 +1438,19 @@ duration_ms: ${data.totalDurationMs}</usage>`
   renderToolUseProgressMessage,
   renderToolUseRejectedMessage,
   renderToolUseErrorMessage,
-  renderGroupedToolUse: renderGroupedAgentToolUse
+  renderGroupedToolUse(toolUses, options) {
+    return renderGroupedAgentToolUse(toolUses as Array<{
+      param: import('@anthropic-ai/sdk/resources/index.mjs').ToolUseBlockParam;
+      isResolved: boolean;
+      isError: boolean;
+      isInProgress: boolean;
+      progressMessages: import('../../types/message.js').ProgressMessage[];
+      result?: {
+        param: import('@anthropic-ai/sdk/resources/index.mjs').ToolResultBlockParam;
+        output: Output;
+      };
+    }>, options);
+  }
 } satisfies ToolDef<InputSchema, Output, Progress>);
 function resolveTeamName(input: {
   team_name?: string;

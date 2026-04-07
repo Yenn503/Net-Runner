@@ -2,6 +2,8 @@
 
 This playbook is a practical guide to run Net-Runner with a local model (Ollama), work safely, and get strong day-to-day results.
 
+It is intentionally scoped to the **supported local-first path** in this repository: local CLI sessions, local/provider-backed model execution, and local-first MCP workflows. It does not assume hosted assistant sessions, the unsupported direct-connect session server path, or a bundled SSH remote implementation.
+
 ## 1. What You Have
 
 - A CLI agent loop that can read/write files, run terminal commands, and help with coding workflows.
@@ -94,6 +96,8 @@ bun run hardening:check
 # strict checks (includes typecheck)
 bun run hardening:strict
 ```
+
+Use `hardening:check` as the practical day-to-day health signal. `hardening:strict` is the broader repo gate because it includes the full TypeScript typecheck, not just the runtime smoke path.
 
 ## 5. Provider Modes
 

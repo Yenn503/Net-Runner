@@ -399,7 +399,9 @@ export function createClaudeAiProxyFetch(innerFetch: FetchLike): FetchLike {
     // that — otherwise we double round-trip time for every connector whose
     // downstream service genuinely needs auth (the common case: 30+ servers
     // with "MCP server requires authentication but no OAuth token configured").
-    const tokenChanged = await handleOAuth401Error(sentToken).catch(() => false)
+    const tokenChanged = sentToken
+      ? await handleOAuth401Error(sentToken).catch(() => false)
+      : false
     logEvent('tengu_mcp_claudeai_proxy_401', {
       tokenChanged:
         tokenChanged as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -919,7 +921,7 @@ export const connectToServer = memoize(
         const context = createChromeContext(serverRef.env)
         inProcessServer = createClaudeForChromeMcpServer(context)
         const [clientTransport, serverTransport] = createLinkedTransportPair()
-        await inProcessServer.connect(serverTransport)
+        await inProcessServer!.connect(serverTransport)
         transport = clientTransport
         logMCPDebug(name, `In-process Chrome MCP server started`)
       } else if (
@@ -938,7 +940,7 @@ export const connectToServer = memoize(
         )
         inProcessServer = await createComputerUseMcpServerForCli()
         const [clientTransport, serverTransport] = createLinkedTransportPair()
-        await inProcessServer.connect(serverTransport)
+        await inProcessServer!.connect(serverTransport)
         transport = clientTransport
         logMCPDebug(name, `In-process Computer Use MCP server started`)
       } else if (serverRef.type === 'stdio' || !serverRef.type) {
@@ -2183,7 +2185,7 @@ export async function reconnectMcpServerImpl(
     if (supportsResources) {
       // Only add resource tools if no other server has them
       const hasResourceTools = [ListMcpResourcesTool, ReadMcpResourceTool].some(
-        tool => tools.some(t => toolMatchesName(t, tool.name)),
+        (tool: Tool) => tools.some(t => toolMatchesName(t, tool.name)),
       )
       if (!hasResourceTools) {
         resourceTools.push(ListMcpResourcesTool, ReadMcpResourceTool)
@@ -2193,7 +2195,7 @@ export async function reconnectMcpServerImpl(
     return {
       client,
       tools: [...tools, ...resourceTools],
-      commands,
+      commands: commands as Command[],
       resources: resources.length > 0 ? resources : undefined,
     }
   } catch (error) {
@@ -2366,7 +2368,7 @@ export async function getMcpToolsCommandsAndResources(
       onConnectionAttempt({
         client,
         tools: [...tools, ...resourceTools],
-        commands,
+        commands: commands as Command[],
         resources: resources.length > 0 ? resources : undefined,
       })
     } catch (error) {

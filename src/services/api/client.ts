@@ -171,14 +171,14 @@ export async function getAnthropicClient({
         ? process.env.ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION
         : getAWSRegion()
 
-    const bedrockArgs: ConstructorParameters<typeof AnthropicBedrock>[0] = {
+    const bedrockArgs = {
       ...ARGS,
       awsRegion,
       ...(isEnvTruthy(process.env.NETRUNNER_SKIP_BEDROCK_AUTH) && {
         skipAuth: true,
       }),
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
-    }
+    } as ConstructorParameters<typeof AnthropicBedrock>[0]
 
     // Add API key authentication if available
     if (process.env.AWS_BEARER_TOKEN_BEDROCK) {
@@ -192,9 +192,16 @@ export async function getAnthropicClient({
       // Refresh auth and get credentials with cache clearing
       const cachedCredentials = await refreshAndGetAwsCredentials()
       if (cachedCredentials) {
-        bedrockArgs.awsAccessKey = cachedCredentials.accessKeyId
-        bedrockArgs.awsSecretKey = cachedCredentials.secretAccessKey
-        bedrockArgs.awsSessionToken = cachedCredentials.sessionToken
+        const mutableBedrockArgs = bedrockArgs as {
+          awsAccessKey?: string | null
+          awsSecretKey?: string | null
+          awsSessionToken?: string | null
+        }
+        mutableBedrockArgs.awsAccessKey = cachedCredentials.accessKeyId ?? null
+        mutableBedrockArgs.awsSecretKey =
+          cachedCredentials.secretAccessKey ?? null
+        mutableBedrockArgs.awsSessionToken =
+          cachedCredentials.sessionToken ?? null
       }
     }
     // we have always been lying about the return type - this doesn't support batching or models

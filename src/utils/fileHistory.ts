@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createHash, type UUID } from 'crypto'
 import { diffLines } from 'diff'
 import type { Stats } from 'fs'

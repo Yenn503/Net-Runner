@@ -82,6 +82,19 @@ function getSpanId(span: Span): string {
   return span.spanContext().spanId || ''
 }
 
+function findLastSpanContext(
+  predicate: (ref: WeakRef<SpanContext>) => boolean,
+): SpanContext | undefined {
+  const refs = Array.from(activeSpans.values())
+  for (let i = refs.length - 1; i >= 0; i--) {
+    const ref = refs[i]
+    if (ref && predicate(ref)) {
+      return ref.deref()
+    }
+  }
+  return undefined
+}
+
 /**
  * Lazily start a background interval that evicts orphaned spans from activeSpans.
  *
@@ -385,15 +398,13 @@ export function endLLMRequestSpan(
   } else {
     // Legacy fallback: find the most recent llm_request span
     // WARNING: This can cause mismatched responses when multiple requests are in flight
-    llmSpanContext = Array.from(activeSpans.values())
-      .findLast(r => {
-        const ctx = r.deref()
-        return (
-          ctx?.attributes['span.type'] === 'llm_request' ||
-          ctx?.attributes['model']
-        )
-      })
-      ?.deref()
+    llmSpanContext = findLastSpanContext(ref => {
+      const ctx = ref.deref()
+      return Boolean(
+        ctx?.attributes['span.type'] === 'llm_request' ||
+          ctx?.attributes['model'],
+      )
+    })
   }
 
   if (!llmSpanContext) {
@@ -578,11 +589,9 @@ export function endToolBlockedOnUserSpan(
   decision?: string,
   source?: string,
 ): void {
-  const blockedSpanContext = Array.from(activeSpans.values())
-    .findLast(
-      r => r.deref()?.attributes['span.type'] === 'tool.blocked_on_user',
-    )
-    ?.deref()
+  const blockedSpanContext = findLastSpanContext(
+    ref => ref.deref()?.attributes['span.type'] === 'tool.blocked_on_user',
+  )
 
   if (!blockedSpanContext) {
     return
@@ -662,9 +671,9 @@ export function endToolExecutionSpan(metadata?: {
     return
   }
 
-  const executionSpanContext = Array.from(activeSpans.values())
-    .findLast(r => r.deref()?.attributes['span.type'] === 'tool.execution')
-    ?.deref()
+  const executionSpanContext = findLastSpanContext(
+    ref => ref.deref()?.attributes['span.type'] === 'tool.execution',
+  )
 
   if (!executionSpanContext) {
     return

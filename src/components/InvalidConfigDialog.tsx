@@ -8,6 +8,7 @@ import { getBaseRenderOptions } from '../utils/renderOptions.js';
 import { jsonStringify, writeFileSync_DEPRECATED } from '../utils/slowOperations.js';
 import type { ThemeName } from '../utils/theme.js';
 import { Select } from './CustomSelect/index.js';
+import type { OptionWithDescription } from './CustomSelect/select.js';
 import { Dialog } from './design-system/Dialog.js';
 interface InvalidConfigHandlerProps {
   error: ConfigParseError;
@@ -22,7 +23,7 @@ interface InvalidConfigDialogProps {
 /**
  * Dialog shown when the Claude config file contains invalid JSON
  */
-function InvalidConfigDialog(t0) {
+function InvalidConfigDialog(t0: InvalidConfigDialogProps) {
   const $ = _c(19);
   const {
     filePath,
@@ -32,7 +33,7 @@ function InvalidConfigDialog(t0) {
   } = t0;
   let t1;
   if ($[0] !== onExit || $[1] !== onReset) {
-    t1 = value => {
+    t1 = (value: 'exit' | 'reset') => {
       if (value === "exit") {
         onExit();
       } else {
@@ -86,7 +87,7 @@ function InvalidConfigDialog(t0) {
     }, {
       label: "Reset with default configuration",
       value: "reset"
-    }];
+    }] as OptionWithDescription<'exit' | 'reset'>[];
     $[11] = t6;
   } else {
     t6 = $[11];

@@ -631,7 +631,7 @@ function isNetRunnerMdExcluded(filePath: string, type: MemoryType): boolean {
     return false
   }
 
-  return picomatch.isMatch(normalizedPath, expandedPatterns, matchOpts)
+  return picomatch(expandedPatterns, matchOpts)(normalizedPath)
 }
 
 /**

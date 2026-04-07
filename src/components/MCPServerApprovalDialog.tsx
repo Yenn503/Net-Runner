@@ -3,13 +3,14 @@ import React from 'react';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from 'src/services/analytics/index.js';
 import { getSettings_DEPRECATED, updateSettingsForSource } from '../utils/settings/settings.js';
 import { Select } from './CustomSelect/index.js';
+import type { OptionWithDescription } from './CustomSelect/index.js';
 import { Dialog } from './design-system/Dialog.js';
 import { MCPServerDialogCopy } from './MCPServerDialogCopy.js';
 type Props = {
   serverName: string;
   onDone(): void;
 };
-export function MCPServerApprovalDialog(t0) {
+export function MCPServerApprovalDialog(t0: Props) {
   const $ = _c(13);
   const {
     serverName,
@@ -17,7 +18,7 @@ export function MCPServerApprovalDialog(t0) {
   } = t0;
   let t1;
   if ($[0] !== onDone || $[1] !== serverName) {
-    t1 = function onChange(value) {
+    t1 = function onChange(value: 'yes' | 'yes_all' | 'no') {
       logEvent("tengu_mcp_dialog_choice", {
         choice: value as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       });
@@ -87,14 +88,14 @@ export function MCPServerApprovalDialog(t0) {
     }, {
       label: "Continue without using this MCP server",
       value: "no"
-    }];
+    }] satisfies OptionWithDescription<'yes' | 'yes_all' | 'no'>[];
     $[6] = t5;
   } else {
     t5 = $[6];
   }
   let t6;
   if ($[7] !== onChange) {
-    t6 = <Select options={t5} onChange={value_0 => onChange(value_0 as 'yes_all' | 'yes' | 'no')} onCancel={() => onChange("no")} />;
+    t6 = <Select options={t5} onChange={(value_0: 'yes' | 'yes_all' | 'no') => onChange(value_0)} onCancel={() => onChange("no")} />;
     $[7] = onChange;
     $[8] = t6;
   } else {

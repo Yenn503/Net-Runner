@@ -14,7 +14,8 @@ type Props = {
   // Startup gate: decline exits the process, so relabel accordingly.
   declineExits?: boolean;
 };
-export function AutoModeOptInDialog(t0) {
+const EMPTY_DEPENDENCIES: [] = [];
+export function AutoModeOptInDialog(t0: Props) {
   const $ = _c(18);
   const {
     onAccept,
@@ -23,7 +24,7 @@ export function AutoModeOptInDialog(t0) {
   } = t0;
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = [];
+    t1 = EMPTY_DEPENDENCIES;
     $[0] = t1;
   } else {
     t1 = $[0];
@@ -31,7 +32,7 @@ export function AutoModeOptInDialog(t0) {
   React.useEffect(_temp, t1);
   let t2;
   if ($[1] !== onAccept || $[2] !== onDecline) {
-    t2 = function onChange(value) {
+    t2 = function onChange(value: 'accept' | 'accept-default' | 'decline') {
       bb3: switch (value) {
         case "accept":
           {
@@ -109,7 +110,7 @@ export function AutoModeOptInDialog(t0) {
   }
   let t8;
   if ($[9] !== onChange) {
-    t8 = value_0 => onChange(value_0 as 'accept' | 'accept-default' | 'decline');
+    t8 = (value_0: string) => onChange(value_0 as 'accept' | 'accept-default' | 'decline');
     $[9] = onChange;
     $[10] = t8;
   } else {

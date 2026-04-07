@@ -433,7 +433,7 @@ export async function getOrganizationUUID(): Promise<string | null> {
 
   // Fall back to fetching from profile (requires user:profile scope)
   const accessToken = getClaudeAIOAuthTokens()?.accessToken
-  if (accessToken === undefined || !hasProfileScope()) {
+  if (accessToken == null || !hasProfileScope()) {
     return null
   }
   const profile = await getOauthProfileFromOauthToken(accessToken)

@@ -1,6 +1,10 @@
 import { feature } from 'bun:bundle'
+import type {
+  BetaMessageDeltaUsage,
+  BetaRawMessageStreamEvent,
+} from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.mjs'
-import { randomUUID } from 'crypto'
+import { randomUUID, type UUID } from 'crypto'
 import last from 'lodash-es/last.js'
 import {
   getSessionId,
@@ -39,7 +43,7 @@ import type { AppState } from './state/AppState.js'
 import { type Tools, type ToolUseContext, toolMatchesName } from './Tool.js'
 import type { AgentDefinition } from './tools/AgentTool/loadAgentsDir.js'
 import { SYNTHETIC_OUTPUT_TOOL_NAME } from './tools/SyntheticOutputTool/SyntheticOutputTool.js'
-import type { Message } from './types/message.js'
+import type { Message, StreamEvent } from './types/message.js'
 import type { OrphanedPermission } from './types/textInputTypes.js'
 import { createAbortController } from './utils/abortController.js'
 import type { AttributionState } from './utils/commitAttribution.js'
@@ -123,9 +127,44 @@ const snipModule = feature('HISTORY_SNIP')
   ? (require('./services/compact/snipCompact.js') as typeof import('./services/compact/snipCompact.js'))
   : null
 const snipProjection = feature('HISTORY_SNIP')
-  ? (require('./services/compact/snipProjection.js') as typeof import('./services/compact/snipProjection.js'))
+  ? (require('./services/compact/snipProjection.ts') as typeof import('./services/compact/snipProjection.ts'))
   : null
 /* eslint-enable @typescript-eslint/no-require-imports */
+
+type MessageStartStreamEvent = Extract<BetaRawMessageStreamEvent, { type: 'message_start' }>
+type MessageDeltaStreamEvent = Extract<BetaRawMessageStreamEvent, { type: 'message_delta' }>
+type MessageStopStreamEvent = Extract<BetaRawMessageStreamEvent, { type: 'message_stop' }>
+
+function isRawMessageStreamEvent(event: StreamEvent['event']): event is BetaRawMessageStreamEvent {
+  return typeof event === 'object' && event !== null && 'type' in event
+}
+
+function isMessageStartStreamEvent(event: StreamEvent['event']): event is MessageStartStreamEvent {
+  return isRawMessageStreamEvent(event) && event.type === 'message_start'
+}
+
+function isMessageDeltaStreamEvent(event: StreamEvent['event']): event is MessageDeltaStreamEvent {
+  return isRawMessageStreamEvent(event) && event.type === 'message_delta'
+}
+
+function isMessageStopStreamEvent(event: StreamEvent['event']): event is MessageStopStreamEvent {
+  return isRawMessageStreamEvent(event) && event.type === 'message_stop'
+}
+
+function findLastIndexBy(messages: Message[], predicate: (message: Message) => boolean): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message && predicate(message)) {
+      return i
+    }
+  }
+  return -1
+}
+
+function findLastMessageBy(messages: Message[], predicate: (message: Message) => boolean): Message | undefined {
+  const index = findLastIndexBy(messages, predicate)
+  return index === -1 ? undefined : messages[index]
+}
 
 export type QueryEngineConfig = {
   cwd: string
@@ -591,7 +630,7 @@ export class QueryEngine {
           (msg.content.includes(`<${LOCAL_COMMAND_STDOUT_TAG}>`) ||
             msg.content.includes(`<${LOCAL_COMMAND_STDERR_TAG}>`))
         ) {
-          yield localCommandOutputToSDKAssistantMessage(msg.content, msg.uuid)
+          yield localCommandOutputToSDKAssistantMessage(msg.content, msg.uuid as UUID)
         }
 
         if (msg.type === 'system' && msg.subtype === 'compact_boundary') {
@@ -649,7 +688,7 @@ export class QueryEngine {
                 fileHistory: updater(prev.fileHistory),
               }))
             },
-            message.uuid,
+            message.uuid as UUID,
           )
         })
     }
@@ -705,7 +744,8 @@ export class QueryEngine {
         ) {
           const tailUuid = message.compactMetadata?.preservedSegment?.tailUuid
           if (tailUuid) {
-            const tailIdx = this.mutableMessages.findLastIndex(
+            const tailIdx = findLastIndexBy(
+              this.mutableMessages,
               m => m.uuid === tailUuid,
             )
             if (tailIdx !== -1) {
@@ -786,7 +826,7 @@ export class QueryEngine {
           yield* normalizeMessage(message)
           break
         case 'stream_event':
-          if (message.event.type === 'message_start') {
+          if (isMessageStartStreamEvent(message.event)) {
             // Reset current message usage for new message
             currentMessageUsage = EMPTY_USAGE
             currentMessageUsage = updateUsage(
@@ -794,10 +834,10 @@ export class QueryEngine {
               message.event.message.usage,
             )
           }
-          if (message.event.type === 'message_delta') {
+          if (isMessageDeltaStreamEvent(message.event)) {
             currentMessageUsage = updateUsage(
               currentMessageUsage,
-              message.event.usage,
+              message.event.usage as BetaMessageDeltaUsage | undefined,
             )
             // Capture stop_reason from message_delta. The assistant message
             // is yielded at content_block_stop with stop_reason=null; the
@@ -807,7 +847,7 @@ export class QueryEngine {
               lastStopReason = message.event.delta.stop_reason
             }
           }
-          if (message.event.type === 'message_stop') {
+          if (isMessageStopStreamEvent(message.event)) {
             // Accumulate current message usage into total
             this.totalUsage = accumulateUsage(
               this.totalUsage,
@@ -1055,7 +1095,8 @@ export class QueryEngine {
     // return '' and -p mode emit a blank line. Allowlist to assistant|user:
     // isResultSuccessful handles both (user with all tool_result blocks is a
     // valid successful terminal state).
-    const result = messages.findLast(
+    const result = findLastMessageBy(
+      messages,
       m => m.type === 'assistant' || m.type === 'user',
     )
     // Capture for the error_during_execution diagnostic — isResultSuccessful

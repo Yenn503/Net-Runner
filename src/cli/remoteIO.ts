@@ -25,7 +25,7 @@ import { ndjsonSafeStringify } from './ndjsonSafeStringify.js'
 import { StructuredIO } from './structuredIO.js'
 import { CCRClient, CCRInitError } from './transports/ccrClient.js'
 import { SSETransport } from './transports/SSETransport.js'
-import type { Transport } from './transports/Transport.js'
+import type { Transport } from './transports/Transport.ts'
 import { getTransportForUrl } from './transports/transportUtils.js'
 
 /**

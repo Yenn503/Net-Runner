@@ -3,7 +3,6 @@ import {
   type JSONRPCMessage,
   JSONRPCMessageSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import type WsWebSocket from 'ws'
 import { logForDiagnosticsNoPII } from './diagLogs.js'
 import { toError } from './errors.js'
 import { jsonParse, jsonStringify } from './slowOperations.js'
@@ -17,6 +16,17 @@ type WebSocketLike = {
   readonly readyState: number
   close(): void
   send(data: string): void
+}
+
+type NodeWebSocketLike = WebSocketLike & {
+  on(event: 'open', listener: () => void): void
+  on(event: 'error', listener: (error: Error) => void): void
+  on(event: 'message', listener: (data: Buffer) => void): void
+  on(event: 'close', listener: () => void): void
+  off(event: 'error', listener: (error: unknown) => void): void
+  off(event: 'message', listener: (data: Buffer) => void): void
+  off(event: 'close', listener: () => void): void
+  send(data: string, callback: (error?: Error) => void): void
 }
 
 export class WebSocketTransport implements Transport {
@@ -44,11 +54,11 @@ export class WebSocketTransport implements Transport {
         nws.addEventListener('open', onOpen)
         nws.addEventListener('error', onError)
       } else {
-        const nws = this.ws as unknown as WsWebSocket
+        const nws = this.ws as unknown as NodeWebSocketLike
         nws.on('open', () => {
           resolve()
         })
-        nws.on('error', error => {
+        nws.on('error', (error: Error) => {
           logForDiagnosticsNoPII('error', 'mcp_websocket_connect_fail')
           reject(error)
         })
@@ -62,7 +72,7 @@ export class WebSocketTransport implements Transport {
       nws.addEventListener('error', this.onBunError)
       nws.addEventListener('close', this.onBunClose)
     } else {
-      const nws = this.ws as unknown as WsWebSocket
+      const nws = this.ws as unknown as NodeWebSocketLike
       nws.on('message', this.onNodeMessage)
       nws.on('error', this.onNodeError)
       nws.on('close', this.onNodeClose)
@@ -129,7 +139,7 @@ export class WebSocketTransport implements Transport {
       nws.removeEventListener('error', this.onBunError)
       nws.removeEventListener('close', this.onBunClose)
     } else {
-      const nws = this.ws as unknown as WsWebSocket
+      const nws = this.ws as unknown as NodeWebSocketLike
       nws.off('message', this.onNodeMessage)
       nws.off('error', this.onNodeError)
       nws.off('close', this.onNodeClose)
@@ -183,7 +193,7 @@ export class WebSocketTransport implements Transport {
         this.ws.send(json)
       } else {
         await new Promise<void>((resolve, reject) => {
-          ;(this.ws as unknown as WsWebSocket).send(json, error => {
+          ;(this.ws as unknown as NodeWebSocketLike).send(json, (error?: Error) => {
             if (error) {
               reject(error)
             } else {

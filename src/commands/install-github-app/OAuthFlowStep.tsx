@@ -45,9 +45,9 @@ export function OAuthFlowStep({
   const [cursorOffset, setCursorOffset] = useState(0);
   const [showPastePrompt, setShowPastePrompt] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
-  const timersRef = useRef<Set<NodeJS.Timeout>>(new Set());
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   // Separate ref so startOAuth's timer clear doesn't cancel the urlCopied reset
-  const urlCopiedTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const urlCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const terminalSize = useTerminalSize();
   const textInputColumns = Math.max(50, terminalSize.columns - PASTE_HERE_MSG.length - 4);
   function handleKeyDown(e: KeyboardEvent): void {
@@ -127,16 +127,21 @@ export function OAuthFlowStep({
       // performLogout which would destroy the user's existing auth session.
       saveOAuthTokensIfNeeded(result);
 
+      if (!result.accessToken) {
+        throw new Error('OAuth flow completed without an access token.');
+      }
+
       // For OAuth flow, the access token can be used as an API key
-      const timer1 = setTimeout((setOAuthStatus_0, accessToken, onSuccess_0, timersRef_0) => {
-        setOAuthStatus_0({
+      const accessToken = result.accessToken;
+      const timer1 = setTimeout(() => {
+        setOAuthStatus({
           state: 'success',
           token: accessToken
         });
         // Auto-continue after brief delay to show success
-        const timer2 = setTimeout(onSuccess_0, 1000, accessToken);
-        timersRef_0.current.add(timer2);
-      }, 100, setOAuthStatus, result.accessToken, onSuccess, timersRef);
+        const timer2 = setTimeout(() => onSuccess(accessToken), 1000);
+        timersRef.current.add(timer2);
+      }, 100);
       timersRef.current.add(timer1);
     } catch (err_0) {
       const errorMessage = (err_0 as Error).message;
@@ -162,11 +167,12 @@ export function OAuthFlowStep({
   // Retry logic
   useEffect(() => {
     if (oauthStatus.state === 'about_to_retry') {
-      const timer_1 = setTimeout((nextState, setShowPastePrompt_0, setOAuthStatus_1) => {
+      const nextState = oauthStatus.nextState;
+      const timer_1 = setTimeout(() => {
         // Only show paste prompt when retrying to waiting_for_login
-        setShowPastePrompt_0(nextState.state === 'waiting_for_login');
-        setOAuthStatus_1(nextState);
-      }, 500, oauthStatus.nextState, setShowPastePrompt, setOAuthStatus);
+        setShowPastePrompt(nextState.state === 'waiting_for_login');
+        setOAuthStatus(nextState);
+      }, 500);
       timersRef.current.add(timer_1);
     }
   }, [oauthStatus]);

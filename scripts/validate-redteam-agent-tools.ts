@@ -1,5 +1,8 @@
 import { getNetRunnerCapabilities } from '../src/security/capabilities.ts'
-import { NET_RUNNER_AGENT_TYPES } from '../src/security/agentTypes.js'
+import {
+  NET_RUNNER_AGENT_TYPES,
+  type NetRunnerAgentType,
+} from '../src/security/agentTypes.js'
 import {
   getSecurityBuiltInAgentTooling,
   validateSecurityAgentToolCoverage,
@@ -38,7 +41,10 @@ const registryAgentTooling = new Map(
     [...agent.tools].sort(),
   ]),
 )
-const builtInAgentTooling = [
+const builtInAgentTooling: Array<{
+  agentType: NetRunnerAgentType
+  tools: string[]
+}> = [
   ENGAGEMENT_LEAD_AGENT,
   RECON_SPECIALIST_AGENT,
   WEB_TESTING_SPECIALIST_AGENT,
@@ -51,8 +57,8 @@ const builtInAgentTooling = [
   EVIDENCE_SPECIALIST_AGENT,
   REPORTING_SPECIALIST_AGENT,
 ].map(agent => ({
-  agentType: agent.agentType,
-  tools: [...agent.tools].sort(),
+  agentType: agent.agentType as NetRunnerAgentType,
+  tools: [...(agent.tools ?? [])].sort(),
 }))
 
 const registryDriftErrors: string[] = []
@@ -94,19 +100,7 @@ const requiredSpecialistTools = [
   WEB_SEARCH_TOOL_NAME,
 ]
 
-for (const agentType of [
-  'engagement-lead',
-  'recon-specialist',
-  'web-testing-specialist',
-  'api-testing-specialist',
-  'network-testing-specialist',
-  'exploit-specialist',
-  'privilege-escalation-specialist',
-  'lateral-movement-specialist',
-  'retest-specialist',
-  'evidence-specialist',
-  'reporting-specialist',
-]) {
+for (const agentType of NET_RUNNER_AGENT_TYPES satisfies readonly NetRunnerAgentType[]) {
   const builtInAgent = builtInAgentsByType.get(agentType)
   if (!builtInAgent) {
     securityMemoryErrors.push(`${agentType} is missing from built-in agents.`)

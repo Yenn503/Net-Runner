@@ -113,6 +113,7 @@ import type {
   SDKMessage,
   SDKUserMessage,
   SDKUserMessageReplay,
+  PermissionMode,
   PermissionResult,
   McpServerConfigForProcessTransport,
   McpServerStatus,
@@ -127,7 +128,6 @@ import type {
   SDKControlMcpSetServersResponse,
   SDKControlReloadPluginsResponse,
 } from 'src/entrypoints/sdk/controlTypes.js'
-import type { PermissionMode } from '@anthropic-ai/claude-agent-sdk'
 import type { PermissionMode as InternalPermissionMode } from 'src/types/permissions.js'
 import { cwd } from 'process'
 import { getCwd } from 'src/utils/cwd.js'
@@ -241,6 +241,7 @@ import { executeNotificationHooks } from 'src/utils/hooks.js'
 import {
   ElicitRequestSchema,
   ElicitationCompleteNotificationSchema,
+  type JSONRPCMessage,
 } from '@modelcontextprotocol/sdk/types.js'
 import { getMcpPrefix } from 'src/services/mcp/mcpStringUtils.js'
 import {
@@ -353,6 +354,13 @@ import { errorMessage, toError } from '../utils/errors.js'
 import { sleep } from '../utils/sleep.js'
 import { isExtractModeActive } from '../memdir/paths.js'
 
+type ProactiveModule = {
+  isProactiveActive: () => boolean
+  activateProactive: (source: string) => void
+  isProactivePaused: () => boolean
+  deactivateProactive: () => void
+}
+
 // Dead code elimination: conditional imports
 /* eslint-disable @typescript-eslint/no-require-imports */
 const coordinatorModeModule = feature('COORDINATOR_MODE')
@@ -360,7 +368,7 @@ const coordinatorModeModule = feature('COORDINATOR_MODE')
   : null
 const proactiveModule =
   feature('PROACTIVE') || feature('KAIROS')
-    ? (require('../proactive/index.js') as typeof import('../proactive/index.js'))
+    ? (require('../proactive/index.js') as ProactiveModule)
     : null
 const cronSchedulerModule = feature('AGENT_TRIGGERS')
   ? (require('../utils/cronScheduler.js') as typeof import('../utils/cronScheduler.js'))
@@ -1952,10 +1960,18 @@ function runHeadlessStreaming(
               batch.push(dequeue(isMainThread)!)
             }
             if (batch.length > 1) {
+              let lastBatchUuid = command.uuid
+              for (let index = batch.length - 1; index >= 0; index -= 1) {
+                const candidateUuid = batch[index]?.uuid
+                if (candidateUuid) {
+                  lastBatchUuid = candidateUuid
+                  break
+                }
+              }
               command = {
                 ...command,
                 value: joinPromptValues(batch.map(c => c.value)),
-                uuid: batch.findLast(c => c.uuid)?.uuid ?? command.uuid,
+                uuid: lastBatchUuid,
               }
             }
           }
@@ -2989,7 +3005,9 @@ function runHeadlessStreaming(
             sdkClient.type === 'connected' &&
             sdkClient.client?.transport?.onmessage
           ) {
-            sdkClient.client.transport.onmessage(mcpRequest.message)
+            sdkClient.client.transport.onmessage(
+              mcpRequest.message as JSONRPCMessage,
+            )
           }
           sendControlResponseSuccess(message)
         } else if (message.request.subtype === 'rewind_files') {
@@ -4057,31 +4075,39 @@ function runHeadlessStreaming(
       }
 
       // First prompt message implicitly initializes if not already done.
+      const sdkUserMessage = message as SDKUserMessage & {
+        message: {
+          role: 'user'
+          content: string | Array<ContentBlockParam>
+        }
+      }
+      const sdkMessageUuid = validateUuid(sdkUserMessage.uuid) ?? undefined
+
       initialized = true
 
       // Check for duplicate user message - skip if already processed
-      if (message.uuid) {
+      if (sdkMessageUuid) {
         const sessionId = getSessionId() as UUID
         const existsInSession = await doesMessageExistInSession(
           sessionId,
-          message.uuid,
+          sdkMessageUuid,
         )
 
         // Check both historical duplicates (from file) and runtime duplicates (this session)
-        if (existsInSession || receivedMessageUuids.has(message.uuid)) {
-          logForDebugging(`Skipping duplicate user message: ${message.uuid}`)
+        if (existsInSession || receivedMessageUuids.has(sdkMessageUuid)) {
+          logForDebugging(`Skipping duplicate user message: ${sdkMessageUuid}`)
           // Send acknowledgment for duplicate message if replay mode is enabled
           if (options.replayUserMessages) {
             logForDebugging(
-              `Sending acknowledgment for duplicate user message: ${message.uuid}`,
+              `Sending acknowledgment for duplicate user message: ${sdkMessageUuid}`,
             )
             output.enqueue({
               type: 'user',
-              message: message.message,
+              message: sdkUserMessage.message,
               session_id: sessionId,
               parent_tool_use_id: null,
-              uuid: message.uuid,
-              timestamp: message.timestamp,
+              uuid: sdkMessageUuid,
+              timestamp: sdkUserMessage.timestamp,
               isReplay: true,
             } as SDKUserMessageReplay)
           }
@@ -4089,23 +4115,26 @@ function runHeadlessStreaming(
           // ran but its lifecycle was never closed (interrupted before ack).
           // Runtime dups don't need this — the original enqueue path closes them.
           if (existsInSession) {
-            notifyCommandLifecycle(message.uuid, 'completed')
+            notifyCommandLifecycle(sdkMessageUuid, 'completed')
           }
           // Don't enqueue duplicate messages for execution
           continue
         }
 
         // Track this UUID to prevent runtime duplicates
-        trackReceivedMessageUuid(message.uuid)
+        trackReceivedMessageUuid(sdkMessageUuid)
       }
 
       enqueue({
         mode: 'prompt' as const,
         // file_attachments rides the protobuf catchall from the web composer.
         // Same-ref no-op when absent (no 'file_attachments' key).
-        value: await resolveAndPrepend(message, message.message.content),
-        uuid: message.uuid,
-        priority: message.priority,
+        value: await resolveAndPrepend(
+          sdkUserMessage,
+          sdkUserMessage.message.content,
+        ),
+        uuid: sdkMessageUuid,
+        priority: sdkUserMessage.priority,
       })
       // Increment prompt count for attribution tracking and save snapshot
       // The snapshot persists promptCount so it survives compaction
@@ -4452,11 +4481,11 @@ async function handleInitializeRequest(
   }
   const initResponse: SDKControlInitializeResponse = {
     commands: commands
-      .filter(cmd => cmd.userInvocable !== false)
-      .map(cmd => ({
-        name: getCommandName(cmd),
-        description: formatDescriptionWithSource(cmd),
-        argumentHint: cmd.argumentHint || '',
+      .filter(command => command.userInvocable !== false)
+      .map(command => ({
+        name: getCommandName(command),
+        description: formatDescriptionWithSource(command),
+        argumentHint: command.argumentHint || '',
       })),
     agents: agents.map(agent => ({
       name: agent.agentType,
@@ -4476,7 +4505,12 @@ async function handleInitializeRequest(
       // getAccountInformation() returns undefined under 3P providers, so the
       // other fields are all absent. apiProvider disambiguates "not logged
       // in" (firstParty + tokenSource:none) from "3P, login not applicable".
-      apiProvider: getAPIProvider(),
+      apiProvider: (() => {
+        const apiProvider = getAPIProvider()
+        return apiProvider === 'openai' || apiProvider === 'gemini'
+          ? undefined
+          : apiProvider
+      })(),
     },
     pid: process.pid,
   }

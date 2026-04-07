@@ -1,9 +1,10 @@
 import { c as _c } from "react-compiler-runtime";
 import React, { useEffect, useRef } from 'react';
+import type { Notification } from 'src/context/notifications.js';
 import { useNotifications } from 'src/context/notifications.js';
 import { Text } from 'src/ink.js';
 import type { MCPServerConnection } from 'src/services/mcp/types.js';
-import { getGlobalConfig, saveGlobalConfig } from 'src/utils/config.js';
+import { getGlobalConfig, saveGlobalConfig, type GlobalConfig } from 'src/utils/config.js';
 import { detectIDEs, type IDEExtensionInstallationStatus, isJetBrainsIde, isSupportedTerminal } from 'src/utils/ide.js';
 import { getIsRemoteMode } from '../../bootstrap/state.js';
 import { useIdeConnectionStatus } from '../useIdeConnectionStatus.js';
@@ -14,7 +15,7 @@ type Props = {
   ideSelection: IDESelection | undefined;
   mcpClients: MCPServerConnection[];
 };
-export function useIDEStatusIndicator(t0) {
+export function useIDEStatusIndicator(t0: Props): void {
   const $ = _c(26);
   const {
     ideSelection,
@@ -163,7 +164,7 @@ export function useIDEStatusIndicator(t0) {
   }
   useEffect(t8, t9);
 }
-function _temp2(hasShownHintRef_0, addNotification_0) {
+function _temp2(hasShownHintRef_0: React.RefObject<boolean>, addNotification_0: (notification: Notification) => void): void {
   detectIDEs(true).then(infos => {
     const ideName_0 = infos[0]?.name;
     if (ideName_0 && !hasShownHintRef_0.current) {
@@ -177,7 +178,7 @@ function _temp2(hasShownHintRef_0, addNotification_0) {
     }
   });
 }
-function _temp(current) {
+function _temp(current: GlobalConfig): GlobalConfig {
   return {
     ...current,
     ideHintShownCount: (current.ideHintShownCount ?? 0) + 1

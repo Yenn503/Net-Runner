@@ -8,6 +8,12 @@ import { KeyboardShortcutHint } from '../../../design-system/KeyboardShortcutHin
 import { useWizard } from '../../../wizard/index.js';
 import { WizardDialogLayout } from '../../../wizard/WizardDialogLayout.js';
 import type { AgentWizardData } from '../types.js';
+
+type MethodOption = {
+  label: string
+  value: AgentWizardData['method']
+}
+
 export function MethodStep() {
   const $ = _c(11);
   const {
@@ -15,7 +21,7 @@ export function MethodStep() {
     goBack,
     updateWizardData,
     goToStep
-  } = useWizard();
+  } = useWizard<AgentWizardData>();
   let t0;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t0 = [{
@@ -39,8 +45,8 @@ export function MethodStep() {
   }
   let t2;
   if ($[2] !== goNext || $[3] !== goToStep || $[4] !== updateWizardData) {
-    t2 = value => {
-      const method = value as 'generate' | 'manual';
+    t2 = (value: MethodOption['value']) => {
+      const method = value as AgentWizardData['method'];
       updateWizardData({
         method,
         wasGenerated: method === "generate"

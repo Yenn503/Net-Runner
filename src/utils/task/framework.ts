@@ -10,6 +10,7 @@ import {
 import type { AppState } from '../../state/AppState.js'
 import {
   isTerminalTaskStatus,
+  type TaskStateBase,
   type TaskStatus,
   type TaskType,
 } from '../../Task.js'
@@ -37,6 +38,8 @@ export type TaskAttachment = {
   description: string
   deltaSummary: string | null // New output since last attachment
 }
+
+type FrameworkTaskState = TaskState & TaskStateBase
 
 type SetAppState = (updater: (prev: AppState) => AppState) => void
 
@@ -74,7 +77,10 @@ export function updateTaskState<T extends TaskState>(
 /**
  * Register a new task in AppState.
  */
-export function registerTask(task: TaskState, setAppState: SetAppState): void {
+export function registerTask(
+  task: FrameworkTaskState,
+  setAppState: SetAppState,
+): void {
   let isReplacement = false
   setAppState(prev => {
     const existing = prev.tasks[task.id]
@@ -127,7 +133,7 @@ export function evictTerminalTask(
   setAppState: SetAppState,
 ): void {
   setAppState(prev => {
-    const task = prev.tasks?.[taskId]
+    const task = prev.tasks?.[taskId] as FrameworkTaskState | undefined
     if (!task) return prev
     if (!isTerminalTaskStatus(task.status)) return prev
     if (!task.notified) return prev
@@ -146,9 +152,11 @@ export function evictTerminalTask(
 /**
  * Get all running tasks.
  */
-export function getRunningTasks(state: AppState): TaskState[] {
+export function getRunningTasks(state: AppState): FrameworkTaskState[] {
   const tasks = state.tasks ?? {}
-  return Object.values(tasks).filter(task => task.status === 'running')
+  return Object.values(tasks).filter(
+    (task): task is FrameworkTaskState => task.status === 'running',
+  )
 }
 
 /**
@@ -166,7 +174,7 @@ export async function generateTaskAttachments(state: AppState): Promise<{
   const attachments: TaskAttachment[] = []
   const updatedTaskOffsets: Record<string, number> = {}
   const evictedTaskIds: string[] = []
-  const tasks = state.tasks ?? {}
+  const tasks = (state.tasks ?? {}) as Record<string, FrameworkTaskState>
 
   for (const taskState of Object.values(tasks)) {
     if (taskState.notified) {
@@ -221,7 +229,9 @@ export function applyTaskOffsetsAndEvictions(
   }
   setAppState(prev => {
     let changed = false
-    const newTasks = { ...prev.tasks }
+    const newTasks = {
+      ...prev.tasks,
+    } as Record<string, FrameworkTaskState>
     for (const id of offsetIds) {
       const fresh = newTasks[id]
       // Re-check status on fresh state — task may have completed during the

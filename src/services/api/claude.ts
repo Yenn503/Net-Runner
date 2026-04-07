@@ -17,7 +17,10 @@ import type {
   BetaUsage,
   BetaMessageParam as MessageParam,
 } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
-import type { TextBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
+import type {
+  ContentBlockParam,
+  TextBlockParam,
+} from '@anthropic-ai/sdk/resources/index.mjs'
 import type { Stream } from '@anthropic-ai/sdk/streaming.mjs'
 import { randomUUID } from 'crypto'
 import {
@@ -166,7 +169,11 @@ import { CHROME_TOOL_SEARCH_INSTRUCTIONS } from 'src/utils/claudeInChrome/prompt
 import { getMaxThinkingTokensForModel } from 'src/utils/context.js'
 import { logForDebugging } from 'src/utils/debug.js'
 import { logForDiagnosticsNoPII } from 'src/utils/diagLogs.js'
-import { type EffortValue, modelSupportsEffort } from 'src/utils/effort.js'
+import {
+  isEffortLevel,
+  type EffortValue,
+  modelSupportsEffort,
+} from 'src/utils/effort.js'
 import {
   isFastModeAvailable,
   isFastModeCooldown,
@@ -450,9 +457,9 @@ function configureEffortParams(
 
   if (effortValue === undefined) {
     betas.push(EFFORT_BETA_HEADER)
-  } else if (typeof effortValue === 'string') {
+  } else if (typeof effortValue === 'string' && isEffortLevel(effortValue)) {
     // Send string effort level as is
-    outputConfig.effort = effortValue
+    outputConfig.effort = effortValue as NonNullable<BetaOutputConfig['effort']>
     betas.push(EFFORT_BETA_HEADER)
   } else if (process.env.USER_TYPE === 'ant') {
     // Numeric effort override - ant-only (uses anthropic_internal)
@@ -938,13 +945,13 @@ function getPreviousRequestIdFromMessages(
 }
 
 function isMedia(
-  block: BetaContentBlockParam,
+  block: BetaContentBlockParam | ContentBlockParam,
 ): block is BetaImageBlockParam | BetaRequestDocumentBlock {
   return block.type === 'image' || block.type === 'document'
 }
 
 function isToolResult(
-  block: BetaContentBlockParam,
+  block: BetaContentBlockParam | ContentBlockParam,
 ): block is BetaToolResultBlockParam {
   return block.type === 'tool_result'
 }
@@ -964,7 +971,7 @@ export function stripExcessMediaItems(
       if (isMedia(block)) toRemove++
       if (isToolResult(block) && Array.isArray(block.content)) {
         for (const nested of block.content) {
-          if (isMedia(nested)) toRemove++
+          if (isMedia(nested as ContentBlockParam)) toRemove++
         }
       }
     }
@@ -987,7 +994,7 @@ export function stripExcessMediaItems(
         )
           return block
         const filtered = block.content.filter(n => {
-          if (toRemove > 0 && isMedia(n)) {
+          if (toRemove > 0 && isMedia(n as ContentBlockParam)) {
             toRemove--
             return false
           }

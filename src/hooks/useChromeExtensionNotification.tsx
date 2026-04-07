@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { Notification } from '../context/notifications.js';
 import { Text } from '../ink.js';
 import { isClaudeAISubscriber } from '../utils/auth.js';
 import { isChromeExtensionInstalled, shouldEnableClaudeInChrome } from '../utils/claudeInChrome/setup.js';
@@ -17,6 +18,8 @@ export function useChromeExtensionNotification() {
   useStartupNotification(_temp);
 }
 async function _temp() {
+  const hostedPriority: Notification['priority'] = 'immediate';
+  const defaultPriority: Notification['priority'] = 'low';
   const chromeFlag = getChromeFlag();
   if (!shouldEnableClaudeInChrome(chromeFlag)) {
     return null;
@@ -25,7 +28,7 @@ async function _temp() {
     return {
       key: "chrome-requires-subscription",
       jsx: <Text color="error">Browser bridge requires a supported hosted subscription</Text>,
-      priority: "immediate",
+      priority: hostedPriority,
       timeoutMs: 5000
     };
   }
@@ -34,7 +37,7 @@ async function _temp() {
     return {
       key: "chrome-extension-not-detected",
       jsx: <Text color="warning">Chrome extension not detected · https://net-runner.dev/chrome to install</Text>,
-      priority: "immediate",
+      priority: hostedPriority,
       timeoutMs: 3000
     };
   }
@@ -42,7 +45,7 @@ async function _temp() {
     return {
       key: "browser-bridge-default-enabled",
       text: "Browser bridge enabled \xB7 /chrome",
-      priority: "low"
+      priority: defaultPriority
     };
   }
   return null;

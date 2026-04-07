@@ -1,13 +1,13 @@
 import { c as _c } from "react-compiler-runtime";
 import * as React from 'react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, Text } from '../../ink.js';
 import { useShortcutDisplay } from '../../keybindings/useShortcutDisplay.js';
 import { SandboxManager } from '../../utils/sandbox/sandbox-adapter.js';
 export function SandboxPromptFooterHint() {
   const $ = _c(6);
   const [recentViolationCount, setRecentViolationCount] = useState(0);
-  const timerRef = useRef(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const detailsShortcut = useShortcutDisplay("app:toggleTranscript", "Global", "ctrl+o");
   let t0;
   let t1;
@@ -37,7 +37,7 @@ export function SandboxPromptFooterHint() {
         }
       };
     };
-    t1 = [];
+    t1 = [] as const;
     $[0] = t0;
     $[1] = t1;
   } else {

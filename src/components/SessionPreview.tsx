@@ -1,12 +1,15 @@
 import { c as _c } from "react-compiler-runtime";
 import type { UUID } from 'crypto';
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Box, Text } from '../ink.js';
 import { useKeybinding } from '../keybindings/useKeybinding.js';
+import type { Command } from '../commands.js';
 import { getAllBaseTools } from '../tools.js';
+import type { ToolUseConfirm } from './permissions/PermissionRequest.js';
 import type { LogOption } from '../types/logs.js';
 import { formatRelativeTimeAgo } from '../utils/format.js';
 import { getSessionIdFromLog, isLiteLog, loadFullLog } from '../utils/sessionStorage.js';
+import type { StreamingToolUse } from '../utils/messages.js';
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js';
 import { Byline } from './design-system/Byline.js';
 import { KeyboardShortcutHint } from './design-system/KeyboardShortcutHint.js';
@@ -17,21 +20,23 @@ type Props = {
   onExit: () => void;
   onSelect: (log: LogOption) => void;
 };
-export function SessionPreview(t0) {
+export function SessionPreview(t0: Props) {
   const $ = _c(33);
   const {
     log,
     onExit,
     onSelect
   } = t0;
-  const [fullLog, setFullLog] = React.useState(null);
+  const [fullLog, setFullLog] = React.useState<LogOption | null>(null);
   let t1;
   let t2;
   if ($[0] !== log) {
     t1 = () => {
       setFullLog(null);
       if (isLiteLog(log)) {
-        loadFullLog(log).then(setFullLog);
+        void loadFullLog(log).then((loadedLog: LogOption) => {
+          setFullLog(loadedLog);
+        });
       }
     };
     t2 = [log];
@@ -112,15 +117,15 @@ export function SessionPreview(t0) {
     }
     return t9;
   }
-  let t8;
+  let t8: Command[];
   if ($[14] === Symbol.for("react.memo_cache_sentinel")) {
     t8 = [];
     $[14] = t8;
   } else {
     t8 = $[14];
   }
-  let t10;
-  let t9;
+  let t10: Set<string>;
+  let t9: ToolUseConfirm[];
   if ($[15] === Symbol.for("react.memo_cache_sentinel")) {
     t9 = [];
     t10 = new Set();
@@ -130,7 +135,7 @@ export function SessionPreview(t0) {
     t10 = $[15];
     t9 = $[16];
   }
-  let t11;
+  let t11: StreamingToolUse[];
   if ($[17] === Symbol.for("react.memo_cache_sentinel")) {
     t11 = [];
     $[17] = t11;

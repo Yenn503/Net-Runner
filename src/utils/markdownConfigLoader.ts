@@ -11,7 +11,7 @@ import {
 import { getProjectRoot } from '../bootstrap/state.js'
 import { logForDebugging } from './debug.js'
 import { getNetRunnerConfigHomeDir, isEnvTruthy } from './envUtils.js'
-import { isFsInaccessible } from './errors.js'
+import { getErrnoCode, getErrnoPath, isFsInaccessible } from './errors.js'
 import { normalizePathForComparison } from './file.js'
 import type { FrontmatterData } from './frontmatterParser.js'
 import { parseFrontmatter } from './frontmatterParser.js'
@@ -578,11 +578,19 @@ async function loadMarkdownFiles(dir: string): Promise<
           signal,
         )
   } catch (e: unknown) {
-    // Handle missing/inaccessible dir directly instead of pre-checking
-    // existence (TOCTOU). findMarkdownFilesNative already catches internally;
-    // ripGrep rejects on inaccessible target paths.
-    if (isFsInaccessible(e)) return []
-    throw e
+    if (
+      !useNative &&
+      (getErrnoCode(e) === 'ENOENT' ||
+        getErrnoCode(e) === 'EACCES' ||
+        getErrnoCode(e) === 'EPERM') &&
+      getErrnoPath(e)?.includes(`${sep}vendor${sep}ripgrep${sep}`)
+    ) {
+      files = await findMarkdownFilesNative(dir, AbortSignal.timeout(3000))
+    } else if (isFsInaccessible(e)) {
+      return []
+    } else {
+      throw e
+    }
   }
 
   const results = await Promise.all(

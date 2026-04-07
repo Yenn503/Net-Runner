@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { CommandResultDisplay, LocalJSXCommandContext } from '../../commands.js';
 import { Dialog } from '../../components/design-system/Dialog.js';
 import { FastIcon, getFastIconString } from '../../components/FastIcon.js';
+import type { ExitState } from '../../hooks/useExitOnCtrlCDWithKeybindings.js';
 import { Box, Link, Text } from '../../ink.js';
 import { useKeybindings } from '../../keybindings/useKeybinding.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from '../../services/analytics/index.js';
@@ -11,8 +12,10 @@ import { type AppState, useAppState, useSetAppState } from '../../state/AppState
 import type { LocalJSXCommandOnDone } from '../../types/command.js';
 import { clearFastModeCooldown, FAST_MODE_MODEL_DISPLAY, getFastModeModel, getFastModeRuntimeState, getFastModeUnavailableReason, isFastModeEnabled, isFastModeSupportedByModel, prefetchFastModeStatus } from '../../utils/fastMode.js';
 import { formatDuration } from '../../utils/format.js';
+import type { ModelSetting } from '../../utils/model/model.js';
 import { formatModelPricing, getOpus46CostTier } from '../../utils/modelCost.js';
 import { updateSettingsForSource } from '../../utils/settings/settings.js';
+
 function applyFastMode(enable: boolean, setAppState: (f: (prev: AppState) => AppState) => void): void {
   clearFastModeCooldown();
   updateSettingsForSource('userSettings', {
@@ -38,14 +41,20 @@ function applyFastMode(enable: boolean, setAppState: (f: (prev: AppState) => App
     }));
   }
 }
-export function FastModePicker(t0) {
+
+type FastModePickerProps = {
+  onDone: LocalJSXCommandOnDone;
+  unavailableReason: string | null;
+};
+
+export function FastModePicker(t0: FastModePickerProps) {
   const $ = _c(30);
   const {
     onDone,
     unavailableReason
   } = t0;
-  const model = useAppState(_temp);
-  const initialFastMode = useAppState(_temp2);
+  const model = useAppState((s: AppState) => s.mainLoopModel);
+  const initialFastMode = useAppState((s: AppState) => s.fastMode);
   const setAppState = useSetAppState();
   const [enableFastMode, setEnableFastMode] = useState(initialFastMode ?? false);
   let t1;
@@ -82,7 +91,10 @@ export function FastModePicker(t0) {
         const modelUpdated = !isFastModeSupportedByModel(model) ? ` · model set to ${FAST_MODE_MODEL_DISPLAY}` : "";
         onDone(`${fastIcon} Fast mode ON${modelUpdated} · ${pricing}`);
       } else {
-        setAppState(_temp3);
+        setAppState(prev => ({
+          ...prev,
+          fastMode: false
+        }));
         onDone("Fast mode OFF");
       }
     };
@@ -128,7 +140,7 @@ export function FastModePicker(t0) {
       if (isUnavailable) {
         return;
       }
-      setEnableFastMode(_temp4);
+      setEnableFastMode((prev: boolean) => !prev);
     };
     $[13] = isUnavailable;
     $[14] = t5;
@@ -172,7 +184,7 @@ export function FastModePicker(t0) {
   const title = t8;
   let t9;
   if ($[20] !== isUnavailable) {
-    t9 = exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : isUnavailable ? <Text>Esc to cancel</Text> : <Text>Tab to toggle · Enter to confirm · Esc to cancel</Text>;
+    t9 = (exitState: ExitState) => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : isUnavailable ? <Text>Esc to cancel</Text> : <Text>Tab to toggle · Enter to confirm · Esc to cancel</Text>;
     $[20] = isUnavailable;
     $[21] = t9;
   } else {
@@ -208,19 +220,19 @@ export function FastModePicker(t0) {
   }
   return t12;
 }
-function _temp4(prev_0) {
+
+function _temp4(prev_0: boolean): boolean {
   return !prev_0;
 }
-function _temp3(prev) {
+
+function _temp3(prev: AppState): AppState {
   return {
     ...prev,
     fastMode: false
   };
 }
-function _temp2(s_0) {
-  return s_0.fastMode;
-}
-function _temp(s) {
+
+function _temp(s: AppState): ModelSetting {
   return s.mainLoopModel;
 }
 async function handleFastModeShortcut(enable: boolean, getAppState: () => AppState, setAppState: (f: (prev: AppState) => AppState) => void): Promise<string> {

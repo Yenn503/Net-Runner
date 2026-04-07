@@ -49,7 +49,7 @@ import { PluginOptionsDialog } from './PluginOptionsDialog.js';
 import { PluginOptionsFlow } from './PluginOptionsFlow.js';
 import type { ViewState as ParentViewState } from './types.js';
 import { UnifiedInstalledCell } from './UnifiedInstalledCell.js';
-import type { UnifiedInstalledItem } from './unifiedTypes.js';
+import type { UnifiedInstalledItem, UnifiedPluginScope } from './unifiedTypes.js';
 import { usePagination } from './usePagination.js';
 type Props = {
   setViewState: (state: ParentViewState) => void;
@@ -73,7 +73,7 @@ type FailedPluginInfo = {
   name: string;
   marketplace: string;
   errors: PluginError[];
-  scope: PersistablePluginScope;
+  scope: UnifiedPluginScope;
 };
 type ViewState = 'plugin-list' | 'plugin-details' | 'configuring' | {
   type: 'plugin-options';
@@ -1452,6 +1452,7 @@ export function ManagePlugins({
           setProcessError(null);
           const pluginId_7 = viewState.plugin.id;
           const pluginScope_1 = viewState.plugin.scope;
+          const pluginScopeForUninstall: PersistablePluginScope = pluginScope_1 === 'builtin' ? 'user' : pluginScope_1;
           // Pass scope to uninstallPluginOp so it can find the correct V2
           // installation record and clean up on-disk files. Fall back to
           // default scope if not installable (e.g. 'managed', though that
@@ -1459,7 +1460,7 @@ export function ManagePlugins({
           // is a recovery path for a plugin that failed to load — it may
           // be reinstallable, so don't nuke ${CLAUDE_PLUGIN_DATA} silently.
           // The normal uninstall path prompts; this one preserves.
-          const result_2 = isInstallableScope(pluginScope_1) ? await uninstallPluginOp(pluginId_7, pluginScope_1, false) : await uninstallPluginOp(pluginId_7, 'user', false);
+          const result_2 = isInstallableScope(pluginScopeForUninstall) ? await uninstallPluginOp(pluginId_7, pluginScopeForUninstall, false) : await uninstallPluginOp(pluginId_7, 'user', false);
           let success = result_2.success;
           if (!success) {
             // Plugin was never installed (only in enabledPlugins settings).
@@ -1660,7 +1661,7 @@ export function ManagePlugins({
   // Configure options (from the Manage menu)
   if (typeof viewState === 'object' && viewState.type === 'configuring-options' && selectedPlugin) {
     const pluginId_11 = `${selectedPlugin.plugin.name}@${selectedPlugin.marketplace}`;
-    return <PluginOptionsDialog title={`Configure ${selectedPlugin.plugin.name}`} subtitle="Plugin options" configSchema={viewState.schema} initialValues={loadPluginOptions(pluginId_11)} onSave={values => {
+    return <PluginOptionsDialog title={`Configure ${selectedPlugin.plugin.name}`} subtitle="Plugin options" configSchema={viewState.schema} initialValues={loadPluginOptions(pluginId_11)} onSave={(values: UserConfigValues) => {
       try {
         savePluginOptions(pluginId_11, values, viewState.schema);
         clearAllCaches();
@@ -1951,6 +1952,7 @@ export function ManagePlugins({
   if (typeof viewState === 'object' && viewState.type === 'mcp-detail') {
     const client_3 = viewState.client;
     const serverToolsCount = filterToolsByServer(mcpTools, client_3.name).length;
+    const isRemoteAuthenticated = client_3.type === 'connected' && serverToolsCount > 0;
 
     // Common handlers for MCP menus
     const handleMcpViewTools = () => {
@@ -1987,7 +1989,7 @@ export function ManagePlugins({
         client: client_3,
         scope: scope_5,
         transport: 'sse',
-        isAuthenticated: undefined,
+        isAuthenticated: isRemoteAuthenticated,
         config: client_3.config as McpSSEServerConfig
       };
       return <MCPRemoteServerMenu server={server_0} serverToolsCount={serverToolsCount} onViewTools={handleMcpViewTools} onCancel={handleMcpCancel} onComplete={handleMcpComplete} borderless />;
@@ -1997,7 +1999,7 @@ export function ManagePlugins({
         client: client_3,
         scope: scope_5,
         transport: 'http',
-        isAuthenticated: undefined,
+        isAuthenticated: isRemoteAuthenticated,
         config: client_3.config as McpHTTPServerConfig
       };
       return <MCPRemoteServerMenu server={server_1} serverToolsCount={serverToolsCount} onViewTools={handleMcpViewTools} onCancel={handleMcpCancel} onComplete={handleMcpComplete} borderless />;
@@ -2007,7 +2009,7 @@ export function ManagePlugins({
         client: client_3,
         scope: scope_5,
         transport: 'claudeai-proxy',
-        isAuthenticated: undefined,
+        isAuthenticated: false,
         config: client_3.config as McpClaudeAIProxyServerConfig
       };
       return <MCPRemoteServerMenu server={server_2} serverToolsCount={serverToolsCount} onViewTools={handleMcpViewTools} onCancel={handleMcpCancel} onComplete={handleMcpComplete} borderless />;
@@ -2023,6 +2025,7 @@ export function ManagePlugins({
     const client_4 = viewState.client;
     const scope_6 = client_4.config.scope;
     const configType_0 = client_4.config.type;
+    const isRemoteAuthenticated = client_4.type === 'connected' && filterToolsByServer(mcpTools, client_4.name).length > 0;
 
     // Build ServerInfo for MCPToolListView
     let server_3: StdioServerInfo | SSEServerInfo | HTTPServerInfo | ClaudeAIServerInfo;
@@ -2040,7 +2043,7 @@ export function ManagePlugins({
         client: client_4,
         scope: scope_6,
         transport: 'sse',
-        isAuthenticated: undefined,
+        isAuthenticated: isRemoteAuthenticated,
         config: client_4.config as McpSSEServerConfig
       };
     } else if (configType_0 === 'http') {
@@ -2049,7 +2052,7 @@ export function ManagePlugins({
         client: client_4,
         scope: scope_6,
         transport: 'http',
-        isAuthenticated: undefined,
+        isAuthenticated: isRemoteAuthenticated,
         config: client_4.config as McpHTTPServerConfig
       };
     } else {
@@ -2058,7 +2061,7 @@ export function ManagePlugins({
         client: client_4,
         scope: scope_6,
         transport: 'claudeai-proxy',
-        isAuthenticated: undefined,
+        isAuthenticated: false,
         config: client_4.config as McpClaudeAIProxyServerConfig
       };
     }
@@ -2082,6 +2085,7 @@ export function ManagePlugins({
     } = viewState;
     const scope_7 = client_5.config.scope;
     const configType_1 = client_5.config.type;
+    const isRemoteAuthenticated = client_5.type === 'connected' && filterToolsByServer(mcpTools, client_5.name).length > 0;
 
     // Build ServerInfo for MCPToolDetailView
     let server_4: StdioServerInfo | SSEServerInfo | HTTPServerInfo | ClaudeAIServerInfo;
@@ -2099,7 +2103,7 @@ export function ManagePlugins({
         client: client_5,
         scope: scope_7,
         transport: 'sse',
-        isAuthenticated: undefined,
+        isAuthenticated: isRemoteAuthenticated,
         config: client_5.config as McpSSEServerConfig
       };
     } else if (configType_1 === 'http') {
@@ -2108,7 +2112,7 @@ export function ManagePlugins({
         client: client_5,
         scope: scope_7,
         transport: 'http',
-        isAuthenticated: undefined,
+        isAuthenticated: isRemoteAuthenticated,
         config: client_5.config as McpHTTPServerConfig
       };
     } else {
@@ -2117,7 +2121,7 @@ export function ManagePlugins({
         client: client_5,
         scope: scope_7,
         transport: 'claudeai-proxy',
-        isAuthenticated: undefined,
+        isAuthenticated: false,
         config: client_5.config as McpClaudeAIProxyServerConfig
       };
     }

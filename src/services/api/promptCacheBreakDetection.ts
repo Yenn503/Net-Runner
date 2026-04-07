@@ -457,7 +457,16 @@ export async function checkResponseForCacheBreak(
 
     // Calculate time since last call for TTL detection by finding the most recent
     // assistant message timestamp in the messages array (before the current response)
-    const lastAssistantMessage = messages.findLast(m => m.type === 'assistant')
+    let lastAssistantMessage:
+      | Extract<(typeof messages)[number], { type: 'assistant' }>
+      | undefined
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i]
+      if (message?.type === 'assistant') {
+        lastAssistantMessage = message
+        break
+      }
+    }
     const timeSinceLastAssistantMsg = lastAssistantMessage
       ? Date.now() - new Date(lastAssistantMessage.timestamp).getTime()
       : null

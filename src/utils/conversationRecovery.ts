@@ -11,6 +11,7 @@ import type {
   LogOption,
   PersistedWorktreeSession,
   SerializedMessage,
+  TranscriptMessage,
 } from '../types/logs.js'
 import type {
   Message,
@@ -64,12 +65,22 @@ const LEGACY_BRIEF_TOOL_NAME: string | null =
         require('../tools/BriefTool/prompt.js') as typeof import('../tools/BriefTool/prompt.js')
       ).LEGACY_BRIEF_TOOL_NAME
     : null
-const SEND_USER_FILE_TOOL_NAME: string | null = feature('KAIROS')
-  ? (
-      require('../tools/SendUserFileTool/prompt.js') as typeof import('../tools/SendUserFileTool/prompt.js')
-    ).SEND_USER_FILE_TOOL_NAME
-  : null
+const SEND_USER_FILE_TOOL_NAME: string | null = null
 /* eslint-enable @typescript-eslint/no-require-imports */
+
+function findLastIndexWhere<T>(
+  items: readonly T[],
+  predicate: (item: T) => boolean,
+): number {
+  for (let index = items.length - 1; index >= 0; index--) {
+    const item = items[index]
+    if (item !== undefined && predicate(item)) {
+      return index
+    }
+  }
+
+  return -1
+}
 
 /**
  * Transforms legacy attachment types to current types for backward compatibility
@@ -228,8 +239,9 @@ export function deserializeMessagesWithInterruptDetection(
     // trailing system/progress messages and insert right after the user
     // message so removeInterruptedMessage's splice(idx, 2) removes the
     // correct pair.
-    const lastRelevantIdx = filteredMessages.findLastIndex(
-      m => m.type !== 'system' && m.type !== 'progress',
+    const lastRelevantIdx = findLastIndexWhere(
+      filteredMessages,
+      (m: NormalizedMessage) => m.type !== 'system' && m.type !== 'progress',
     )
     if (
       lastRelevantIdx !== -1 &&
@@ -281,8 +293,9 @@ function detectTurnInterruption(
   // before API send (normalizeMessagesForAPI) — skipping them here lets
   // auto-resume fire after retry exhaustion instead of reading the error as
   // a completed turn.
-  const lastMessageIdx = messages.findLastIndex(
-    m =>
+  const lastMessageIdx = findLastIndexWhere(
+    messages,
+    (m: NormalizedMessage) =>
       m.type !== 'system' &&
       m.type !== 'progress' &&
       !(m.type === 'assistant' && m.isApiErrorMessage),
@@ -418,7 +431,7 @@ export async function loadMessagesFromJsonlPath(path: string): Promise<{
   sessionId: UUID | undefined
 }> {
   const { messages: byUuid, leafUuids } = await loadTranscriptFile(path)
-  let tip: (typeof byUuid extends Map<UUID, infer T> ? T : never) | null = null
+  let tip: TranscriptMessage | null = null
   let tipTs = 0
   for (const m of byUuid.values()) {
     if (m.isSidechain || !leafUuids.has(m.uuid)) continue
@@ -490,19 +503,8 @@ export async function loadConversationForResume(
       const logsPromise = loadMessageLogs()
       let skip = new Set<string>()
       if (feature('BG_SESSIONS')) {
-        try {
-          const { listAllLiveSessions } = await import('./udsClient.js')
-          const live = await listAllLiveSessions()
-          skip = new Set(
-            live.flatMap(s =>
-              s.kind && s.kind !== 'interactive' && s.sessionId
-                ? [s.sessionId]
-                : [],
-            ),
-          )
-        } catch {
-          // UDS unavailable — treat all sessions as continuable
-        }
+        // The local UDS client is not part of this OSS tree. Fall back to
+        // treating all sessions as continuable, matching the old catch path.
       }
       const logs = await logsPromise
       log =

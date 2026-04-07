@@ -12,6 +12,7 @@ import type { HookEventMetadata } from 'src/utils/hooks/hooksConfigManager.js';
 import { Box, Text } from '../../ink.js';
 import { getHookDisplayText, hookSourceHeaderDisplayString, type IndividualHookConfig } from '../../utils/hooks/hooksSettings.js';
 import { Select } from '../CustomSelect/select.js';
+import type { OptionWithDescription } from '../CustomSelect/select.js';
 import { Dialog } from '../design-system/Dialog.js';
 type Props = {
   selectedEvent: HookEvent;
@@ -21,7 +22,7 @@ type Props = {
   onSelect: (hook: IndividualHookConfig) => void;
   onCancel: () => void;
 };
-export function SelectHookMode(t0) {
+export function SelectHookMode(t0: Props) {
   const $ = _c(19);
   const {
     selectedEvent,
@@ -63,7 +64,7 @@ export function SelectHookMode(t0) {
   }
   let t3;
   if ($[7] !== hooksForSelectedMatcher || $[8] !== onSelect) {
-    t3 = value => {
+    t3 = (value: string) => {
       const index_0 = parseInt(value, 10);
       const hook_0 = hooksForSelectedMatcher[index_0];
       if (hook_0) {
@@ -99,7 +100,7 @@ export function SelectHookMode(t0) {
   }
   return t5;
 }
-function _temp2(hook, index) {
+function _temp2(hook: IndividualHookConfig, index: number): OptionWithDescription<string> {
   return {
     label: `[${hook.config.type}] ${getHookDisplayText(hook.config)}`,
     value: index.toString(),

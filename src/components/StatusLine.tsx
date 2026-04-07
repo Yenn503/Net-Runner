@@ -114,7 +114,7 @@ function buildStatusLineCommandInput(permissionMode: PermissionMode, exceeds200k
         session_id: getSessionId()
       }
     }),
-    ...(worktreeSession && {
+    ...(worktreeSession?.worktreeBranch && worktreeSession.originalBranch && {
       worktree: {
         name: worktreeSession.worktreeName,
         path: worktreeSession.worktreePath,

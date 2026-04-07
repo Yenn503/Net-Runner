@@ -1,7 +1,7 @@
 import { c as _c } from "react-compiler-runtime";
 import { useEffect } from 'react';
 import { useNotifications } from 'src/context/notifications.js';
-import { useAppState, useSetAppState } from 'src/state/AppState.js';
+import { useAppState, useSetAppState, type AppState } from 'src/state/AppState.js';
 import { type CooldownReason, isFastModeEnabled, onCooldownExpired, onCooldownTriggered, onFastModeOverageRejection, onOrgFastModeChanged } from 'src/utils/fastMode.js';
 import { formatDuration } from 'src/utils/format.js';
 import { getIsRemoteMode } from '../../bootstrap/state.js';
@@ -136,20 +136,20 @@ export function useFastModeNotification() {
   }
   useEffect(t4, t5);
 }
-function _temp3(prev_0) {
+function _temp3(prev_0: AppState): AppState {
   return {
     ...prev_0,
     fastMode: false
   };
 }
-function _temp2(prev) {
+function _temp2(prev: AppState): AppState {
   return {
     ...prev,
     fastMode: false
   };
 }
-function _temp(s) {
-  return s.fastMode;
+function _temp(s: AppState): boolean {
+  return s.fastMode ?? false;
 }
 function getCooldownMessage(reason: CooldownReason, resetIn: string): string {
   switch (reason) {

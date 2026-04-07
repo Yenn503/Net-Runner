@@ -9,7 +9,7 @@ import { GLOB_TOOL_NAME } from '../../tools/GlobTool/prompt.js'
 import { GREP_TOOL_NAME } from '../../tools/GrepTool/prompt.js'
 import { WEB_FETCH_TOOL_NAME } from '../../tools/WebFetchTool/prompt.js'
 import { WEB_SEARCH_TOOL_NAME } from '../../tools/WebSearchTool/prompt.js'
-import type { Message } from '../../types/message.js'
+import type { AssistantMessage, Message } from '../../types/message.js'
 import { logForDebugging } from '../../utils/debug.js'
 import { getMainLoopModel } from '../../utils/model/model.js'
 import { SHELL_TOOL_NAMES } from '../../utils/shell/shellToolUtils.js'
@@ -219,6 +219,16 @@ export type MicrocompactResult = {
   }
 }
 
+function getLastAssistant(messages: Message[]): AssistantMessage | undefined {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message?.type === 'assistant') {
+      return message
+    }
+  }
+  return undefined
+}
+
 /**
  * Walk messages and collect tool_use IDs whose tool name is in
  * COMPACTABLE_TOOLS, in encounter order. Shared by both microcompact paths.
@@ -371,7 +381,7 @@ async function cachedMicrocompactPath(
     // actual cache_deleted_input_tokens from the API instead of client-side estimates
     // Capture the baseline cumulative cache_deleted_input_tokens from the last
     // assistant message so we can compute a per-operation delta after the API call
-    const lastAsst = messages.findLast(m => m.type === 'assistant')
+    const lastAsst = getLastAssistant(messages)
     const baseline =
       lastAsst?.type === 'assistant'
         ? ((
@@ -431,7 +441,7 @@ export function evaluateTimeBasedTrigger(
   if (!config.enabled || !querySource || !isMainThreadSource(querySource)) {
     return null
   }
-  const lastAssistant = messages.findLast(m => m.type === 'assistant')
+  const lastAssistant = getLastAssistant(messages)
   if (!lastAssistant) {
     return null
   }

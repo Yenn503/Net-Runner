@@ -39,6 +39,11 @@ type InstallState = {
   message: string;
   warnings?: string[];
 };
+
+type SetupNotesProps = {
+  messages: string[];
+};
+
 function getInstallationPath(): string {
   const isWindows = env.platform === 'win32';
   const homeDir = homedir();
@@ -50,7 +55,7 @@ function getInstallationPath(): string {
   }
   return '~/.local/bin/net-runner';
 }
-function SetupNotes(t0) {
+function SetupNotes(t0: SetupNotesProps) {
   const $ = _c(5);
   const {
     messages
@@ -83,7 +88,7 @@ function SetupNotes(t0) {
   }
   return t3;
 }
-function _temp(message, index) {
+function _temp(message: string, index: number) {
   return <Box key={index} marginLeft={2}><Text dimColor={true}>• {message}</Text></Box>;
 }
 function Install({

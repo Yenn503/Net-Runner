@@ -1,4 +1,9 @@
 import type {
+  BetaMessage,
+  BetaRawMessageStreamEvent,
+} from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
+import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages/messages.mjs'
+import type {
   SDKAssistantMessage,
   SDKCompactBoundaryMessage,
   SDKMessage,
@@ -7,6 +12,7 @@ import type {
   SDKStatusMessage,
   SDKSystemMessage,
   SDKToolProgressMessage,
+  SDKUserMessage,
 } from '../entrypoints/agentSdkTypes.js'
 import type {
   AssistantMessage,
@@ -17,6 +23,48 @@ import type {
 import { logForDebugging } from '../utils/debug.js'
 import { fromSDKCompactMetadata } from '../utils/messages/mappers.js'
 import { createUserMessage } from '../utils/messages.js'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isContentBlockParamArray(value: unknown): value is ContentBlockParam[] {
+  return Array.isArray(value) && value.every(block => isRecord(block))
+}
+
+function isBetaMessage(value: unknown): value is BetaMessage {
+  return (
+    isRecord(value) &&
+    value.role === 'assistant' &&
+    Array.isArray(value.content) &&
+    typeof value.model === 'string'
+  )
+}
+
+function isBetaRawMessageStreamEvent(
+  value: unknown,
+): value is BetaRawMessageStreamEvent {
+  return isRecord(value) && typeof value.type === 'string'
+}
+
+function getSDKUserMessageContent(
+  msg: SDKUserMessage,
+): string | ContentBlockParam[] | undefined {
+  if (!isRecord(msg.message)) {
+    return undefined
+  }
+
+  const content = msg.message.content
+  if (typeof content === 'string' || isContentBlockParamArray(content)) {
+    return content
+  }
+
+  return undefined
+}
+
+function isToolResultBlock(block: ContentBlockParam): boolean {
+  return block.type === 'tool_result'
+}
 
 /**
  * Converts SDKMessage from CCR to REPL Message types.
@@ -29,9 +77,29 @@ import { createUserMessage } from '../utils/messages.js'
  * Convert an SDKAssistantMessage to an AssistantMessage
  */
 function convertAssistantMessage(msg: SDKAssistantMessage): AssistantMessage {
+  const message = isBetaMessage(msg.message)
+    ? msg.message
+    : {
+        id: msg.uuid,
+        type: 'message',
+        role: 'assistant',
+        content: [],
+        model: 'unknown',
+        stop_reason: null,
+        stop_sequence: null,
+        usage: {
+          input_tokens: 0,
+          cache_creation_input_tokens: null,
+          cache_read_input_tokens: null,
+          output_tokens: 0,
+          server_tool_use: null,
+          service_tier: null,
+        },
+      } as unknown as BetaMessage
+
   return {
     type: 'assistant',
-    message: msg.message,
+    message,
     uuid: msg.uuid,
     requestId: undefined,
     timestamp: new Date().toISOString(),
@@ -45,7 +113,7 @@ function convertAssistantMessage(msg: SDKAssistantMessage): AssistantMessage {
 function convertStreamEvent(msg: SDKPartialAssistantMessage): StreamEvent {
   return {
     type: 'stream_event',
-    event: msg.event,
+    event: isBetaRawMessageStreamEvent(msg.event) ? msg.event : {},
   }
 }
 
@@ -174,14 +242,14 @@ export function convertSDKMessage(
       return { type: 'message', message: convertAssistantMessage(msg) }
 
     case 'user': {
-      const content = msg.message?.content
+      const content = getSDKUserMessageContent(msg)
       // Tool result messages from the remote server need to be converted so
       // they render and collapse like local tool results. Detect via content
       // shape (tool_result blocks) — parent_tool_use_id is NOT reliable: the
       // agent-side normalizeMessage() hardcodes it to null for top-level
       // tool results, so it can't distinguish tool results from prompt echoes.
       const isToolResult =
-        Array.isArray(content) && content.some(b => b.type === 'tool_result')
+        Array.isArray(content) && content.some(isToolResultBlock)
       if (opts?.convertToolResults && isToolResult) {
         return {
           type: 'message',

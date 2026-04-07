@@ -1,6 +1,6 @@
 import { c as _c } from "react-compiler-runtime";
 import * as React from 'react';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { useSettings } from '../hooks/useSettings.js';
 import { Ansi, Box, type DOMElement, measureElement, NoSelect, Text, useTheme } from '../ink.js';
 import { isFullscreenEnvEnabled } from '../utils/fullscreen.js';
@@ -15,7 +15,11 @@ type Props = {
   dim?: boolean;
 };
 const DEFAULT_WIDTH = 80;
-export const HighlightedCode = memo(function HighlightedCode(t0) {
+type CodeLineProps = {
+  line: string;
+  gutterWidth: number;
+};
+export const HighlightedCode = memo(function HighlightedCode(t0: Props) {
   const $ = _c(21);
   const {
     code,
@@ -24,7 +28,7 @@ export const HighlightedCode = memo(function HighlightedCode(t0) {
     dim: t1
   } = t0;
   const dim = t1 === undefined ? false : t1;
-  const ref = useRef(null);
+  const ref = useRef<DOMElement | null>(null);
   const [measuredWidth, setMeasuredWidth] = useState(width || DEFAULT_WIDTH);
   const [theme] = useTheme();
   const settings = useSettings();
@@ -121,7 +125,7 @@ export const HighlightedCode = memo(function HighlightedCode(t0) {
   const gutterWidth = t6;
   let t7;
   if ($[14] !== code || $[15] !== dim || $[16] !== filePath || $[17] !== gutterWidth || $[18] !== lines || $[19] !== syntaxHighlightingDisabled) {
-    t7 = <Box ref={ref}>{lines ? <Box flexDirection="column">{lines.map((line, i) => gutterWidth > 0 ? <CodeLine key={i} line={line} gutterWidth={gutterWidth} /> : <Text key={i}><Ansi>{line}</Ansi></Text>)}</Box> : <HighlightedCodeFallback code={code} filePath={filePath} dim={dim} skipColoring={syntaxHighlightingDisabled} />}</Box>;
+    t7 = <Box ref={ref}>{lines ? <Box flexDirection="column">{lines.map((line: string, i: number) => gutterWidth > 0 ? <CodeLine key={i} line={line} gutterWidth={gutterWidth} /> : <Text key={i}><Ansi>{line}</Ansi></Text>)}</Box> : <HighlightedCodeFallback code={code} filePath={filePath} dim={dim} skipColoring={syntaxHighlightingDisabled} />}</Box>;
     $[14] = code;
     $[15] = dim;
     $[16] = filePath;
@@ -134,7 +138,7 @@ export const HighlightedCode = memo(function HighlightedCode(t0) {
   }
   return t7;
 });
-function CodeLine(t0) {
+function CodeLine(t0: CodeLineProps) {
   const $ = _c(13);
   const {
     line,

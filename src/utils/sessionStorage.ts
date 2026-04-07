@@ -1,5 +1,4 @@
 import { feature } from 'bun:bundle'
-import type { UUID } from 'crypto'
 import type { Dirent } from 'fs'
 // Sync fs primitives for readFileTailSync — separate from fs/promises
 // imports above. Named (not wildcard) per NETRUNNER.md style; no collisions
@@ -61,8 +60,8 @@ import type {
   SystemCompactBoundaryMessage,
   SystemMessage,
   UserMessage,
-} from '../types/message.js'
-import type { QueueOperationMessage } from '../types/messageQueueTypes.js'
+} from '../types/message.ts'
+import type { QueueOperationMessage } from '../types/messageQueueTypes.ts'
 import { uniq } from './array.js'
 import { registerCleanup } from './cleanupRegistry.js'
 import { updateSessionName } from './concurrentSessions.js'
@@ -98,12 +97,28 @@ import { validateUuid } from './uuid.js'
 // See: https://github.com/oven-sh/bun/issues/26168
 const VERSION = typeof MACRO !== 'undefined' ? MACRO.VERSION : 'unknown'
 
+type UUID = string
+
 type Transcript = (
   | UserMessage
   | AssistantMessage
   | AttachmentMessage
   | SystemMessage
 )[]
+
+function findLastMatching<T>(
+  items: readonly T[],
+  predicate: (item: T) => boolean,
+): T | undefined {
+  for (let index = items.length - 1; index >= 0; index--) {
+    const item = items[index]
+    if (item !== undefined && predicate(item)) {
+      return item
+    }
+  }
+
+  return undefined
+}
 
 // Use getOriginalCwd() at each call site instead of capturing at module load
 // time. getCwd() at import time may run before bootstrap resolves symlinks via
@@ -738,7 +753,7 @@ class Project {
     // happens to be JSON-serialized into a message.
     const tailLines = tail.split('\n')
     if (!skipTitleRefresh) {
-      const titleLine = tailLines.findLast(l =>
+      const titleLine = findLastMatching(tailLines, (l: string) =>
         l.startsWith('{"type":"custom-title"'),
       )
       if (titleLine) {
@@ -752,7 +767,9 @@ class Project {
         }
       }
     }
-    const tagLine = tailLines.findLast(l => l.startsWith('{"type":"tag"'))
+    const tagLine = findLastMatching(tailLines, (l: string) =>
+      l.startsWith('{"type":"tag"'),
+    )
     if (tagLine) {
       const tailTag = extractLastJsonStringField(tagLine, 'tag')
       // Same: tagSession(id, null) writes `tag:""` to clear.
@@ -1036,16 +1053,25 @@ class Project {
           effectiveParentUuid = message.sourceToolAssistantUUID
         }
 
-        const transcriptMessage: TranscriptMessage = {
-          parentUuid: isCompactBoundary ? null : effectiveParentUuid,
-          logicalParentUuid: isCompactBoundary ? parentUuid : undefined,
+        const transcriptParentUuid: TranscriptMessage['parentUuid'] =
+          isCompactBoundary
+            ? null
+            : (effectiveParentUuid as TranscriptMessage['parentUuid'])
+        const transcriptLogicalParentUuid: TranscriptMessage['logicalParentUuid'] =
+          isCompactBoundary
+            ? undefined
+            : (parentUuid as TranscriptMessage['logicalParentUuid'])
+
+        const transcriptMessage = {
+          ...message,
+          parentUuid: transcriptParentUuid,
+          logicalParentUuid: transcriptLogicalParentUuid,
           isSidechain,
           teamName: teamInfo?.teamName,
           agentName: teamInfo?.agentName,
           promptId:
             message.type === 'user' ? (getPromptId() ?? undefined) : undefined,
           agentId,
-          ...message,
           // Session-stamp fields MUST come after the spread. On --fork-session
           // and --resume, messages arrive as SerializedMessage (carries source
           // sessionId/cwd/etc. because removeExtraFields only strips parentUuid
@@ -1061,7 +1087,7 @@ class Project {
           version: VERSION,
           gitBranch,
           slug,
-        }
+        } as TranscriptMessage
         await this.appendEntry(transcriptMessage)
         if (isChainParticipant(message)) {
           parentUuid = message.uuid
@@ -1090,7 +1116,7 @@ class Project {
     return this.trackWrite(async () => {
       const fileHistoryMessage: FileHistorySnapshotMessage = {
         type: 'file-history-snapshot',
-        messageId,
+        messageId: messageId as FileHistorySnapshotMessage['messageId'],
         snapshot,
         isSnapshotUpdate,
       }
@@ -1117,7 +1143,7 @@ class Project {
     return this.trackWrite(async () => {
       const entry: ContentReplacementEntry = {
         type: 'content-replacement',
-        sessionId: getSessionId() as UUID,
+        sessionId: getSessionId() as ContentReplacementEntry['sessionId'],
         agentId,
         replacements,
       }
@@ -1444,8 +1470,10 @@ export async function recordTranscript(
   // slice is all-recorded (rewind, /resume scenarios where every message is
   // already in messageSet). Progress is skipped — it's written to the JSONL
   // but nothing chains TO it (see isChainParticipant).
-  const lastRecorded = newMessages.findLast(isChainParticipant)
-  return (lastRecorded?.uuid as UUID | undefined) ?? startingParentUuid ?? null
+  const lastRecorded = findLastMatching(newMessages, isChainParticipant)
+  return ((lastRecorded as Message | undefined)?.uuid as UUID | undefined) ??
+    startingParentUuid ??
+    null
 }
 
 export async function recordSidechainTranscript(
@@ -1550,7 +1578,7 @@ export async function recordContextCollapseCommit(commit: {
   if (!sessionId) return
   await getProject().appendEntry({
     type: 'marble-origami-commit',
-    sessionId,
+    sessionId: sessionId as ContextCollapseCommitEntry['sessionId'],
     ...commit,
   })
 }
@@ -1575,7 +1603,7 @@ export async function recordContextCollapseSnapshot(snapshot: {
   if (!sessionId) return
   await getProject().appendEntry({
     type: 'marble-origami-snapshot',
-    sessionId,
+    sessionId: sessionId as ContextCollapseSnapshotEntry['sessionId'],
     ...snapshot,
   })
 }
@@ -1907,14 +1935,17 @@ function applyPreservedSegmentRelinks(
     if (head) {
       messages.set(lastSeg.headUuid, {
         ...head,
-        parentUuid: lastSeg.anchorUuid,
+        parentUuid: lastSeg.anchorUuid as TranscriptMessage['parentUuid'],
       })
     }
     // Tail-splice: anchor's other children → tail. No-op if already pointing
     // at tail (the useLogMessages race case).
     for (const [uuid, msg] of messages) {
       if (msg.parentUuid === lastSeg.anchorUuid && uuid !== lastSeg.headUuid) {
-        messages.set(uuid, { ...msg, parentUuid: lastSeg.tailUuid })
+        messages.set(uuid, {
+          ...msg,
+          parentUuid: lastSeg.tailUuid as TranscriptMessage['parentUuid'],
+        })
       }
     }
     // Zero stale usage: on-disk input_tokens reflect pre-compact context
@@ -2028,7 +2059,10 @@ function applySnipRemovals(messages: Map<UUID, TranscriptMessage>): void {
   let relinkedCount = 0
   for (const [uuid, msg] of messages) {
     if (!msg.parentUuid || !toDelete.has(msg.parentUuid)) continue
-    messages.set(uuid, { ...msg, parentUuid: resolve(msg.parentUuid) })
+    messages.set(uuid, {
+      ...msg,
+      parentUuid: resolve(msg.parentUuid) as TranscriptMessage['parentUuid'],
+    })
     relinkedCount++
   }
 
@@ -2147,7 +2181,7 @@ function recoverOrphanedParallelToolResults(
       m.type === 'user' &&
       m.parentUuid &&
       Array.isArray(m.message.content) &&
-      m.message.content.some(b => b.type === 'tool_result')
+      m.message.content.some((b: { type?: string }) => b.type === 'tool_result')
     ) {
       const group = toolResultsByAsst.get(m.parentUuid)
       if (group) group.push(m)
@@ -2511,7 +2545,7 @@ function convertToLogOption(
     teamName: firstMessage.teamName,
     agentName: firstMessage.agentName,
     agentSetting,
-    leafUuid: lastMessage.uuid,
+    leafUuid: lastMessage.uuid as LogOption['leafUuid'],
     summary,
     customTitle,
     tag,
@@ -3026,7 +3060,7 @@ export async function loadFullLog(log: LogOption): Promise<LogOption> {
       gitBranch: mostRecentLeaf?.gitBranch ?? log.gitBranch,
       isSidechain: transcript[0]?.isSidechain ?? log.isSidechain,
       teamName: transcript[0]?.teamName ?? log.teamName,
-      leafUuid: mostRecentLeaf?.uuid ?? log.leafUuid,
+      leafUuid: (mostRecentLeaf?.uuid ?? log.leafUuid) as LogOption['leafUuid'],
       fileHistorySnapshots: buildFileHistorySnapshotChain(
         fileHistorySnapshots,
         transcript,
@@ -3578,6 +3612,83 @@ export async function loadTranscriptFile(
       buf = walkChainBeforeParse(buf)
     }
 
+    const applyMetadataEntry = (entry: Entry): void => {
+      switch (entry.type) {
+        case 'summary':
+          if (entry.leafUuid) {
+            summaries.set(entry.leafUuid, entry.summary)
+          }
+          return
+        case 'custom-title':
+          if (entry.sessionId) {
+            customTitles.set(entry.sessionId, entry.customTitle)
+          }
+          return
+        case 'tag':
+          if (entry.sessionId) {
+            tags.set(entry.sessionId, entry.tag)
+          }
+          return
+        case 'agent-name':
+          if (entry.sessionId) {
+            agentNames.set(entry.sessionId, entry.agentName)
+          }
+          return
+        case 'agent-color':
+          if (entry.sessionId) {
+            agentColors.set(entry.sessionId, entry.agentColor)
+          }
+          return
+        case 'agent-setting':
+          if (entry.sessionId) {
+            agentSettings.set(entry.sessionId, entry.agentSetting)
+          }
+          return
+        case 'mode':
+          if (entry.sessionId) {
+            modes.set(entry.sessionId, entry.mode)
+          }
+          return
+        case 'worktree-state':
+          if (entry.sessionId) {
+            worktreeStates.set(entry.sessionId, entry.worktreeSession)
+          }
+          return
+        case 'pr-link':
+          if (entry.sessionId) {
+            prNumbers.set(entry.sessionId, entry.prNumber)
+            prUrls.set(entry.sessionId, entry.prUrl)
+            prRepositories.set(entry.sessionId, entry.prRepository)
+          }
+          return
+        case 'file-history-snapshot':
+          fileHistorySnapshots.set(entry.messageId, entry)
+          return
+        case 'attribution-snapshot':
+          attributionSnapshots.set(entry.messageId, entry)
+          return
+        case 'content-replacement':
+          if (entry.agentId) {
+            const existing = agentContentReplacements.get(entry.agentId) ?? []
+            agentContentReplacements.set(entry.agentId, existing)
+            existing.push(...entry.replacements)
+          } else {
+            const existing = contentReplacements.get(entry.sessionId) ?? []
+            contentReplacements.set(entry.sessionId, existing)
+            existing.push(...entry.replacements)
+          }
+          return
+        case 'marble-origami-commit':
+          contextCollapseCommits.push(entry)
+          return
+        case 'marble-origami-snapshot':
+          contextCollapseSnapshot = entry
+          return
+        default:
+          return
+      }
+    }
+
     // First pass: process metadata-only lines collected during the boundary scan.
     // These populate the session-scoped maps (agentSettings, modes, prNumbers,
     // etc.) for entries written before the compact boundary. Any overlap with
@@ -3587,27 +3698,7 @@ export async function loadTranscriptFile(
         Buffer.from(metadataLines.join('\n')),
       )
       for (const entry of metaEntries) {
-        if (entry.type === 'summary' && entry.leafUuid) {
-          summaries.set(entry.leafUuid, entry.summary)
-        } else if (entry.type === 'custom-title' && entry.sessionId) {
-          customTitles.set(entry.sessionId, entry.customTitle)
-        } else if (entry.type === 'tag' && entry.sessionId) {
-          tags.set(entry.sessionId, entry.tag)
-        } else if (entry.type === 'agent-name' && entry.sessionId) {
-          agentNames.set(entry.sessionId, entry.agentName)
-        } else if (entry.type === 'agent-color' && entry.sessionId) {
-          agentColors.set(entry.sessionId, entry.agentColor)
-        } else if (entry.type === 'agent-setting' && entry.sessionId) {
-          agentSettings.set(entry.sessionId, entry.agentSetting)
-        } else if (entry.type === 'mode' && entry.sessionId) {
-          modes.set(entry.sessionId, entry.mode)
-        } else if (entry.type === 'worktree-state' && entry.sessionId) {
-          worktreeStates.set(entry.sessionId, entry.worktreeSession)
-        } else if (entry.type === 'pr-link' && entry.sessionId) {
-          prNumbers.set(entry.sessionId, entry.prNumber)
-          prUrls.set(entry.sessionId, entry.prUrl)
-          prRepositories.set(entry.sessionId, entry.prRepository)
-        }
+        applyMetadataEntry(entry)
       }
     }
 
@@ -3641,7 +3732,8 @@ export async function loadTranscriptFile(
       }
       if (isTranscriptMessage(entry)) {
         if (entry.parentUuid && progressBridge.has(entry.parentUuid)) {
-          entry.parentUuid = progressBridge.get(entry.parentUuid) ?? null
+          entry.parentUuid = (progressBridge.get(entry.parentUuid) ??
+            null) as TranscriptMessage['parentUuid']
         }
         messages.set(entry.uuid, entry)
         // Compact boundary: prior marble-origami-commit entries reference
@@ -3655,47 +3747,10 @@ export async function loadTranscriptFile(
           contextCollapseCommits.length = 0
           contextCollapseSnapshot = undefined
         }
-      } else if (entry.type === 'summary' && entry.leafUuid) {
-        summaries.set(entry.leafUuid, entry.summary)
-      } else if (entry.type === 'custom-title' && entry.sessionId) {
-        customTitles.set(entry.sessionId, entry.customTitle)
-      } else if (entry.type === 'tag' && entry.sessionId) {
-        tags.set(entry.sessionId, entry.tag)
-      } else if (entry.type === 'agent-name' && entry.sessionId) {
-        agentNames.set(entry.sessionId, entry.agentName)
-      } else if (entry.type === 'agent-color' && entry.sessionId) {
-        agentColors.set(entry.sessionId, entry.agentColor)
-      } else if (entry.type === 'agent-setting' && entry.sessionId) {
-        agentSettings.set(entry.sessionId, entry.agentSetting)
-      } else if (entry.type === 'mode' && entry.sessionId) {
-        modes.set(entry.sessionId, entry.mode)
-      } else if (entry.type === 'worktree-state' && entry.sessionId) {
-        worktreeStates.set(entry.sessionId, entry.worktreeSession)
-      } else if (entry.type === 'pr-link' && entry.sessionId) {
-        prNumbers.set(entry.sessionId, entry.prNumber)
-        prUrls.set(entry.sessionId, entry.prUrl)
-        prRepositories.set(entry.sessionId, entry.prRepository)
-      } else if (entry.type === 'file-history-snapshot') {
-        fileHistorySnapshots.set(entry.messageId, entry)
-      } else if (entry.type === 'attribution-snapshot') {
-        attributionSnapshots.set(entry.messageId, entry)
-      } else if (entry.type === 'content-replacement') {
-        // Subagent decisions key by agentId (sidechain resume); main-thread
-        // decisions key by sessionId (/resume).
-        if (entry.agentId) {
-          const existing = agentContentReplacements.get(entry.agentId) ?? []
-          agentContentReplacements.set(entry.agentId, existing)
-          existing.push(...entry.replacements)
-        } else {
-          const existing = contentReplacements.get(entry.sessionId) ?? []
-          contentReplacements.set(entry.sessionId, existing)
-          existing.push(...entry.replacements)
-        }
-      } else if (entry.type === 'marble-origami-commit') {
-        contextCollapseCommits.push(entry)
-      } else if (entry.type === 'marble-origami-snapshot') {
-        contextCollapseSnapshot = entry
+        continue
       }
+
+      applyMetadataEntry(entry)
     }
   } catch {
     // File doesn't exist or can't be read
@@ -3716,10 +3771,8 @@ export async function loadTranscriptFile(
   const allMessages = [...messages.values()]
 
   // Standard leaf computation using parent relationships
-  const parentUuids = new Set(
-    allMessages
-      .map(msg => msg.parentUuid)
-      .filter((uuid): uuid is UUID => uuid !== null),
+  const parentUuids = new Set<string>(
+    allMessages.flatMap(msg => (msg.parentUuid ? [msg.parentUuid] : [])),
   )
 
   // Find all terminal messages (messages with no children)
@@ -4207,7 +4260,9 @@ export async function getAgentTranscript(agentId: AgentId): Promise<{
     }
 
     // Find the most recent leaf message with this agentId
-    const parentUuids = new Set(agentMessages.map(msg => msg.parentUuid))
+    const parentUuids = new Set<string>(
+      agentMessages.flatMap(msg => (msg.parentUuid ? [msg.parentUuid] : [])),
+    )
     const leafMessage = findLatestMessage(
       agentMessages,
       msg => !parentUuids.has(msg.uuid),
@@ -4665,7 +4720,7 @@ export async function loadAllLogsFromSessionFile(
       messageCount: countVisibleMessages(chain),
       isSidechain: firstMessage.isSidechain ?? false,
       sessionId,
-      leafUuid: leafMessage.uuid,
+      leafUuid: leafMessage.uuid as LogOption['leafUuid'],
       summary: summaries.get(leafMessage.uuid),
       customTitle: customTitles.get(sessionId),
       tag: tags.get(sessionId),

@@ -72,9 +72,11 @@ const VALID_CONTEXTS: KeybindingContextName[] = [
   'Attachments',
   'Footer',
   'MessageSelector',
+  'Scroll',
   'DiffDialog',
   'ModelPicker',
   'Select',
+  'MessageActions',
   'Plugin',
 ]
 

@@ -41,6 +41,16 @@ import {
 import { estimateMessageTokens } from './microCompact.js'
 import { getCompactUserSummaryMessage } from './prompt.js'
 
+function findLastCompactBoundaryIndex(messages: Message[]): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (isCompactBoundaryMessage(messages[i]!)) {
+      return i
+    }
+  }
+
+  return -1
+}
+
 /**
  * Configuration for session memory compaction thresholds
  */
@@ -367,7 +377,7 @@ export function calculateMessagesToKeepIndex(
   // would let the loader's tail→head walk bypass inner preserved messages
   // and then prune them. Reactive compact already slices at the boundary
   // via getMessagesAfterCompactBoundary; this is the same invariant.
-  const idx = messages.findLastIndex(m => isCompactBoundaryMessage(m))
+  const idx = findLastCompactBoundaryIndex(messages)
   const floor = idx === -1 ? 0 : idx + 1
   for (let i = startIndex - 1; i >= floor; i--) {
     const msg = messages[i]!
@@ -447,7 +457,7 @@ function createCompactionResultFromSessionMemory(
   const boundaryMarker = createCompactBoundaryMessage(
     'auto',
     preCompactTokenCount ?? 0,
-    messages[messages.length - 1]?.uuid,
+    messages[messages.length - 1]?.uuid as `${string}-${string}-${string}-${string}-${string}` | undefined,
   )
   const preCompactDiscovered = extractDiscoveredToolNames(messages)
   if (preCompactDiscovered.size > 0) {
@@ -487,7 +497,7 @@ function createCompactionResultFromSessionMemory(
   return {
     boundaryMarker: annotateBoundaryWithPreservedSegment(
       boundaryMarker,
-      summaryMessages[summaryMessages.length - 1]!.uuid,
+      summaryMessages[summaryMessages.length - 1]!.uuid as `${string}-${string}-${string}-${string}-${string}`,
       messagesToKeep,
     ),
     summaryMessages,

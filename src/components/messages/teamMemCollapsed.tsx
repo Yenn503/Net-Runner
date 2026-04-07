@@ -17,7 +17,13 @@ export function checkHasTeamMemOps(message: CollapsedReadSearchGroup): boolean {
  * This module is only loaded when feature('TEAMMEM') is true,
  * so DCE removes it entirely from external builds.
  */
-export function TeamMemCountParts(t0) {
+type TeamMemCountPartsProps = {
+  message: CollapsedReadSearchGroup;
+  isActiveGroup?: boolean;
+  hasPrecedingParts: boolean;
+};
+
+export function TeamMemCountParts(t0: TeamMemCountPartsProps) {
   const $ = _c(23);
   const {
     message,

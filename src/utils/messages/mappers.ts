@@ -7,6 +7,7 @@ import {
 } from 'src/constants/xml.js'
 import type {
   SDKAssistantMessage,
+  SDKAssistantMessageError,
   SDKCompactBoundaryMessage,
   SDKMessage,
   SDKRateLimitInfo,
@@ -22,6 +23,23 @@ import type { DeepImmutable } from 'src/types/utils.js'
 import stripAnsi from 'strip-ansi'
 import { createAssistantMessage } from '../messages.js'
 import { getPlan } from '../plans.js'
+
+function toSdkAssistantError(
+  value: unknown,
+): SDKAssistantMessageError | undefined {
+  switch (value) {
+    case 'unknown':
+    case 'authentication_failed':
+    case 'billing_error':
+    case 'rate_limit':
+    case 'invalid_request':
+    case 'server_error':
+    case 'max_output_tokens':
+      return value
+    default:
+      return undefined
+  }
+}
 
 export function toInternalMessages(
   messages: readonly DeepImmutable<SDKMessage>[],
@@ -123,7 +141,7 @@ export function toSDKMessages(messages: Message[]): SDKMessage[] {
             session_id: getSessionId(),
             parent_tool_use_id: null,
             uuid: message.uuid,
-            error: message.error,
+            error: toSdkAssistantError(message.error),
           },
         ]
       case 'user':
@@ -169,7 +187,7 @@ export function toSDKMessages(messages: Message[]): SDKMessage[] {
           return [
             localCommandOutputToSDKAssistantMessage(
               message.content,
-              message.uuid,
+              message.uuid as UUID,
             ),
           ]
         }

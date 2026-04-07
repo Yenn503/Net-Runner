@@ -198,7 +198,15 @@ const SuggestionItemRow = memo(function SuggestionItemRow(t0) {
     t7 = $[35];
   }
   return t7;
-});
+} as ({
+  item,
+  maxColumnWidth,
+  isSelected
+}: {
+  item: SuggestionItem;
+  maxColumnWidth?: number;
+  isSelected: boolean;
+}) => ReactNode);
 type Props = {
   suggestions: SuggestionItem[];
   selectedSuggestion: number;
@@ -210,7 +218,7 @@ type Props = {
    */
   overlay?: boolean;
 };
-export function PromptInputFooterSuggestions(t0) {
+export function PromptInputFooterSuggestions(t0: Props) {
   const $ = _c(22);
   const {
     suggestions,
@@ -248,7 +256,7 @@ export function PromptInputFooterSuggestions(t0) {
     t3 = overlay ? undefined : "flex-end";
     let t5;
     if ($[13] !== maxColumnWidth || $[14] !== selectedSuggestion || $[15] !== suggestions) {
-      t5 = item_0 => <SuggestionItemRow key={item_0.id} item={item_0} maxColumnWidth={maxColumnWidth} isSelected={item_0.id === suggestions[selectedSuggestion]?.id} />;
+      t5 = (item_0: SuggestionItem) => <SuggestionItemRow key={item_0.id} item={item_0} maxColumnWidth={maxColumnWidth} isSelected={item_0.id === suggestions[selectedSuggestion]?.id} />;
       $[13] = maxColumnWidth;
       $[14] = selectedSuggestion;
       $[15] = suggestions;
@@ -286,7 +294,7 @@ export function PromptInputFooterSuggestions(t0) {
   }
   return t5;
 }
-function _temp(item) {
+function _temp(item: SuggestionItem) {
   return stringWidth(item.displayText);
 }
 export default memo(PromptInputFooterSuggestions);

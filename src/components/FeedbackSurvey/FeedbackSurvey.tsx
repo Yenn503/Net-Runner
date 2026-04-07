@@ -17,7 +17,7 @@ type Props = {
   onRequestFeedback?: () => void;
   message?: string;
 };
-export function FeedbackSurvey(t0) {
+export function FeedbackSurvey(t0: Props) {
   const $ = _c(16);
   const {
     state,
@@ -108,7 +108,7 @@ type ThanksProps = {
   onRequestFeedback?: () => void;
 };
 const isFollowUpDigit = (char: string): char is '1' => char === '1';
-function FeedbackSurveyThanks(t0) {
+function FeedbackSurveyThanks(t0: ThanksProps) {
   const $ = _c(12);
   const {
     lastResponse,
@@ -152,7 +152,7 @@ function FeedbackSurveyThanks(t0) {
     t3 = $[7];
   }
   useDebouncedDigitInput(t3);
-  const feedbackCommand = false ? "/issue" : "/feedback";
+  const feedbackCommand = process.env.USER_TYPE === 'ant' ? "/issue" : "/feedback";
   let t4;
   if ($[8] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = <Text color="success">Thanks for the feedback!</Text>;

@@ -7,6 +7,7 @@ import test from 'node:test'
 import { call as evidenceCommand } from '../commands/evidence/evidence.js'
 import { initializeNetRunnerProject } from './engagement.ts'
 import { readEvidenceEntries } from './evidence.ts'
+import type { LocalJSXCommandContext } from '../types/command.js'
 import { runWithCwdOverride } from '../utils/cwd.js'
 
 test('evidence command records finding classification metadata into the ledger', async () => {
@@ -20,6 +21,7 @@ test('evidence command records finding classification metadata into the ledger',
   const result = await runWithCwdOverride(cwd, () =>
     evidenceCommand(
       `finding high Missing auth on admin route | GET /admin returned 200 without authentication. | Require authentication. | {"cweIds":["CWE-862"],"cvss":{"vector":"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N","baseScore":9.1},"mitreAttack":["T1190"],"compliance":[{"framework":"NIST-800-53","controls":["AC-3","AC-6"]}]}`,
+      {} as LocalJSXCommandContext,
     ),
   )
 

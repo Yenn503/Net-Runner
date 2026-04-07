@@ -18,7 +18,8 @@ type Props = {
   }) => void;
   commands: Command[];
 };
-export function HelpV2(t0) {
+const EMPTY_COMMANDS: Command[] = [];
+export function HelpV2(t0: Props) {
   const $ = _c(44);
   const {
     onClose,
@@ -59,15 +60,14 @@ export function HelpV2(t0) {
   if ($[3] !== commands) {
     const builtinNames = builtInCommandNames();
     builtinCommands = commands.filter(cmd => builtinNames.has(cmd.name) && !cmd.isHidden);
-    let t4;
-    if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
-      t4 = [];
-      $[7] = t4;
+    if (process.env.USER_TYPE === 'ant') {
+      const internalOnlyNames = new Set(INTERNAL_ONLY_COMMANDS.map(_ => _.name));
+      builtinCommands = builtinCommands.filter(cmd => !internalOnlyNames.has(cmd.name));
+      antOnlyCommands = commands.filter(cmd => internalOnlyNames.has(cmd.name) && !cmd.isHidden);
     } else {
-      t4 = $[7];
+      antOnlyCommands = EMPTY_COMMANDS;
     }
-    antOnlyCommands = t4;
-    t3 = commands.filter(cmd_2 => !builtinNames.has(cmd_2.name) && !cmd_2.isHidden);
+    t3 = commands.filter((cmd_2: Command) => !builtinNames.has(cmd_2.name) && !cmd_2.isHidden);
     $[3] = commands;
     $[4] = antOnlyCommands;
     $[5] = builtinCommands;
@@ -112,7 +112,7 @@ export function HelpV2(t0) {
       t6 = $[25];
     }
     tabs.push(t6);
-    if (false && antOnlyCommands.length > 0) {
+    if (process.env.USER_TYPE === 'ant' && antOnlyCommands.length > 0) {
       let t7;
       if ($[26] !== antOnlyCommands || $[27] !== close || $[28] !== columns || $[29] !== maxHeight) {
         t7 = <Tab key="ant-only" title="[ant-only]"><Commands commands={antOnlyCommands} maxHeight={maxHeight} columns={columns} title="Browse ant-only commands:" onCancel={close} /></Tab>;
@@ -139,7 +139,7 @@ export function HelpV2(t0) {
   const t5 = insideModal ? undefined : maxHeight;
   let t6;
   if ($[31] !== tabs) {
-    t6 = <Tabs title={false ? "/help" : `${NET_RUNNER_BRAND.productName} v${MACRO.VERSION}`} color="professionalBlue" defaultTab="general">{tabs}</Tabs>;
+    t6 = <Tabs title={process.env.USER_TYPE === 'ant' ? "/help" : `${NET_RUNNER_BRAND.productName} v${MACRO.VERSION}`} color="professionalBlue" defaultTab="general">{tabs}</Tabs>;
     $[31] = tabs;
     $[32] = t6;
   } else {

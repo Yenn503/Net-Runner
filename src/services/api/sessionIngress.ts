@@ -80,7 +80,7 @@ async function appendSessionLogImpl(
       })
 
       if (response.status === 200 || response.status === 201) {
-        lastUuidMap.set(sessionId, entry.uuid)
+        lastUuidMap.set(sessionId, entry.uuid as UUID)
         logForDebugging(
           `Successfully persisted session log entry for session ${sessionId}`,
         )
@@ -94,7 +94,7 @@ async function appendSessionLogImpl(
         const serverLastUuid = response.headers['x-last-uuid']
         if (serverLastUuid === entry.uuid) {
           // Our entry IS the last entry on server - it was stored successfully previously
-          lastUuidMap.set(sessionId, entry.uuid)
+          lastUuidMap.set(sessionId, entry.uuid as UUID)
           logForDebugging(
             `Session entry ${entry.uuid} already present on server, recovering from stale state`,
           )
@@ -232,7 +232,7 @@ export async function getSessionLogs(
     // Update our lastUuid to the last entry's UUID
     const lastEntry = logs.at(-1)
     if (lastEntry && 'uuid' in lastEntry && lastEntry.uuid) {
-      lastUuidMap.set(sessionId, lastEntry.uuid)
+      lastUuidMap.set(sessionId, lastEntry.uuid as UUID)
     }
   }
 
@@ -492,8 +492,14 @@ function findLastUuid(logs: Entry[] | null): UUID | undefined {
   if (!logs) {
     return undefined
   }
-  const entry = logs.findLast(e => 'uuid' in e && e.uuid)
-  return entry && 'uuid' in entry ? (entry.uuid as UUID) : undefined
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const entry = logs[i]
+    if (entry && 'uuid' in entry && entry.uuid) {
+      return entry.uuid as UUID
+    }
+  }
+
+  return undefined
 }
 
 /**

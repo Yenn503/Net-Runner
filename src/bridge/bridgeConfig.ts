@@ -36,7 +36,7 @@ export function getBridgeBaseUrlOverride(): string | undefined {
  * keychain. Undefined means "not logged in".
  */
 export function getBridgeAccessToken(): string | undefined {
-  return getBridgeTokenOverride() ?? getClaudeAIOAuthTokens()?.accessToken
+  return getBridgeTokenOverride() ?? getClaudeAIOAuthTokens()?.accessToken ?? undefined
 }
 
 /**

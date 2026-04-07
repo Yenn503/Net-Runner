@@ -4,6 +4,8 @@ Net-Runner runs locally first, but some optional features still depend on hosted
 
 This document defines the retained service contracts so future updates can replace, self-host, or remove them cleanly.
 
+For the current OSS repository, these hosted surfaces should be treated as **optional integration debt**, not as part of the default supported runtime. The default supported path remains local CLI + local-first MCP. Hosted assistant-session flows, the direct-connect session server, and the shipped SSH remote implementation are not bundled as stable OSS runtime paths in this snapshot.
+
 ## Rule
 
 Target state:
@@ -188,13 +190,14 @@ These do not require hosted services:
 - engagement state under `.netrunner/`
 - evidence ledger and reports
 - specialist-agent orchestration
-- optional coordinator mode
+- experimental coordinator-mode surfaces
 - plan/explore/verification built-ins
 - skills-first execution
 - shell, file, and local web tooling
 - local provider connections and OpenAI-compatible providers
 - project memory and agent memory
 - local team memory files
+- pilot agent teams / swarm features when explicitly enabled
 - relevant-memory retrieval (auto memory + `.netrunner/memory/agents/`)
 - session-memory summarization for long conversations
 - background memory consolidation (`autoDream`)

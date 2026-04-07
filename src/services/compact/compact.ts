@@ -1,4 +1,5 @@
 import { feature } from 'bun:bundle'
+import type { BetaRawMessageStreamEvent } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
 import type { UUID } from 'crypto'
 import uniqBy from 'lodash-es/uniqBy.js'
 
@@ -87,6 +88,33 @@ import {
   tokenCountFromLastAPIResponse,
   tokenCountWithEstimation,
 } from '../../utils/tokens.js'
+
+function isRawMessageStreamEvent(
+  event: unknown,
+): event is BetaRawMessageStreamEvent {
+  return typeof event === 'object' && event !== null && 'type' in event
+}
+
+function findLastCompactBoundaryIndex(messages: Message[]): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (isCompactBoundaryMessage(messages[i]!)) {
+      return i
+    }
+  }
+
+  return -1
+}
+
+function findLastNonProgressUuid(messages: Message[]): UUID | undefined {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message?.type !== 'progress' && message?.uuid) {
+      return message.uuid as UUID
+    }
+  }
+
+  return undefined
+}
 import {
   extractDiscoveredToolNames,
   isToolSearchEnabled,
@@ -598,7 +626,7 @@ export async function compactConversation(
     const boundaryMarker = createCompactBoundaryMessage(
       isAutoCompact ? 'auto' : 'manual',
       preCompactTokenCount ?? 0,
-      messages.at(-1)?.uuid,
+      messages.at(-1)?.uuid as UUID | undefined,
     )
     // Carry loaded-tool state — the summary doesn't preserve tool_reference
     // blocks, so the post-compact schema filter needs this to keep sending
@@ -1008,9 +1036,8 @@ export async function partialCompactConversation(
     // a logicalParentUuid pointing at one. Both directions skip them.
     const lastPreCompactUuid =
       direction === 'up_to'
-        ? allMessages.slice(0, pivotIndex).findLast(m => m.type !== 'progress')
-            ?.uuid
-        : messagesToKeep.at(-1)?.uuid
+        ? findLastNonProgressUuid(allMessages.slice(0, pivotIndex))
+        : (messagesToKeep.at(-1)?.uuid as UUID | undefined)
     const boundaryMarker = createCompactBoundaryMessage(
       'manual',
       preCompactTokenCount ?? 0,
@@ -1082,7 +1109,7 @@ export async function partialCompactConversation(
     return {
       boundaryMarker: annotateBoundaryWithPreservedSegment(
         boundaryMarker,
-        anchorUuid,
+        anchorUuid as UUID,
         messagesToKeep,
       ),
       summaryMessages,
@@ -1333,6 +1360,7 @@ async function streamCompactSummary({
         if (
           !hasStartedStreaming &&
           event.type === 'stream_event' &&
+          isRawMessageStreamEvent(event.event) &&
           event.event.type === 'content_block_start' &&
           event.event.content_block.type === 'text'
         ) {
@@ -1342,6 +1370,7 @@ async function streamCompactSummary({
 
         if (
           event.type === 'stream_event' &&
+          isRawMessageStreamEvent(event.event) &&
           event.event.type === 'content_block_delta' &&
           event.event.delta.type === 'text_delta'
         ) {

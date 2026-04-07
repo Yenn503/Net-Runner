@@ -11,6 +11,7 @@ import { getSettingSourceName, type SettingSource } from '../utils/settings/cons
 import { updateSettingsForSource } from '../utils/settings/settings.js';
 import { getEnvironmentSelectionInfo } from '../utils/teleport/environmentSelection.js';
 import type { EnvironmentResource } from '../utils/teleport/environments.js';
+import type { OptionWithDescription } from './CustomSelect/select.js';
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js';
 import { Select } from './CustomSelect/select.js';
 import { Byline } from './design-system/Byline.js';
@@ -23,25 +24,41 @@ type Props = {
   onDone: (message?: string) => void;
 };
 type LoadingState = 'loading' | 'updating' | null;
-export function RemoteEnvironmentDialog(t0) {
+type EnvironmentOption = OptionWithDescription<string>;
+type EnvironmentLabelProps = {
+  environment: EnvironmentResource;
+};
+type SingleEnvironmentContentProps = {
+  environment: EnvironmentResource;
+  onDone: (message?: string) => void;
+};
+type MultipleEnvironmentsContentProps = {
+  environments: EnvironmentResource[];
+  selectedEnvironment: EnvironmentResource;
+  selectedEnvironmentSource: SettingSource | null;
+  loadingState: LoadingState;
+  onSelect: (value: string) => void;
+  onCancel: () => void;
+};
+export function RemoteEnvironmentDialog(t0: Props) {
   const $ = _c(27);
   const {
     onDone
   } = t0;
-  const [loadingState, setLoadingState] = useState("loading");
-  let t1;
+  const [loadingState, setLoadingState] = useState<LoadingState>("loading");
+  let t1: EnvironmentResource[];
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = [];
     $[0] = t1;
   } else {
     t1 = $[0];
   }
-  const [environments, setEnvironments] = useState(t1);
-  const [selectedEnvironment, setSelectedEnvironment] = useState(null);
-  const [selectedEnvironmentSource, setSelectedEnvironmentSource] = useState(null);
-  const [error, setError] = useState(null);
+  const [environments, setEnvironments] = useState<EnvironmentResource[]>(t1);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentResource | null>(null);
+  const [selectedEnvironmentSource, setSelectedEnvironmentSource] = useState<SettingSource | null>(null);
+  const [error, setError] = useState<string | null>(null);
   let t2;
-  let t3;
+  let t3: [];
   if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
     t2 = () => {
       let cancelled = false;
@@ -82,13 +99,13 @@ export function RemoteEnvironmentDialog(t0) {
   useEffect(t2, t3);
   let t4;
   if ($[3] !== environments || $[4] !== onDone) {
-    t4 = function handleSelect(value) {
+    t4 = function handleSelect(value: string) {
       if (value === "cancel") {
         onDone();
         return;
       }
       setLoadingState("updating");
-      const selectedEnv = environments.find(env => env.environment_id === value);
+      const selectedEnv = environments.find((env: EnvironmentResource) => env.environment_id === value);
       if (!selectedEnv) {
         onDone("Error: Selected environment not found");
         return;
@@ -190,7 +207,7 @@ export function RemoteEnvironmentDialog(t0) {
   }
   return t5;
 }
-function EnvironmentLabel(t0) {
+function EnvironmentLabel(t0: EnvironmentLabelProps) {
   const $ = _c(7);
   const {
     environment
@@ -222,7 +239,7 @@ function EnvironmentLabel(t0) {
   }
   return t3;
 }
-function SingleEnvironmentContent(t0) {
+function SingleEnvironmentContent(t0: SingleEnvironmentContentProps) {
   const $ = _c(6);
   const {
     environment,
@@ -257,7 +274,7 @@ function SingleEnvironmentContent(t0) {
   }
   return t3;
 }
-function MultipleEnvironmentsContent(t0) {
+function MultipleEnvironmentsContent(t0: MultipleEnvironmentsContentProps) {
   const $ = _c(18);
   const {
     environments,
@@ -331,7 +348,7 @@ function MultipleEnvironmentsContent(t0) {
   }
   return t7;
 }
-function _temp(env) {
+function _temp(env: EnvironmentResource): EnvironmentOption {
   return {
     label: <Text>{env.name} <Text dimColor={true}>({env.environment_id})</Text></Text>,
     value: env.environment_id

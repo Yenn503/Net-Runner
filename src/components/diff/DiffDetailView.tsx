@@ -1,7 +1,7 @@
 import { c as _c } from "react-compiler-runtime";
 import type { StructuredPatchHunk } from 'diff';
 import { resolve } from 'path';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { Box, Text } from '../../ink.js';
 import { getCwd } from '../../utils/cwd.js';
@@ -16,13 +16,23 @@ type Props = {
   isTruncated?: boolean;
   isUntracked?: boolean;
 };
+type StructuredDiffComponentProps = {
+  patch: StructuredPatchHunk;
+  dim: boolean;
+  filePath: string;
+  firstLine: string | null;
+  fileContent?: string;
+  width: number;
+  skipHighlighting?: boolean;
+};
+const TypedStructuredDiff = StructuredDiff as React.ComponentType<StructuredDiffComponentProps>;
 
 /**
  * Displays the diff content for a single file.
  * Uses StructuredDiff for word-level diffing and syntax highlighting.
  * No scrolling - renders all lines (max 400 due to parsing limits).
  */
-export function DiffDetailView(t0) {
+export function DiffDetailView(t0: Props) {
   const $ = _c(53);
   const {
     filePath,
@@ -240,7 +250,7 @@ export function DiffDetailView(t0) {
   }
   let t6;
   if ($[39] !== columns || $[40] !== fileContent || $[41] !== filePath || $[42] !== firstLine || $[43] !== hunks) {
-    t6 = hunks.length === 0 ? <Text dimColor={true}>No diff content</Text> : hunks.map((hunk, index) => <StructuredDiff key={index} patch={hunk} filePath={filePath} firstLine={firstLine} fileContent={fileContent} dim={false} width={columns - 2 - 2} />);
+    t6 = hunks.length === 0 ? <Text dimColor={true}>No diff content</Text> : hunks.map((hunk: StructuredPatchHunk, index: number) => <TypedStructuredDiff key={index} patch={hunk} filePath={filePath} firstLine={firstLine} fileContent={fileContent} dim={false} width={columns - 2 - 2} />);
     $[39] = columns;
     $[40] = fileContent;
     $[41] = filePath;

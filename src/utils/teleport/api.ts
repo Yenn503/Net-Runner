@@ -183,7 +183,7 @@ export async function prepareApiRequest(): Promise<{
   orgUUID: string
 }> {
   const accessToken = getClaudeAIOAuthTokens()?.accessToken
-  if (accessToken === undefined) {
+  if (!accessToken) {
     throw new Error(
       'Net-Runner web sessions require authentication with a Claude.ai account. API key authentication is not sufficient. Please run /login to authenticate, or check your authentication status with /status.',
     )

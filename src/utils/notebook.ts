@@ -38,6 +38,13 @@ function processOutputText(text: string | string[] | undefined): string {
   return truncatedContent
 }
 
+function getPlainTextOutput(
+  data: Record<string, unknown> | undefined,
+): string | string[] | undefined {
+  const text = data?.['text/plain']
+  return typeof text === 'string' || Array.isArray(text) ? text : undefined
+}
+
 function extractImage(
   data: Record<string, unknown>,
 ): NotebookOutputImage | undefined {
@@ -67,7 +74,7 @@ function processOutput(output: NotebookCellOutput) {
     case 'display_data':
       return {
         output_type: output.output_type,
-        text: processOutputText(output.data?.['text/plain']),
+        text: processOutputText(getPlainTextOutput(output.data)),
         image: output.data && extractImage(output.data),
       }
     case 'error':

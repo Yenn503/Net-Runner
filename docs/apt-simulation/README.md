@@ -15,6 +15,7 @@ The APT Simulation subsystem enables red teams to simulate realistic Advanced Pe
 - **10 simulation workflows** ready to use, covering 7+ industry sectors
 - **13 industry threat profiles** mapping sectors to relevant threat actors
 - **172 MITRE ATT&CK technique definitions** in the technique library
+- **115 unique MITRE ATT&CK techniques currently referenced** across APT group mappings
 - **Sources**: Every group profile links to MITRE ATT&CK group pages, CISA advisories, Microsoft threat intel, and Mandiant reports
 
 ---

@@ -82,14 +82,17 @@ export function CoordinatorTaskPanel(): React.ReactNode {
  */
 export function useCoordinatorTaskCount() {
   const tasks = useAppState(_temp);
-  let t0;
-  t0 = 0;
-  return t0;
+  return getVisibleAgentTasks(tasks).length;
 }
-function _temp(s) {
+function _temp(s: AppState) {
   return s.tasks;
 }
-function MainLine(t0) {
+type MainLineProps = {
+  isSelected: boolean;
+  isViewed: boolean;
+  onClick: () => void;
+};
+function MainLine(t0: MainLineProps) {
   const $ = _c(10);
   const {
     isSelected,
@@ -140,7 +143,7 @@ type AgentLineProps = {
   isViewed?: boolean;
   onClick?: () => void;
 };
-function AgentLine(t0) {
+function AgentLine(t0: AgentLineProps) {
   const $ = _c(32);
   const {
     task,

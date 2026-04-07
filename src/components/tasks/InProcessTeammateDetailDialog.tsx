@@ -1,7 +1,8 @@
 import { c as _c } from "react-compiler-runtime";
-import React, { useMemo } from 'react';
+import React from 'react';
 import type { DeepImmutable } from 'src/types/utils.js';
 import { useElapsedTime } from '../../hooks/useElapsedTime.js';
+import type { ExitState } from '../../hooks/useExitOnCtrlCDWithKeybindings.js';
 import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import { Box, Text, useTheme } from '../../ink.js';
 import { useKeybindings } from '../../keybindings/useKeybinding.js';
@@ -22,7 +23,8 @@ type Props = {
   onBack?: () => void;
   onForeground?: () => void;
 };
-export function InProcessTeammateDetailDialog(t0) {
+type TeammateRecentActivity = NonNullable<NonNullable<InProcessTeammateTaskState['progress']>['recentActivities']>[number];
+export function InProcessTeammateDetailDialog(t0: Props) {
   const $ = _c(63);
   const {
     teammate,
@@ -63,7 +65,7 @@ export function InProcessTeammateDetailDialog(t0) {
   useKeybindings(t2, t3);
   let t4;
   if ($[4] !== onBack || $[5] !== onDone || $[6] !== onForeground || $[7] !== onKill || $[8] !== teammate.status) {
-    t4 = e => {
+    t4 = (e: KeyboardEvent) => {
       if (e.key === " ") {
         e.preventDefault();
         onDone();
@@ -195,7 +197,7 @@ export function InProcessTeammateDetailDialog(t0) {
   const subtitle = t15;
   let t16;
   if ($[37] !== onBack || $[38] !== onForeground || $[39] !== onKill || $[40] !== teammate.status) {
-    t16 = exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>{onBack && <KeyboardShortcutHint shortcut={"\u2190"} action="go back" />}<KeyboardShortcutHint shortcut="Esc/Enter/Space" action="close" />{teammate.status === "running" && onKill && <KeyboardShortcutHint shortcut="x" action="stop" />}{teammate.status === "running" && onForeground && <KeyboardShortcutHint shortcut="f" action="foreground" />}</Byline>;
+    t16 = (exitState: ExitState) => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>{onBack && <KeyboardShortcutHint shortcut={"\u2190"} action="go back" />}<KeyboardShortcutHint shortcut="Esc/Enter/Space" action="close" />{teammate.status === "running" && onKill && <KeyboardShortcutHint shortcut="x" action="stop" />}{teammate.status === "running" && onForeground && <KeyboardShortcutHint shortcut="f" action="foreground" />}</Byline>;
     $[37] = onBack;
     $[38] = onForeground;
     $[39] = onKill;
@@ -206,7 +208,8 @@ export function InProcessTeammateDetailDialog(t0) {
   }
   let t17;
   if ($[42] !== teammate.progress || $[43] !== teammate.status || $[44] !== theme) {
-    t17 = teammate.status === "running" && teammate.progress?.recentActivities && teammate.progress.recentActivities.length > 0 && <Box flexDirection="column"><Text bold={true} dimColor={true}>Progress</Text>{teammate.progress.recentActivities.map((activity_0, i) => <Text key={i} dimColor={i < teammate.progress.recentActivities.length - 1} wrap="truncate-end">{i === teammate.progress.recentActivities.length - 1 ? "\u203A " : "  "}{renderToolActivity(activity_0, tools, theme)}</Text>)}</Box>;
+    const recentActivities = teammate.progress?.recentActivities;
+    t17 = teammate.status === "running" && recentActivities && recentActivities.length > 0 && <Box flexDirection="column"><Text bold={true} dimColor={true}>Progress</Text>{recentActivities.map((activity_0: TeammateRecentActivity, i: number) => <Text key={i} dimColor={i < recentActivities.length - 1} wrap="truncate-end">{i === recentActivities.length - 1 ? "\u203A " : "  "}{renderToolActivity(activity_0, tools, theme)}</Text>)}</Box>;
     $[42] = teammate.progress;
     $[43] = teammate.status;
     $[44] = theme;

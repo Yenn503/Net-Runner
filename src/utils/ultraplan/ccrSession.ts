@@ -23,6 +23,36 @@ const POLL_INTERVAL_MS = 3000
 // at any nonzero 5xx rate one blip would kill the run.
 const MAX_CONSECUTIVE_FAILURES = 5
 
+function getAssistantBlocks(message: SDKMessage): ToolUseBlock[] {
+  const content = (message as { message?: { content?: unknown } }).message?.content
+  if (!Array.isArray(content)) {
+    return []
+  }
+
+  return content.filter(
+    (block): block is ToolUseBlock =>
+      block !== null &&
+      typeof block === 'object' &&
+      'type' in block &&
+      block.type === 'tool_use',
+  )
+}
+
+function getUserToolResults(message: SDKMessage): ToolResultBlockParam[] {
+  const content = (message as { message?: { content?: unknown } }).message?.content
+  if (!Array.isArray(content)) {
+    return []
+  }
+
+  return content.filter(
+    (block): block is ToolResultBlockParam =>
+      block !== null &&
+      typeof block === 'object' &&
+      'type' in block &&
+      block.type === 'tool_result',
+  )
+}
+
 export type PollFailReason =
   | 'terminated'
   | 'timeout_pending'
@@ -94,27 +124,28 @@ export class ExitPlanModeScanner {
    * the remote is showing the approval dialog in the browser.
    */
   get hasPendingPlan(): boolean {
-    const id = this.exitPlanCalls.findLast(c => !this.rejectedIds.has(c))
+    let id: string | undefined
+    for (let i = this.exitPlanCalls.length - 1; i >= 0; i--) {
+      const candidate = this.exitPlanCalls[i]
+      if (candidate && !this.rejectedIds.has(candidate)) {
+        id = candidate
+        break
+      }
+    }
     return id !== undefined && !this.results.has(id)
   }
 
   ingest(newEvents: SDKMessage[]): ScanResult {
     for (const m of newEvents) {
       if (m.type === 'assistant') {
-        for (const block of m.message.content) {
-          if (block.type !== 'tool_use') continue
-          const tu = block as ToolUseBlock
+        for (const tu of getAssistantBlocks(m)) {
           if (tu.name === EXIT_PLAN_MODE_V2_TOOL_NAME) {
             this.exitPlanCalls.push(tu.id)
           }
         }
       } else if (m.type === 'user') {
-        const content = m.message.content
-        if (!Array.isArray(content)) continue
-        for (const block of content) {
-          if (block.type === 'tool_result') {
-            this.results.set(block.tool_use_id, block)
-          }
+        for (const block of getUserToolResults(m)) {
+          this.results.set(block.tool_use_id, block)
         }
       } else if (m.type === 'result' && m.subtype !== 'success') {
         // result(success) fires after EVERY CCR turn

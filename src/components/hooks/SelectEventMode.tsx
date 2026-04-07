@@ -15,6 +15,7 @@ import type { HookEventMetadata } from 'src/utils/hooks/hooksConfigManager.js';
 import { Box, Link, Text } from '../../ink.js';
 import { plural } from '../../utils/stringUtils.js';
 import { Select } from '../CustomSelect/select.js';
+import type { OptionWithDescription } from '../CustomSelect/select.js';
 import { Dialog } from '../design-system/Dialog.js';
 type Props = {
   hookEventMetadata: Record<HookEvent, HookEventMetadata>;
@@ -24,7 +25,7 @@ type Props = {
   onSelectEvent: (event: HookEvent) => void;
   onCancel: () => void;
 };
-export function SelectEventMode(t0) {
+export function SelectEventMode(t0: Props) {
   const $ = _c(23);
   const {
     hookEventMetadata,
@@ -60,8 +61,8 @@ export function SelectEventMode(t0) {
   }
   let t4;
   if ($[5] !== onSelectEvent) {
-    t4 = value => {
-      onSelectEvent(value as HookEvent);
+    t4 = (value: HookEvent) => {
+      onSelectEvent(value);
     };
     $[5] = onSelectEvent;
     $[6] = t4;
@@ -78,9 +79,9 @@ export function SelectEventMode(t0) {
   }
   let t6;
   if ($[9] !== hooksByEvent || $[10] !== t5) {
-    t6 = t5.map(t7 => {
+    t6 = (t5 as [HookEvent, HookEventMetadata][]).map((t7): OptionWithDescription<HookEvent> => {
       const [name, metadata] = t7;
-      const count = hooksByEvent[name as HookEvent] || 0;
+      const count = hooksByEvent[name] || 0;
       return {
         label: count > 0 ? <Text>{name} <Text color="suggestion">({count})</Text></Text> : name,
         value: name,

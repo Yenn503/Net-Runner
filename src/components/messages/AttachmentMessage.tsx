@@ -1,10 +1,10 @@
 import { c as _c } from "react-compiler-runtime";
 // biome-ignore-all assist/source/organizeImports: ANT-ONLY import markers must not be reordered
 import React, { useMemo } from 'react';
-import { Ansi, Box, Text } from '../../ink.js';
+import { Ansi, Box, Text, type TextProps } from '../../ink.js';
 import type { Attachment } from 'src/utils/attachments.js';
 import type { NullRenderingAttachmentType } from './nullRenderingAttachments.js';
-import { useAppState } from '../../state/AppState.js';
+import { useAppState, type AppState } from '../../state/AppState.js';
 import { getDisplayPath } from 'src/utils/file.js';
 import { formatFileSize } from 'src/utils/format.js';
 import { MessageResponse } from '../MessageResponse.js';
@@ -27,11 +27,24 @@ import { CtrlOToExpand } from '../CtrlOToExpand.js';
 import { FilePathLink } from '../FilePathLink.js';
 import { feature } from 'bun:bundle';
 import { useSelectedMessageBg } from '../messageActions.js';
+import type { TaskState } from '../../tasks/types.js';
+import { isInProcessTeammateTask } from '../../tasks/InProcessTeammateTask/types.js';
 type Props = {
   addMargin: boolean;
   attachment: Attachment;
   verbose: boolean;
   isTranscriptMode?: boolean;
+};
+type TaskStatusAttachment = Extract<Attachment, {
+  type: 'task_status';
+}>;
+type TaskStatusProps = {
+  attachment: TaskStatusAttachment;
+};
+type LineProps = {
+  dimColor?: boolean;
+  children: React.ReactNode;
+  color?: TextProps['color'];
 };
 export function AttachmentMessage({
   attachment,
@@ -112,8 +125,7 @@ export function AttachmentMessage({
       // turn is still fresh. External users (when this un-gates) just see
       // names — shortId is undefined outside ant builds anyway.
       const names = attachment.skills.map(s => s.shortId ? `${s.name} [${s.shortId}]` : s.name).join(', ');
-      const firstId = attachment.skills[0]?.shortId;
-      const hint = "external" === 'ant' && !isDemoEnv && firstId ? ` · /skill-feedback ${firstId} 1=wrong 2=noisy 3=good [comment]` : '';
+      const hint = '';
       return <Line>
           <Text bold>{attachment.skills.length}</Text> relevant{' '}
           {plural(attachment.skills.length, 'skill')}: {names}
@@ -355,10 +367,7 @@ export function AttachmentMessage({
       return null;
   }
 }
-type TaskStatusAttachment = Extract<Attachment, {
-  type: 'task_status';
-}>;
-function TaskStatusMessage(t0) {
+function TaskStatusMessage(t0: TaskStatusProps) {
   const $ = _c(4);
   const {
     attachment
@@ -387,7 +396,7 @@ function TaskStatusMessage(t0) {
   }
   return t1;
 }
-function GenericTaskStatus(t0) {
+function GenericTaskStatus(t0: TaskStatusProps) {
   const $ = _c(9);
   const {
     attachment
@@ -429,7 +438,7 @@ function GenericTaskStatus(t0) {
   }
   return t4;
 }
-function TeammateTaskStatus(t0) {
+function TeammateTaskStatus(t0: TaskStatusProps) {
   const $ = _c(16);
   const {
     attachment
@@ -437,14 +446,14 @@ function TeammateTaskStatus(t0) {
   const bg = useSelectedMessageBg();
   let t1;
   if ($[0] !== attachment.taskId) {
-    t1 = s => s.tasks[attachment.taskId];
+    t1 = (s: AppState): TaskState | undefined => s.tasks[attachment.taskId];
     $[0] = attachment.taskId;
     $[1] = t1;
   } else {
     t1 = $[1];
   }
   const task = useAppState(t1);
-  if (task?.type !== "in_process_teammate") {
+  if (!isInProcessTeammateTask(task)) {
     let t2;
     if ($[2] !== attachment) {
       t2 = <GenericTaskStatus attachment={attachment} />;
@@ -503,7 +512,7 @@ function TeammateTaskStatus(t0) {
 }
 // We allow setting dimColor to false here to help work around the dim-bold bug.
 // https://github.com/chalk/chalk/issues/290
-function Line(t0) {
+function Line(t0: LineProps) {
   const $ = _c(7);
   const {
     dimColor: t1,

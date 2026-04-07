@@ -26,7 +26,9 @@ red team automation, AI security assessment, LLM security testing
 
 Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment — picking workflows, launching specialist agents, running 153+ red-team tools, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
-The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic — instead of exposing 153 tools as individual MCP definitions (which would consume ~150K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM — GitHub Copilot, Claude Desktop, Cursor — can connect and drive the full harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** framework where MCP calls are essential-only and the real work happens through shell execution, specialist agents, and reusable skill bundles.
+The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic — instead of exposing 153 tools as individual MCP definitions (which would consume ~150K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM — GitHub Copilot, Claude Desktop, Cursor — can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
+
+The current OSS baseline is local-first and type-safe: the repository now typechecks cleanly, the CLI supports direct provider credentials, and the FastMCP server can be run directly from source for red-team-style tool driving, evidence capture, and workflow control.
 
 ---
 
@@ -107,8 +109,8 @@ Six modules that give the LLM runtime adaptive decision-making, formal verificat
 
 These modules operate at two levels:
 
-- **Skill layer** — the engagement lead invokes skills like `/feedback-loop` or `/waf-detection` when the context calls for it
-- **Runtime middleware** — tool failures, WAF detection, and evidence ingestion happen **automatically** during execution. The middleware classifies failures, fingerprints WAFs on first HTTP contact, syncs findings into the knowledge graph, and persists intelligence state to `.netrunner/intelligence-state.json` for session continuity
+- **Skill layer** — the engagement lead invokes skills like `/feedback-loop` or `/waf-detection`, but the skill outputs are now **code-backed**. They execute the same TypeScript modules used by the runtime middleware and format live results from engagement state, evidence, and explicit operator input
+- **Runtime middleware** — tool failures, WAF detection, and evidence ingestion happen **automatically** during execution. The middleware classifies failures, fingerprints WAFs on first HTTP contact, syncs findings into the knowledge graph, plans next actions, and persists intelligence state to `.netrunner/intelligence-state.json` for session continuity
 
 Full reference: [Intelligence Engine Docs](docs/intelligence-engine/README.md)
 
@@ -123,10 +125,15 @@ Full reference: [Intelligence Engine Docs](docs/intelligence-engine/README.md)
 
 ```bash
 bun install
+bun run typecheck
 bun run build
 ```
 
 ### 2. Configure model provider
+
+For the open-source build, the primary supported paths are direct provider credentials and local runtimes.
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, Ollama, and the local FastMCP server should work without any hosted Net-Runner web dependency.
+OAuth, hosted connector discovery, remote-session sync, and other Claude-Code-derived first-party service flows are optional and may require infrastructure that is not bundled with this repository.
 
 `ANTHROPIC_API_KEY`
 
@@ -134,6 +141,8 @@ bun run build
 export ANTHROPIC_API_KEY="sk-ant-..."
 node dist/cli.mjs
 ```
+
+If you are using Net-Runner only as an inbound MCP server, you can run `src/mcp/server.ts` without configuring a separate Net-Runner login flow. Provider credentials matter when the CLI itself is acting as the LLM runtime.
 
 `OPENAI_API_KEY`
 
@@ -177,6 +186,27 @@ Assess https://target.example. Start with recon, map the attack surface, validat
 ```
 
 </details>
+
+---
+
+## 🧭 OSS Runtime Status
+
+The strongest supported path in this repository is **local-first**:
+
+- **CLI runtime** — local sessions with direct provider credentials or local runtimes such as Ollama
+- **Inbound MCP** — the FastMCP server in `src/mcp/server.ts`
+- **Outbound MCP** — external MCP servers configured through `.mcp.json` or `net-runner mcp ...`
+- **Security harness core** — workflows, specialist agents, evidence capture, intelligence modules, and APT simulation
+- **Agent teams / swarm** — available as a pilot for external builds through `agentTeamsEnabled`, `NETRUNNER_EXPERIMENTAL_AGENT_TEAMS=1`, or `--agent-teams`
+
+Not bundled as stable OSS runtime paths in this snapshot:
+
+- **Assistant remote sessions** — hosted assistant session flows are not supported in the OSS build
+- **Direct-connect session server** — `net-runner server` is present as a CLI surface but exits unsupported in this repository
+- **SSH remote sessions** — the CLI surface exists, but the shipped OSS snapshot does not include the remote transport implementation
+- **Coordinator worker mode** — coordinator-mode code paths still exist, but the worker-agent path should be treated as experimental/incomplete in OSS
+
+If you already have a compatible `cc://` endpoint from another environment, the client-side attach plumbing exists. This repository does **not** ship that session server itself.
 
 ---
 
@@ -231,6 +261,7 @@ The recon stack includes cloud and identity enumeration tools: `cloud_enum`, `GH
 ```text
 .netrunner/
 ├── engagement.json
+├── intelligence-state.json
 ├── run-state.json
 ├── evidence/
 │   └── ledger.jsonl
@@ -250,6 +281,28 @@ Everything the LLM finds, logs, and produces stays here. Agents store their memo
 ## 🔌 MCP Integration
 
 Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat.
+
+For this repository, the default expectation is **local-first MCP**:
+
+- connect an external MCP client to `src/mcp/server.ts`
+- or run the Net-Runner CLI and let it connect to external MCP servers you configure
+
+Hosted OAuth-backed connector discovery and Claude.ai-managed MCP surfaces still exist in parts of the codebase, but they are optional hosted integrations rather than required local runtime dependencies for the OSS workflow.
+
+For OSS use, keep the setup model simple:
+
+- the **CLI runtime** can use direct provider credentials such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, Bedrock, Vertex, Foundry, or local runtimes
+- the **FastMCP server** does not need a separate Net-Runner-hosted account flow to expose the 8-tool local harness
+- hosted connector discovery and Claude.ai-managed MCP integrations remain optional extras, not prerequisites for local red-team usage
+
+`nr_exec` remains the workhorse, but now supports:
+
+- **Composite execution** — pass a batch of commands through the same tool instead of expanding the MCP surface
+- **Summary-first returns** — batch mode can return concise per-command summaries to reduce context burn
+- **Artifact offload** — oversized output is saved to `.netrunner/artifacts/` and linked back into the evidence ledger
+- **Runtime intelligence hooks** — HTTP responses, tool failures, and blind-finding workflows feed the intelligence engine automatically
+- **Context budget warnings** — the server tracks cumulative tool-result volume per MCP session and warns when the transcript is getting expensive
+- **Operator-grade runtime logs** — MCP server terminals now surface command execution, artifact saves, evidence writes, intelligence triggers, and context-budget snapshots in real time
 
 ### Tool surface (8 tools, `nr_*` prefix)
 
@@ -377,7 +430,7 @@ Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
 
 ---
 
-## � Documentation
+## 📚 Documentation
 
 - [Workflow Overview](docs/workflows/overview.md)
 - [Research Alignment](docs/project/research-alignment.md)

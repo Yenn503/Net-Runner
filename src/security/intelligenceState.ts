@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'fs/promises'
-import { dirname } from 'path'
+import { dirname, relative, resolve } from 'path'
 import { getIntelligenceStatePath } from './paths.js'
 import type { WafType } from './wafDetection.js'
 
@@ -63,11 +63,21 @@ export function createDefaultIntelligenceState(): IntelligenceState {
   }
 }
 
+function getSafeIntelligenceStatePath(cwd: string): string {
+  const rootDir = resolve(cwd)
+  const intelligenceStatePath = resolve(getIntelligenceStatePath(cwd))
+  const relativePath = relative(rootDir, intelligenceStatePath)
+  if (relativePath.startsWith('..')) {
+    throw new Error('Resolved intelligence state path escaped cwd')
+  }
+  return intelligenceStatePath
+}
+
 export async function readIntelligenceState(
   cwd: string,
 ): Promise<IntelligenceState | null> {
   try {
-    const raw = await readFile(getIntelligenceStatePath(cwd), 'utf8')
+    const raw = await readFile(getSafeIntelligenceStatePath(cwd), 'utf8')
     return JSON.parse(raw) as IntelligenceState
   } catch {
     return null
@@ -82,7 +92,7 @@ export async function writeIntelligenceState(
     ...state,
     updatedAt: new Date().toISOString(),
   }
-  const path = getIntelligenceStatePath(cwd)
+  const path = getSafeIntelligenceStatePath(cwd)
   await mkdir(dirname(path), { recursive: true })
   await writeFile(path, JSON.stringify(next, null, 2), 'utf8')
 }
@@ -132,4 +142,23 @@ export async function updateKnowledgeGraphStats(
   const state = await ensureIntelligenceState(cwd)
   state.knowledgeGraphStats = stats
   await writeIntelligenceState(cwd, state)
+}
+
+export async function incrementPendingBlindVerifications(
+  cwd: string,
+  count = 1,
+): Promise<void> {
+  const state = await ensureIntelligenceState(cwd)
+  state.pendingBlindVerifications = Math.max(
+    0,
+    state.pendingBlindVerifications + count,
+  )
+  await writeIntelligenceState(cwd, state)
+}
+
+export async function decrementPendingBlindVerifications(
+  cwd: string,
+  count = 1,
+): Promise<void> {
+  await incrementPendingBlindVerifications(cwd, -count)
 }

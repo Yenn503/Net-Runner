@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Link, Text } from '../ink.js';
 import { type AwsAuthStatus, AwsAuthStatusManager } from '../utils/awsAuthStatusManager.js';
 const URL_RE = /https?:\/\/\S+/;
+const EMPTY_DEPENDENCIES: [] = [];
 export function AwsAuthStatusBox() {
   const $ = _c(11);
   let t0;
@@ -20,7 +21,7 @@ export function AwsAuthStatusBox() {
       const unsubscribe = AwsAuthStatusManager.getInstance().subscribe(setStatus);
       return unsubscribe;
     };
-    t2 = [];
+    t2 = EMPTY_DEPENDENCIES;
     $[1] = t1;
     $[2] = t2;
   } else {
@@ -68,7 +69,7 @@ export function AwsAuthStatusBox() {
   }
   return t6;
 }
-function _temp(line, index) {
+function _temp(line: string, index: number) {
   const m = line.match(URL_RE);
   if (!m) {
     return <Text key={index} dimColor={true}>{line}</Text>;
