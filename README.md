@@ -120,84 +120,80 @@ Full reference: [Intelligence Engine Docs](docs/intelligence-engine/README.md)
 
 ## 🚀 Getting Started
 
-<details>
-<summary><strong>Open setup and first run</strong></summary>
+### Prerequisites
 
-### 1. Install and build
+- **[Bun](https://bun.sh)** — install with one command:
+  ```bash
+  curl -fsSL https://bun.sh/install | bash   # macOS / Linux
+  # Windows: powershell -c "irm bun.sh/install.ps1 | iex"
+  ```
+- **Git** — to clone the repo
+
+---
+
+### Step 1 — Clone and install
 
 ```bash
+git clone https://github.com/Yenn503/Net-Runners.git
+cd Net-Runners
 bun install
-bun run typecheck
 bun run build
 ```
 
-### 2. Configure model provider
+---
 
-For the open-source build, the primary supported paths are direct provider credentials and local runtimes.
-`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GITHUB_TOKEN`, Ollama, and the local FastMCP server should work without any hosted Net-Runner web dependency.
-OAuth, hosted connector discovery, remote-session sync, and other Claude-Code-derived first-party service flows are optional and may require infrastructure that is not bundled with this repository.
-
-`ANTHROPIC_API_KEY`
+### Step 2 — Run
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
-node dist/cli.mjs
+bun run dev:profile
 ```
 
-If you are using Net-Runner only as an inbound MCP server, you can run `src/mcp/server.ts` without configuring a separate Net-Runner login flow. Provider credentials matter when the CLI itself is acting as the LLM runtime.
+**That's it.** On the first run, Net-Runner detects that no provider has been configured and launches a built-in setup wizard:
 
-`OPENAI_API_KEY`
-
-```bash
-export OPENAI_API_KEY="sk-..."
-export OPENAI_MODEL="gpt-4o"
-node dist/cli.mjs
+```
+? Select your provider:
+  1. GitHub Models   (free with any GitHub account)
+  2. GitHub Copilot  (your existing Copilot subscription)
+  3. OpenAI
+  4. Google Gemini
+  5. Ollama (local)
 ```
 
-`GEMINI_API_KEY`
+Follow the prompts — it fetches the live model list, lets you pick a model, and saves everything to `.net-runner-profile.json`. Future starts skip the wizard and load straight into the CLI.
 
-```bash
-export GEMINI_API_KEY="AIza..."
-export GEMINI_MODEL="gemini-2.5-pro"
-node dist/cli.mjs
-```
+---
 
-`GITHUB_TOKEN` (GitHub Models)
+### Provider cheat-sheet
 
-```bash
-export NETRUNNER_USE_GITHUB="1"
-export GITHUB_TOKEN="ghp_..."
-export OPENAI_BASE_URL="https://models.github.ai/inference"
-export OPENAI_MODEL="openai/gpt-4.1"
-node dist/cli.mjs
-```
+| Provider | What you need |
+|---|---|
+| **GitHub Models** | A GitHub account — free tier, no credit card |
+| **GitHub Copilot** | An active Copilot subscription (Individual / Business / Enterprise) |
+| **OpenAI** | `OPENAI_API_KEY` from [platform.openai.com](https://platform.openai.com) |
+| **Google Gemini** | `GEMINI_API_KEY` from [aistudio.google.com](https://aistudio.google.com) |
+| **Ollama** | `ollama serve` running locally — no key needed |
 
-Ollama
+---
 
-```bash
-ollama serve
-ollama pull llama3.1:8b
-export OPENAI_BASE_URL="http://localhost:11434/v1"
-export OPENAI_MODEL="llama3.1:8b"
-node dist/cli.mjs
-```
+### Step 3 — Run an assessment
 
-Any OpenAI-compatible API
-
-```bash
-export OPENAI_API_KEY="your-key"
-export OPENAI_BASE_URL="https://your-provider.com/v1"
-export OPENAI_MODEL="your-model-name"
-node dist/cli.mjs
-```
-
-### 3. Run an assessment
+Once you're at the Net-Runner prompt:
 
 ```text
 Assess https://target.example. Start with recon, map the attack surface, validate findings, and capture evidence.
 ```
 
-</details>
+Type `/skills` to see all built-in skills, `/help` for all commands, or `/provider` to switch providers later.
+
+---
+
+### Diagnostics
+
+If something isn't working, run the system doctor:
+
+```bash
+bun run scripts/system-check.ts
+```
 
 ---
 
