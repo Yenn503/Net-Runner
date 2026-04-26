@@ -240,7 +240,8 @@ export function loadProfileFile(options?: ProfileFileLocation): ProfileFile | nu
       parsed.profile !== 'ollama' &&
       parsed.profile !== 'codex' &&
       parsed.profile !== 'gemini' &&
-      parsed.profile !== 'github'
+      parsed.profile !== 'github' &&
+      parsed.profile !== 'copilot'
     ) {
       return null
     }
