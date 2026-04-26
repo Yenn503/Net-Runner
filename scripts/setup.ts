@@ -24,6 +24,7 @@ import {
   fetchCopilotModels,
   isCopilotChatModel,
   pollForAccessToken,
+  probeCopilotModel,
   startDeviceCodeFlow,
   type CopilotModelEntry,
 } from './copilot-auth.ts'
@@ -429,7 +430,32 @@ async function main(): Promise<void> {
       token = await getToken(rl, preset)
     }
 
-    const model = await getModel(rl, preset, provider, token, copilotModels)
+    let model = await getModel(rl, preset, provider, token, copilotModels)
+
+    // For Copilot, validate that the picked model is actually entitled to
+    // the user's subscription. The catalog returns models the user can't
+    // necessarily use; only a real /chat/completions request can confirm
+    // entitlement. Loop until the user picks something that works.
+    if (provider === 'copilot' && copilotAuth) {
+      while (true) {
+        console.log(dim(`Verifying ${bold(model)} is entitled to your subscription ...`))
+        const probe = await probeCopilotModel(copilotAuth.copilotToken, model)
+        if (probe.ok) {
+          console.log(green(`✔ ${model} is available on your subscription.`))
+          break
+        }
+        console.log(red(`✘ ${model} rejected by Copilot: ${probe.reason}`))
+        if (probe.status === 400 || probe.status === 403 || probe.status === 404) {
+          console.log(yellow('  Your subscription tier likely does not include this model. Pick a different one.'))
+          model = await getModel(rl, preset, provider, token, copilotModels)
+          continue
+        }
+        // Non-entitlement error (network, 5xx, etc.). Save anyway and let the
+        // user iterate later if it's transient.
+        console.log(yellow('  Treating this as transient and saving the profile anyway. Re-run setup if launch fails.'))
+        break
+      }
+    }
 
     if (provider !== 'copilot' && preset.tokenVar && !token) {
       console.log()

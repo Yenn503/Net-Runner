@@ -94,6 +94,54 @@ export function isCopilotChatModel(m: CopilotModelEntry): boolean {
   return true
 }
 
+/**
+ * Send a minimal /chat/completions probe to verify a model is entitled to
+ * the current subscription. Copilot's catalog returns models the user is
+ * not actually entitled to use; the only reliable way to know is to ask.
+ *
+ * Resolves to:
+ *   { ok: true } if the model accepts a chat completion
+ *   { ok: false, reason } with the server's error message otherwise
+ *
+ * Uses max_tokens: 1 to keep the probe cheap (single token roundtrip).
+ */
+export async function probeCopilotModel(
+  copilotToken: string,
+  modelId: string,
+): Promise<{ ok: true } | { ok: false, status: number, reason: string }> {
+  try {
+    const res = await fetch(`${COPILOT_API_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${copilotToken}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'GitHubCopilotChat/0.26.7',
+        'Editor-Version': 'vscode/1.99.3',
+        'Editor-Plugin-Version': 'copilot-chat/0.26.7',
+        'Copilot-Integration-Id': 'vscode-chat',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+        stream: false,
+      }),
+    })
+    if (res.ok) return { ok: true }
+    const body = await safeText(res)
+    let reason = `HTTP ${res.status}`
+    try {
+      const json = JSON.parse(body)
+      reason = json?.error?.message || json?.message || reason
+    } catch {
+      if (body) reason = `${reason}: ${body}`
+    }
+    return { ok: false, status: res.status, reason }
+  } catch (err) {
+    return { ok: false, status: 0, reason: (err as Error).message }
+  }
+}
+
 const JSON_HEADERS = {
   Accept: 'application/json',
   'Content-Type': 'application/json',
