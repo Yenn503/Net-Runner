@@ -171,8 +171,29 @@ async function main(): Promise<void> {
 
   let env: NodeJS.ProcessEnv
   if (profile === null) {
-    env = { ...process.env }
-    console.log('No saved provider profile detected. Launching Net-Runner so the built-in first-run provider walkthrough can configure one.')
+    // No saved profile and no usable env credentials. Run the readline-based
+    // setup script (bypasses the Ink walkthrough's long-paste wrap bug) so
+    // the user lands in a configured state in one shot. After setup writes
+    // .net-runner-profile.json, reload it and continue with the launch.
+    console.log('No saved provider profile detected. Running Net-Runner setup...')
+    const setupCode = await runProcess('bun', ['run', 'scripts/setup.ts'], process.env)
+    if (setupCode !== 0) {
+      console.error('Setup did not complete. Re-run with `bun run setup` and try again.')
+      process.exit(setupCode)
+    }
+    const reloaded = loadProfileFile()
+    if (!reloaded) {
+      console.error('Setup completed but no profile was saved. Re-run with `bun run setup`.')
+      process.exit(1)
+    }
+    profile = reloaded.profile
+    env = await buildLaunchEnv({
+      profile,
+      persisted: reloaded,
+      goal: options.goal,
+      getOllamaChatBaseUrl,
+      resolveOllamaDefaultModel: async () => resolvedOllamaModel || 'llama3.1:8b',
+    })
   } else {
     env = await buildLaunchEnv({
       profile,
