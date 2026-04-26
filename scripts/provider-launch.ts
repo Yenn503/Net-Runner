@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync } from 'node:fs'
+import { resolve as resolvePath } from 'node:path'
 import {
   resolveCodexApiCredentials,
 } from '../src/services/api/providerConfig.js'
@@ -11,8 +11,8 @@ import {
 } from '../src/utils/providerRecommendation.ts'
 import {
   buildLaunchEnv,
+  loadProfileFile,
   selectAutoProfile,
-  type ProfileFile,
   type ProviderProfile,
 } from '../src/utils/providerProfile.ts'
 import {
@@ -48,7 +48,7 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
       continue
     }
 
-    if ((lower === 'auto' || lower === 'openai' || lower === 'ollama' || lower === 'codex' || lower === 'gemini') && requestedProfile === 'auto') {
+    if ((lower === 'auto' || lower === 'openai' || lower === 'ollama' || lower === 'codex' || lower === 'gemini' || lower === 'github') && requestedProfile === 'auto') {
       requestedProfile = lower as ProviderProfile | 'auto'
       continue
     }
@@ -71,20 +71,6 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
     passthroughArgs,
     fast,
     goal,
-  }
-}
-
-function loadPersistedProfile(): ProfileFile | null {
-  const path = resolve(process.cwd(), '.net-runner-profile.json')
-  if (!existsSync(path)) return null
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8')) as ProfileFile
-    if (parsed.profile === 'openai' || parsed.profile === 'ollama' || parsed.profile === 'codex' || parsed.profile === 'gemini') {
-      return parsed
-    }
-    return null
-  } catch {
-    return null
   }
 }
 
@@ -132,6 +118,10 @@ function printSummary(profile: ProviderProfile, env: NodeJS.ProcessEnv): void {
   if (profile === 'gemini') {
     console.log(`GEMINI_MODEL=${env.GEMINI_MODEL}`)
     console.log(`GEMINI_API_KEY_SET=${Boolean(env.GEMINI_API_KEY)}`)
+  } else if (profile === 'github') {
+    console.log(`OPENAI_BASE_URL=${env.OPENAI_BASE_URL}`)
+    console.log(`OPENAI_MODEL=${env.OPENAI_MODEL}`)
+    console.log(`GITHUB_TOKEN_SET=${Boolean(env.GITHUB_TOKEN ?? env.OPENAI_API_KEY)}`)
   } else if (profile === 'codex') {
     console.log(`OPENAI_BASE_URL=${env.OPENAI_BASE_URL}`)
     console.log(`OPENAI_MODEL=${env.OPENAI_MODEL}`)
@@ -147,12 +137,12 @@ async function main(): Promise<void> {
   const options = parseLaunchOptions(process.argv.slice(2))
   const requestedProfile = options.requestedProfile
   if (!requestedProfile) {
-    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
+    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|github|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
     process.exit(1)
   }
 
-  const persisted = loadPersistedProfile()
-  let profile: ProviderProfile
+  const persisted = loadProfileFile()
+  let profile: ProviderProfile | null
   let resolvedOllamaModel: string | null = null
 
   if (requestedProfile === 'auto') {
@@ -162,7 +152,7 @@ async function main(): Promise<void> {
       resolvedOllamaModel = await resolveOllamaDefaultModel(options.goal)
       profile = selectAutoProfile(resolvedOllamaModel)
     } else {
-      profile = 'openai'
+      profile = null
     }
   } else {
     profile = requestedProfile
@@ -179,54 +169,113 @@ async function main(): Promise<void> {
     }
   }
 
-  const env = await buildLaunchEnv({
-    profile,
-    persisted,
-    goal: options.goal,
-    getOllamaChatBaseUrl,
-    resolveOllamaDefaultModel: async () => resolvedOllamaModel || 'llama3.1:8b',
-  })
+  let env: NodeJS.ProcessEnv
+  if (profile === null) {
+    env = { ...process.env }
+    console.log('No saved provider profile detected. Launching Net-Runner so the built-in first-run provider walkthrough can configure one.')
+  } else {
+    env = await buildLaunchEnv({
+      profile,
+      persisted,
+      goal: options.goal,
+      getOllamaChatBaseUrl,
+      resolveOllamaDefaultModel: async () => resolvedOllamaModel || 'llama3.1:8b',
+    })
+  }
+
   if (options.fast) {
     applyFastFlags(env)
   }
 
+  if (
+    profile === 'ollama' &&
+    (persisted?.profile !== 'ollama' || !persisted?.env?.OPENAI_MODEL)
+  ) {
+    // already resolved above
+  }
+
+  // In auto mode (no profile explicitly requested), missing credentials should
+  // fall through to the in-CLI first-run walkthrough rather than fail-fast.
+  // Explicit profile selection (e.g. `dev:github`) keeps the strict gate.
+  const isAutoMode = options.requestedProfile === 'auto'
+  const fallThroughToWalkthrough = (reason: string): void => {
+    console.log(`${reason} Launching the built-in first-run walkthrough instead.`)
+    profile = null
+    env = { ...process.env }
+    if (env.OPENAI_API_KEY === 'SUA_CHAVE') delete env.OPENAI_API_KEY
+  }
+
   if (profile === 'gemini' && !env.GEMINI_API_KEY) {
-    console.error('GEMINI_API_KEY is required for gemini profile. Run: bun run profile:init -- --provider gemini --api-key <key>')
-    process.exit(1)
+    if (isAutoMode) {
+      fallThroughToWalkthrough('No GEMINI_API_KEY detected.')
+    } else {
+      console.error('GEMINI_API_KEY is required for gemini profile. Run: bun run profile:init -- --provider gemini --api-key <key>')
+      process.exit(1)
+    }
+  }
+
+  if (profile === 'github' && !(env.GITHUB_TOKEN || process.env.GH_TOKEN || env.OPENAI_API_KEY)) {
+    if (isAutoMode) {
+      fallThroughToWalkthrough('No GITHUB_TOKEN or GH_TOKEN detected.')
+    } else {
+      console.error('GITHUB_TOKEN or GH_TOKEN is required for github profile. Run: bun run profile:init -- --provider github --api-key <token>')
+      process.exit(1)
+    }
   }
 
   if (profile === 'openai' && (!env.OPENAI_API_KEY || env.OPENAI_API_KEY === 'SUA_CHAVE')) {
-    console.error('OPENAI_API_KEY is required for openai profile and cannot be SUA_CHAVE. Run: bun run profile:init -- --provider openai --api-key <key>')
-    process.exit(1)
+    if (isAutoMode) {
+      fallThroughToWalkthrough('No usable OPENAI_API_KEY detected.')
+    } else {
+      console.error('OPENAI_API_KEY is required for openai profile and cannot be SUA_CHAVE. Run: bun run profile:init -- --provider openai --api-key <key>')
+      process.exit(1)
+    }
   }
 
   if (profile === 'codex') {
     const credentials = resolveCodexApiCredentials(env)
-    if (!credentials.apiKey) {
-      const authHint = credentials.authPath
-        ? ` or make sure ${credentials.authPath} exists`
-        : ''
-      console.error(`CODEX_API_KEY is required for codex profile${authHint}. Run: bun run profile:init -- --provider codex --model codexplan`)
-      process.exit(1)
-    }
-
-    if (!credentials.accountId) {
-      console.error('CHATGPT_ACCOUNT_ID is required for codex profile. Set CHATGPT_ACCOUNT_ID/CODEX_ACCOUNT_ID or use an auth.json that includes it.')
-      process.exit(1)
+    if (!credentials.apiKey || !credentials.accountId) {
+      if (isAutoMode) {
+        fallThroughToWalkthrough('Codex credentials incomplete.')
+      } else if (!credentials.apiKey) {
+        const authHint = credentials.authPath
+          ? ` or make sure ${credentials.authPath} exists`
+          : ''
+        console.error(`CODEX_API_KEY is required for codex profile${authHint}. Run: bun run profile:init -- --provider codex --model codexplan`)
+        process.exit(1)
+      } else {
+        console.error('CHATGPT_ACCOUNT_ID is required for codex profile. Set CHATGPT_ACCOUNT_ID/CODEX_ACCOUNT_ID or use an auth.json that includes it.')
+        process.exit(1)
+      }
     }
   }
 
-  printSummary(profile, env)
-
-  const doctorCode = await runProcess('bun', ['run', 'scripts/system-check.ts'], env)
-  if (doctorCode !== 0) {
-    console.error('Runtime doctor failed. Fix configuration before launching.')
-    process.exit(doctorCode)
+  if (profile !== null) {
+    printSummary(profile, env)
   }
 
-  const buildCode = await runProcess('bun', ['run', 'build'], env)
-  if (buildCode !== 0) {
-    process.exit(buildCode)
+  // Doctor is informational. A failed pre-flight should not block first-run launch —
+  // upstream OpenClaude does not gate on this and the in-CLI walkthrough handles
+  // configuration interactively. Skip entirely when no profile is set so the
+  // walkthrough is the very first thing the user sees.
+  if (profile !== null && process.env.NETRUNNER_SKIP_DOCTOR !== '1') {
+    const doctorCode = await runProcess('bun', ['run', 'scripts/system-check.ts'], env)
+    if (doctorCode !== 0) {
+      console.warn('Runtime doctor reported issues. Continuing launch — set NETRUNNER_SKIP_DOCTOR=1 to silence, or fix configuration if startup fails.')
+    }
+  }
+
+  // Skip the rebuild step when a usable bundle already exists. This makes
+  // repeat launches near-instant and matches the upstream `openclaude`
+  // experience where the binary is already compiled. Force a rebuild with
+  // NETRUNNER_FORCE_BUILD=1 or by deleting dist/cli.mjs.
+  const distEntry = resolvePath(process.cwd(), 'dist/cli.mjs')
+  const needsBuild = process.env.NETRUNNER_FORCE_BUILD === '1' || !existsSync(distEntry)
+  if (needsBuild) {
+    const buildCode = await runProcess('bun', ['run', 'build'], env)
+    if (buildCode !== 0) {
+      process.exit(buildCode)
+    }
   }
 
   const devCode = await runProcess('node', ['dist/cli.mjs', ...options.passthroughArgs], env)

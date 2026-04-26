@@ -7,6 +7,7 @@ import test from 'node:test'
 import {
   buildCodexProfileEnv,
   buildGeminiProfileEnv,
+  buildGithubProfileEnv,
   buildLaunchEnv,
   buildOllamaProfileEnv,
   buildOpenAIProfileEnv,
@@ -145,6 +146,52 @@ test('matching persisted gemini env is reused for gemini launch', async () => {
   assert.equal(env.GEMINI_MODEL, 'gemini-2.5-flash')
   assert.equal(env.GEMINI_API_KEY, 'gem-persisted')
   assert.equal(env.GEMINI_BASE_URL, 'https://example.test/v1beta/openai')
+})
+
+test('matching persisted github env is reused for github launch', async () => {
+  const env = await buildLaunchEnv({
+    profile: 'github',
+    persisted: profile('github', {
+      OPENAI_BASE_URL: 'https://models.github.ai/inference',
+      OPENAI_MODEL: 'openai/gpt-4.1',
+      GITHUB_TOKEN: 'ghp_persisted',
+    }),
+    goal: 'balanced',
+    processEnv: {},
+  })
+
+  assert.equal(env.NETRUNNER_USE_GITHUB, '1')
+  assert.equal(env.NETRUNNER_USE_OPENAI, '1')
+  assert.equal(env.OPENAI_BASE_URL, 'https://models.github.ai/inference')
+  assert.equal(env.OPENAI_MODEL, 'openai/gpt-4.1')
+  assert.equal(env.GITHUB_TOKEN, 'ghp_persisted')
+  assert.equal(env.OPENAI_API_KEY, 'ghp_persisted')
+})
+
+test('github launch strips other provider secrets and prefers live github token', async () => {
+  const env = await buildLaunchEnv({
+    profile: 'github',
+    persisted: profile('openai', {
+      OPENAI_BASE_URL: 'https://api.openai.com/v1',
+      OPENAI_MODEL: 'gpt-4o',
+      OPENAI_API_KEY: 'sk-persisted',
+    }),
+    goal: 'balanced',
+    processEnv: {
+      GITHUB_TOKEN: 'ghp_live',
+      OPENAI_API_KEY: 'sk-live',
+      CODEX_API_KEY: 'codex-live',
+      CHATGPT_ACCOUNT_ID: 'acct_live',
+      NETRUNNER_USE_OPENAI: '1',
+    },
+  })
+
+  assert.equal(env.NETRUNNER_USE_GITHUB, '1')
+  assert.equal(env.NETRUNNER_USE_OPENAI, '1')
+  assert.equal(env.GITHUB_TOKEN, 'ghp_live')
+  assert.equal(env.OPENAI_API_KEY, 'ghp_live')
+  assert.equal(env.CODEX_API_KEY, undefined)
+  assert.equal(env.CHATGPT_ACCOUNT_ID, undefined)
 })
 
 test('gemini launch ignores mismatched persisted openai env and strips other provider secrets', async () => {
@@ -359,6 +406,28 @@ test('gemini profiles require a key', () => {
   assert.equal(env, null)
 })
 
+test('github profiles accept GH_TOKEN fallback', () => {
+  const env = buildGithubProfileEnv({
+    processEnv: {
+      GH_TOKEN: 'ghp_live',
+    },
+  })
+
+  assert.deepEqual(env, {
+    OPENAI_BASE_URL: 'https://models.github.ai/inference',
+    OPENAI_MODEL: 'openai/gpt-4.1',
+    GITHUB_TOKEN: 'ghp_live',
+  })
+})
+
+test('github profiles require a token', () => {
+  const env = buildGithubProfileEnv({
+    processEnv: {},
+  })
+
+  assert.equal(env, null)
+})
+
 test('openai profiles ignore codex shell transport hints', () => {
   const env = buildOpenAIProfileEnv({
     goal: 'balanced',
@@ -377,7 +446,18 @@ test('openai profiles ignore codex shell transport hints', () => {
   })
 })
 
-test('auto profile falls back to openai when no viable ollama model exists', () => {
-  assert.equal(selectAutoProfile(null), 'openai')
+test('auto profile prefers ollama when a recommended model exists', () => {
   assert.equal(selectAutoProfile('qwen2.5-coder:7b'), 'ollama')
+})
+
+test('auto profile returns null when no ollama model and no usable credentials', () => {
+  assert.equal(selectAutoProfile(null, {}), null)
+  assert.equal(selectAutoProfile(null, { OPENAI_API_KEY: 'SUA_CHAVE' }), null)
+})
+
+test('auto profile detects openai/github/gemini from environment credentials', () => {
+  assert.equal(selectAutoProfile(null, { OPENAI_API_KEY: 'sk-real' }), 'openai')
+  assert.equal(selectAutoProfile(null, { GITHUB_TOKEN: 'ghp_real' }), 'github')
+  assert.equal(selectAutoProfile(null, { GH_TOKEN: 'ghp_real' }), 'github')
+  assert.equal(selectAutoProfile(null, { GEMINI_API_KEY: 'AIza-real' }), 'gemini')
 })

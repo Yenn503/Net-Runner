@@ -1,5 +1,9 @@
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
   DEFAULT_CODEX_BASE_URL,
+  DEFAULT_GITHUB_MODELS_BASE_URL,
+  DEFAULT_GITHUB_MODELS_MODEL,
   DEFAULT_OPENAI_BASE_URL,
   isCodexBaseUrl,
   resolveCodexApiCredentials,
@@ -12,8 +16,9 @@ import {
 
 const DEFAULT_GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai'
 const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash'
+export const PROFILE_FILE_NAME = '.net-runner-profile.json'
 
-export type ProviderProfile = 'openai' | 'ollama' | 'codex' | 'gemini'
+export type ProviderProfile = 'openai' | 'ollama' | 'codex' | 'gemini' | 'github'
 
 export type ProfileEnv = {
   OPENAI_BASE_URL?: string
@@ -25,12 +30,26 @@ export type ProfileEnv = {
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
   GEMINI_BASE_URL?: string
+  GITHUB_TOKEN?: string
 }
 
 export type ProfileFile = {
   profile: ProviderProfile
   env: ProfileEnv
   createdAt: string
+}
+
+type ProfileFileLocation = {
+  cwd?: string
+  filePath?: string
+}
+
+function resolveProfileFilePath(options?: ProfileFileLocation): string {
+  if (options?.filePath) {
+    return options.filePath
+  }
+
+  return resolve(options?.cwd ?? process.cwd(), PROFILE_FILE_NAME)
 }
 
 export function sanitizeApiKey(
@@ -81,6 +100,35 @@ export function buildGeminiProfileEnv(options: {
   }
 
   return env
+}
+
+export function buildGithubProfileEnv(options: {
+  model?: string | null
+  baseUrl?: string | null
+  token?: string | null
+  processEnv?: NodeJS.ProcessEnv
+}): ProfileEnv | null {
+  const processEnv = options.processEnv ?? process.env
+  const token = sanitizeApiKey(
+    options.token ??
+      processEnv.GITHUB_TOKEN ??
+      processEnv.GH_TOKEN,
+  )
+  if (!token) {
+    return null
+  }
+
+  return {
+    OPENAI_BASE_URL:
+      options.baseUrl ||
+      processEnv.OPENAI_BASE_URL ||
+      DEFAULT_GITHUB_MODELS_BASE_URL,
+    OPENAI_MODEL:
+      options.model ||
+      processEnv.OPENAI_MODEL ||
+      DEFAULT_GITHUB_MODELS_MODEL,
+    GITHUB_TOKEN: token,
+  }
 }
 
 export function buildOpenAIProfileEnv(options: {
@@ -158,10 +206,71 @@ export function createProfileFile(
   }
 }
 
+export function loadProfileFile(options?: ProfileFileLocation): ProfileFile | null {
+  const filePath = resolveProfileFilePath(options)
+  if (!existsSync(filePath)) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as Partial<ProfileFile>
+    if (
+      parsed.profile !== 'openai' &&
+      parsed.profile !== 'ollama' &&
+      parsed.profile !== 'codex' &&
+      parsed.profile !== 'gemini' &&
+      parsed.profile !== 'github'
+    ) {
+      return null
+    }
+
+    if (!parsed.env || typeof parsed.env !== 'object') {
+      return null
+    }
+
+    return {
+      profile: parsed.profile,
+      env: parsed.env,
+      createdAt:
+        typeof parsed.createdAt === 'string'
+          ? parsed.createdAt
+          : new Date().toISOString(),
+    }
+  } catch {
+    return null
+  }
+}
+
+export function saveProfileFile(
+  profileFile: ProfileFile,
+  options?: ProfileFileLocation,
+): string {
+  const filePath = resolveProfileFilePath(options)
+  writeFileSync(filePath, JSON.stringify(profileFile, null, 2), {
+    encoding: 'utf8',
+    mode: 0o600,
+  })
+  return filePath
+}
+
+export function deleteProfileFile(options?: ProfileFileLocation): string {
+  const filePath = resolveProfileFilePath(options)
+  rmSync(filePath, { force: true })
+  return filePath
+}
+
 export function selectAutoProfile(
   recommendedOllamaModel: string | null,
-): ProviderProfile {
-  return recommendedOllamaModel ? 'ollama' : 'openai'
+  env: NodeJS.ProcessEnv = process.env,
+): ProviderProfile | null {
+  if (recommendedOllamaModel) return 'ollama'
+  // Auto-detect a usable profile from environment credentials.
+  // SUA_CHAVE is the documented placeholder string and must never count as a real key.
+  if (env.OPENAI_API_KEY && env.OPENAI_API_KEY !== 'SUA_CHAVE') return 'openai'
+  if (env.GITHUB_TOKEN || env.GH_TOKEN) return 'github'
+  if (env.GEMINI_API_KEY) return 'gemini'
+  // No usable credentials — let the CLI's first-run walkthrough configure one.
+  return null
 }
 
 export async function buildLaunchEnv(options: {
@@ -211,6 +320,48 @@ export async function buildLaunchEnv(options: {
     delete env.OPENAI_BASE_URL
     delete env.OPENAI_MODEL
     delete env.OPENAI_API_KEY
+    delete env.CODEX_API_KEY
+    delete env.CHATGPT_ACCOUNT_ID
+    delete env.CODEX_ACCOUNT_ID
+
+    return env
+  }
+
+  if (options.profile === 'github') {
+    const env: NodeJS.ProcessEnv = {
+      ...processEnv,
+      NETRUNNER_USE_GITHUB: '1',
+      NETRUNNER_USE_OPENAI: '1',
+    }
+
+    delete env.NETRUNNER_USE_GEMINI
+
+    env.OPENAI_BASE_URL =
+      processEnv.OPENAI_BASE_URL ||
+      persistedEnv.OPENAI_BASE_URL ||
+      DEFAULT_GITHUB_MODELS_BASE_URL
+    env.OPENAI_MODEL =
+      processEnv.OPENAI_MODEL ||
+      persistedEnv.OPENAI_MODEL ||
+      DEFAULT_GITHUB_MODELS_MODEL
+
+    const githubToken =
+      sanitizeApiKey(processEnv.GITHUB_TOKEN) ||
+      sanitizeApiKey(processEnv.GH_TOKEN) ||
+      sanitizeApiKey(persistedEnv.GITHUB_TOKEN)
+
+    if (githubToken) {
+      env.GITHUB_TOKEN = githubToken
+      env.OPENAI_API_KEY = githubToken
+    } else {
+      delete env.GITHUB_TOKEN
+      delete env.OPENAI_API_KEY
+    }
+
+    delete env.GEMINI_API_KEY
+    delete env.GEMINI_MODEL
+    delete env.GEMINI_BASE_URL
+    delete env.GOOGLE_API_KEY
     delete env.CODEX_API_KEY
     delete env.CHATGPT_ACCOUNT_ID
     delete env.CODEX_ACCOUNT_ID
@@ -311,4 +462,70 @@ export async function buildLaunchEnv(options: {
   delete env.CHATGPT_ACCOUNT_ID
   delete env.CODEX_ACCOUNT_ID
   return env
+}
+
+export function applyProfileEnvToProcessEnv(
+  targetEnv: NodeJS.ProcessEnv,
+  nextEnv: NodeJS.ProcessEnv,
+): void {
+  const keysToClear = [
+    'NETRUNNER_USE_OPENAI',
+    'NETRUNNER_USE_GEMINI',
+    'NETRUNNER_USE_GITHUB',
+    'OPENAI_BASE_URL',
+    'OPENAI_MODEL',
+    'OPENAI_API_KEY',
+    'CODEX_API_KEY',
+    'CHATGPT_ACCOUNT_ID',
+    'CODEX_ACCOUNT_ID',
+    'GEMINI_API_KEY',
+    'GEMINI_MODEL',
+    'GEMINI_BASE_URL',
+    'GOOGLE_API_KEY',
+    'GITHUB_TOKEN',
+  ] as const
+
+  for (const key of keysToClear) {
+    delete targetEnv[key]
+  }
+
+  Object.assign(targetEnv, nextEnv)
+}
+
+export async function buildStartupEnvFromProfile(options?: {
+  persisted?: ProfileFile | null
+  goal?: RecommendationGoal
+  processEnv?: NodeJS.ProcessEnv
+  getOllamaChatBaseUrl?: (baseUrl?: string) => string
+  resolveOllamaDefaultModel?: (goal: RecommendationGoal) => Promise<string>
+}): Promise<NodeJS.ProcessEnv> {
+  const processEnv = options?.processEnv ?? process.env
+  const persisted = options?.persisted ?? loadProfileFile()
+
+  if (!persisted) {
+    return processEnv
+  }
+
+  return buildLaunchEnv({
+    profile: persisted.profile,
+    persisted,
+    goal: options?.goal ?? 'balanced',
+    processEnv,
+    getOllamaChatBaseUrl: options?.getOllamaChatBaseUrl,
+    resolveOllamaDefaultModel: options?.resolveOllamaDefaultModel,
+  })
+}
+
+export async function applySavedProfileToCurrentSession(options: {
+  profileFile: ProfileFile
+  processEnv?: NodeJS.ProcessEnv
+}): Promise<void> {
+  const processEnv = options.processEnv ?? process.env
+  const nextEnv = await buildLaunchEnv({
+    profile: options.profileFile.profile,
+    persisted: options.profileFile,
+    goal: 'balanced',
+    processEnv: { ...processEnv },
+  })
+  applyProfileEnvToProcessEnv(processEnv, nextEnv)
 }
