@@ -18,7 +18,7 @@ const DEFAULT_GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1bet
 const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash'
 export const PROFILE_FILE_NAME = '.net-runner-profile.json'
 
-export type ProviderProfile = 'openai' | 'ollama' | 'codex' | 'gemini' | 'github'
+export type ProviderProfile = 'openai' | 'ollama' | 'codex' | 'gemini' | 'github' | 'copilot'
 
 export type ProfileEnv = {
   OPENAI_BASE_URL?: string
@@ -27,6 +27,8 @@ export type ProfileEnv = {
   CODEX_API_KEY?: string
   CHATGPT_ACCOUNT_ID?: string
   CODEX_ACCOUNT_ID?: string
+  GITHUB_COPILOT_TOKEN?: string
+  COPILOT_TOKEN_EXPIRES_AT?: string
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
   GEMINI_BASE_URL?: string
@@ -354,6 +356,51 @@ export async function buildLaunchEnv(options: {
     delete env.CODEX_API_KEY
     delete env.CHATGPT_ACCOUNT_ID
     delete env.CODEX_ACCOUNT_ID
+
+    return env
+  }
+
+  if (options.profile === 'copilot') {
+    // Copilot profile: persisted env carries OPENAI_BASE_URL pointing at
+    // api.githubcopilot.com plus a short-lived OPENAI_API_KEY (the Copilot
+    // service token, refreshed by the launcher before reaching here) and the
+    // long-lived GITHUB_COPILOT_TOKEN used to mint new service tokens.
+    const env: NodeJS.ProcessEnv = {
+      ...processEnv,
+      NETRUNNER_USE_OPENAI: '1',
+      NETRUNNER_USE_COPILOT: '1',
+    }
+    delete env.NETRUNNER_USE_GEMINI
+    delete env.NETRUNNER_USE_GITHUB
+
+    env.OPENAI_BASE_URL =
+      processEnv.OPENAI_BASE_URL ||
+      persistedEnv.OPENAI_BASE_URL ||
+      'https://api.githubcopilot.com'
+    env.OPENAI_MODEL =
+      processEnv.OPENAI_MODEL ||
+      persistedEnv.OPENAI_MODEL ||
+      'gpt-4o'
+    env.OPENAI_API_KEY =
+      processEnv.OPENAI_API_KEY ||
+      persistedEnv.OPENAI_API_KEY ||
+      ''
+
+    if (persistedEnv.GITHUB_COPILOT_TOKEN) {
+      env.GITHUB_COPILOT_TOKEN = persistedEnv.GITHUB_COPILOT_TOKEN
+    }
+    if (persistedEnv.COPILOT_TOKEN_EXPIRES_AT) {
+      env.COPILOT_TOKEN_EXPIRES_AT = persistedEnv.COPILOT_TOKEN_EXPIRES_AT
+    }
+
+    delete env.GEMINI_API_KEY
+    delete env.GEMINI_MODEL
+    delete env.GEMINI_BASE_URL
+    delete env.GOOGLE_API_KEY
+    delete env.CODEX_API_KEY
+    delete env.CHATGPT_ACCOUNT_ID
+    delete env.CODEX_ACCOUNT_ID
+    delete env.GITHUB_TOKEN
 
     return env
   }

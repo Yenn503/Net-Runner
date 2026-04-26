@@ -18,8 +18,16 @@
 import { createInterface } from 'node:readline'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import {
+  COPILOT_API_BASE,
+  exchangeForCopilotToken,
+  fetchCopilotModels,
+  pollForAccessToken,
+  startDeviceCodeFlow,
+  type CopilotModelEntry,
+} from './copilot-auth.ts'
 
-type Provider = 'github' | 'openai' | 'gemini' | 'ollama'
+type Provider = 'github' | 'copilot' | 'openai' | 'gemini' | 'ollama'
 
 const PROFILE_PATH = resolve(process.cwd(), '.net-runner-profile.json')
 
@@ -34,7 +42,7 @@ const PROVIDER_PRESETS: Record<Provider, {
   detectFromEnv: () => string | undefined
 }> = {
   github: {
-    label: 'GitHub Models (free with any GitHub account)',
+    label: 'GitHub Models — public catalog, free with any GitHub account',
     envFlag: 'NETRUNNER_USE_GITHUB',
     baseUrl: 'https://models.github.ai/inference',
     defaultModel: 'openai/gpt-4.1',
@@ -47,6 +55,15 @@ const PROVIDER_PRESETS: Record<Provider, {
       (process.env.OPENAI_API_KEY && /^(github_pat_|ghp_|gho_|ghu_|ghs_)/.test(process.env.OPENAI_API_KEY)
         ? process.env.OPENAI_API_KEY
         : undefined),
+  },
+  copilot: {
+    label: 'GitHub Copilot — your subscription models (Sonnet 4.5, GPT-5, ...)',
+    envFlag: 'NETRUNNER_USE_OPENAI',
+    baseUrl: COPILOT_API_BASE,
+    defaultModel: 'gpt-4o',
+    tokenVar: null, // device-code flow — no manual paste
+    tokenHint: '',
+    detectFromEnv: () => undefined,
   },
   openai: {
     label: 'OpenAI (api.openai.com)',
@@ -100,17 +117,49 @@ async function pickProvider(rl: ReturnType<typeof createInterface>): Promise<Pro
   console.log()
   console.log(bold('Choose a provider:'))
   console.log(`  ${cyan('1')}. ${PROVIDER_PRESETS.github.label}  ${green('(default)')}`)
-  console.log(`  ${cyan('2')}. ${PROVIDER_PRESETS.openai.label}`)
-  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.gemini.label}`)
-  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.ollama.label}`)
+  console.log(`  ${cyan('2')}. ${PROVIDER_PRESETS.copilot.label}`)
+  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.openai.label}`)
+  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.gemini.label}`)
+  console.log(`  ${cyan('5')}. ${PROVIDER_PRESETS.ollama.label}`)
   console.log()
-  const ans = (await prompt(rl, dim('Enter 1-4 (or press Enter for GitHub Models): '))).trim()
+  const ans = (await prompt(rl, dim('Enter 1-5 (or press Enter for GitHub Models): '))).trim()
   if (ans === '' || ans === '1') return 'github'
-  if (ans === '2') return 'openai'
-  if (ans === '3') return 'gemini'
-  if (ans === '4') return 'ollama'
+  if (ans === '2') return 'copilot'
+  if (ans === '3') return 'openai'
+  if (ans === '4') return 'gemini'
+  if (ans === '5') return 'ollama'
   console.log(red(`'${ans}' is not a valid choice. Defaulting to GitHub Models.`))
   return 'github'
+}
+
+async function runCopilotDeviceFlow(): Promise<{ githubAccessToken: string; copilotToken: string; copilotExpiresAt: number }> {
+  console.log()
+  console.log(bold(cyan('GitHub Copilot — device authorisation')))
+  console.log(dim('  Net-Runner will exchange a one-time code for an OAuth token.'))
+  console.log(dim('  Requires an active Copilot subscription (Pro / Pro+ / Business / Enterprise).'))
+  console.log()
+
+  const device = await startDeviceCodeFlow()
+  console.log(bold('1. Open this URL in any browser:'))
+  console.log(`   ${cyan(device.verification_uri)}`)
+  console.log()
+  console.log(bold('2. Enter this code:'))
+  console.log(`   ${bold(green(device.user_code))}`)
+  console.log()
+  console.log(dim(`   (Expires in ${Math.round(device.expires_in / 60)} min. Polling every ${device.interval}s ...)`))
+
+  const githubAccessToken = await pollForAccessToken(device)
+  console.log(green('✔ GitHub OAuth complete.'))
+
+  console.log(dim('Exchanging for Copilot service token ...'))
+  const copilot = await exchangeForCopilotToken(githubAccessToken)
+  console.log(green(`✔ Got Copilot token (expires at ${new Date(copilot.expires_at * 1000).toISOString()}).`))
+
+  return {
+    githubAccessToken,
+    copilotToken: copilot.token,
+    copilotExpiresAt: copilot.expires_at,
+  }
 }
 
 async function getToken(
@@ -224,8 +273,29 @@ async function getModel(
   preset: typeof PROVIDER_PRESETS[Provider],
   provider: Provider,
   token: string | undefined,
+  copilotModels?: CopilotModelEntry[],
 ): Promise<string> {
   console.log()
+
+  if (provider === 'copilot' && copilotModels && copilotModels.length > 0) {
+    console.log(green(`Found ${copilotModels.length} models in your Copilot subscription.`))
+    const items = copilotModels
+      .slice()
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map(m => {
+        const family = m.capabilities?.family ? dim(` [${m.capabilities.family}]`) : ''
+        const ctx = m.capabilities?.limits?.max_context_window_tokens
+          ? dim(` (${Math.round(m.capabilities.limits.max_context_window_tokens / 1000)}k ctx)`)
+          : ''
+        const id = bold(m.id.padEnd(36))
+        const name = m.name ? dim(`  ${m.name}`) : ''
+        return { id: m.id, label: `${id}${family}${ctx}${name}` }
+      })
+    const defaultIdx = items.findIndex(m =>
+      m.id === 'gpt-4o' || m.id === 'claude-sonnet-4.5' || m.id === 'gpt-5'
+    )
+    return await pickFromList(rl, items, defaultIdx >= 0 ? defaultIdx : 0)
+  }
 
   if (provider === 'github' && token) {
     console.log(dim('Fetching live model catalog from https://models.github.ai/catalog/models ...'))
@@ -290,10 +360,33 @@ async function main(): Promise<void> {
   try {
     const provider = await pickProvider(rl)
     const preset = PROVIDER_PRESETS[provider]
-    const token = await getToken(rl, preset)
-    const model = await getModel(rl, preset, provider, token)
 
-    if (preset.tokenVar && !token) {
+    let copilotAuth: { githubAccessToken: string; copilotToken: string; copilotExpiresAt: number } | undefined
+    let copilotModels: CopilotModelEntry[] | undefined
+    let token: string | undefined
+
+    if (provider === 'copilot') {
+      try {
+        copilotAuth = await runCopilotDeviceFlow()
+      } catch (err) {
+        console.log()
+        console.log(red(`Copilot setup failed: ${(err as Error).message}`))
+        console.log(dim('  Re-run with `bun run setup --force` and try again, or pick a different provider.'))
+        process.exit(1)
+      }
+      try {
+        console.log(dim('Fetching live model catalog from api.githubcopilot.com/models ...'))
+        copilotModels = await fetchCopilotModels(copilotAuth.copilotToken)
+      } catch (err) {
+        console.log(yellow(`Could not fetch Copilot models live (${(err as Error).message}). Falling back to defaults.`))
+      }
+    } else {
+      token = await getToken(rl, preset)
+    }
+
+    const model = await getModel(rl, preset, provider, token, copilotModels)
+
+    if (provider !== 'copilot' && preset.tokenVar && !token) {
       console.log()
       console.log(red(`Setup aborted — no ${preset.tokenVar} provided.`))
       console.log(dim('  Re-run `bun run setup` and paste a token, or use --force to overwrite an existing profile.'))
@@ -304,7 +397,11 @@ async function main(): Promise<void> {
       OPENAI_BASE_URL: preset.baseUrl,
       OPENAI_MODEL: model,
     }
-    if (preset.tokenVar === 'GITHUB_TOKEN' && token) {
+    if (provider === 'copilot' && copilotAuth) {
+      env.OPENAI_API_KEY = copilotAuth.copilotToken
+      env.GITHUB_COPILOT_TOKEN = copilotAuth.githubAccessToken
+      env.COPILOT_TOKEN_EXPIRES_AT = String(copilotAuth.copilotExpiresAt)
+    } else if (preset.tokenVar === 'GITHUB_TOKEN' && token) {
       env.GITHUB_TOKEN = token
     } else if (preset.tokenVar === 'OPENAI_API_KEY' && token) {
       env.OPENAI_API_KEY = token

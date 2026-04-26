@@ -1,10 +1,11 @@
 // @ts-nocheck
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 import {
   resolveCodexApiCredentials,
 } from '../src/services/api/providerConfig.js'
+import { exchangeForCopilotToken } from './copilot-auth.ts'
 import {
   normalizeRecommendationGoal,
   recommendOllamaModel,
@@ -48,7 +49,7 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
       continue
     }
 
-    if ((lower === 'auto' || lower === 'openai' || lower === 'ollama' || lower === 'codex' || lower === 'gemini' || lower === 'github') && requestedProfile === 'auto') {
+    if ((lower === 'auto' || lower === 'openai' || lower === 'ollama' || lower === 'codex' || lower === 'gemini' || lower === 'github' || lower === 'copilot') && requestedProfile === 'auto') {
       requestedProfile = lower as ProviderProfile | 'auto'
       continue
     }
@@ -271,6 +272,14 @@ async function main(): Promise<void> {
     }
   }
 
+  // Refresh the Copilot service token if it's near expiry. The Copilot token
+  // saved by setup is short-lived (~30 min). The long-lived GitHub OAuth
+  // token is what we use to mint a new one. Token expiry is tracked via the
+  // COPILOT_TOKEN_EXPIRES_AT field saved alongside the profile.
+  if (profile === 'copilot') {
+    await refreshCopilotTokenIfExpired(env)
+  }
+
   if (profile !== null) {
     printSummary(profile, env)
   }
@@ -301,6 +310,47 @@ async function main(): Promise<void> {
 
   const devCode = await runProcess('node', ['dist/cli.mjs', ...options.passthroughArgs], env)
   process.exit(devCode)
+}
+
+async function refreshCopilotTokenIfExpired(env: NodeJS.ProcessEnv): Promise<void> {
+  const githubToken = env.GITHUB_COPILOT_TOKEN
+  const expiresAtRaw = env.COPILOT_TOKEN_EXPIRES_AT
+  if (!githubToken) {
+    console.warn('Copilot profile is missing GITHUB_COPILOT_TOKEN; cannot refresh service token. Re-run `bun run setup --force`.')
+    return
+  }
+  const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : 0
+  const nowSec = Math.floor(Date.now() / 1000)
+  // Refresh if the token expires within the next 60 seconds.
+  if (expiresAt > nowSec + 60) {
+    return
+  }
+
+  console.log('Refreshing Copilot service token...')
+  try {
+    const refreshed = await exchangeForCopilotToken(githubToken)
+    env.OPENAI_API_KEY = refreshed.token
+    env.COPILOT_TOKEN_EXPIRES_AT = String(refreshed.expires_at)
+
+    // Persist the new token back to the profile so subsequent launches reuse it.
+    const profilePath = resolvePath(process.cwd(), '.net-runner-profile.json')
+    if (existsSync(profilePath)) {
+      try {
+        const current = JSON.parse(readFileSync(profilePath, 'utf8'))
+        current.env = current.env || {}
+        current.env.OPENAI_API_KEY = refreshed.token
+        current.env.COPILOT_TOKEN_EXPIRES_AT = String(refreshed.expires_at)
+        writeFileSync(profilePath, JSON.stringify(current, null, 2), { mode: 0o600 })
+      } catch (err) {
+        console.warn(`Could not persist refreshed Copilot token: ${(err as Error).message}`)
+      }
+    }
+    console.log(`Copilot token refreshed (expires at ${new Date(refreshed.expires_at * 1000).toISOString()}).`)
+  } catch (err) {
+    console.error(`Failed to refresh Copilot token: ${(err as Error).message}`)
+    console.error('Re-run `bun run setup --force` to re-authorise.')
+    process.exit(1)
+  }
 }
 
 await main()
