@@ -10,3 +10,5 @@ reports/
 .netrunner/
 .claude/local/
 *.local.json
+docs/academic/
+AI input academic.md
