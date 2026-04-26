@@ -4,4 +4,9 @@ dist/
 .env
 .env.*
 .net-runner-profile.json
+.openclaude-profile.json
 reports/
+.omx/
+.netrunner/
+.claude/local/
+*.local.json

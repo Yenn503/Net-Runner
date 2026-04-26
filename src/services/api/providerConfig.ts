@@ -4,6 +4,8 @@ import { join } from 'node:path'
 
 export const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
 export const DEFAULT_CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex'
+export const DEFAULT_GITHUB_MODELS_BASE_URL = 'https://models.github.ai/inference'
+export const DEFAULT_GITHUB_MODELS_MODEL = 'openai/gpt-4.1'
 
 const CODEX_ALIAS_MODELS: Record<
   string,
@@ -41,6 +43,12 @@ export type ResolvedCodexCredentials = {
   accountId?: string
   authPath?: string
   source: 'env' | 'auth.json' | 'none'
+}
+
+function isEnvTruthy(value: string | undefined): boolean {
+  if (!value) return false
+  const normalized = value.trim().toLowerCase()
+  return normalized !== '' && normalized !== '0' && normalized !== 'false' && normalized !== 'no'
 }
 
 type ModelDescriptor = {
@@ -171,16 +179,47 @@ export function isCodexBaseUrl(baseUrl: string | undefined): boolean {
   }
 }
 
+export function getGithubEndpointType(
+  baseUrl: string | undefined,
+): 'copilot' | 'models' | 'custom' {
+  if (!baseUrl) return 'models'
+  try {
+    const hostname = new URL(baseUrl).hostname.toLowerCase()
+    if (hostname === 'api.githubcopilot.com') {
+      return 'copilot'
+    }
+    if (hostname === 'models.github.ai' || hostname.endsWith('.github.ai')) {
+      return 'models'
+    }
+    return 'custom'
+  } catch {
+    return 'models'
+  }
+}
+
+export function normalizeGithubModel(requestedModel: string): string {
+  const noQuery = requestedModel.split('?', 1)[0] ?? requestedModel
+  const segment =
+    noQuery.includes(':') ? noQuery.split(':', 2)[1]!.trim() : noQuery.trim()
+  if (!segment || segment.toLowerCase() === 'copilot') {
+    return DEFAULT_GITHUB_MODELS_MODEL
+  }
+  return segment
+}
+
 export function resolveProviderRequest(options?: {
   model?: string
   baseUrl?: string
   fallbackModel?: string
 }): ResolvedProviderRequest {
+  const isGithubMode =
+    isEnvTruthy(process.env.NETRUNNER_USE_GITHUB) ||
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const requestedModel =
     options?.model?.trim() ||
     process.env.OPENAI_MODEL?.trim() ||
     options?.fallbackModel?.trim() ||
-    'gpt-4o'
+    (isGithubMode ? 'github:copilot' : 'gpt-4o')
   const descriptor = parseModelDescriptor(requestedModel)
   const rawBaseUrl =
     options?.baseUrl ??
@@ -188,17 +227,24 @@ export function resolveProviderRequest(options?: {
     process.env.OPENAI_API_BASE ??
     undefined
   const transport: ProviderTransport =
-    isCodexAlias(requestedModel) || isCodexBaseUrl(rawBaseUrl)
-      ? 'codex_responses'
-      : 'chat_completions'
+    isGithubMode
+      ? 'chat_completions'
+      : isCodexAlias(requestedModel) || isCodexBaseUrl(rawBaseUrl)
+        ? 'codex_responses'
+        : 'chat_completions'
+  const resolvedModel = isGithubMode
+    ? normalizeGithubModel(requestedModel)
+    : descriptor.baseModel
 
   return {
     transport,
     requestedModel,
-    resolvedModel: descriptor.baseModel,
+    resolvedModel,
     baseUrl:
       (rawBaseUrl ??
-        (transport === 'codex_responses'
+        (isGithubMode
+          ? DEFAULT_GITHUB_MODELS_BASE_URL
+          : transport === 'codex_responses'
           ? DEFAULT_CODEX_BASE_URL
           : DEFAULT_OPENAI_BASE_URL)
       ).replace(/\/+$/, ''),

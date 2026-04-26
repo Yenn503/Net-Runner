@@ -27,6 +27,7 @@ import {
 } from './codexShim.js'
 import {
   resolveCodexApiCredentials,
+  getGithubEndpointType,
   resolveProviderRequest,
 } from './providerConfig.js'
 
@@ -59,6 +60,26 @@ interface OpenAITool {
     parameters: Record<string, unknown>
     strict?: boolean
   }
+}
+
+const GITHUB_MODELS_BASE_HOST = 'https://models.github.ai/inference'
+const GITHUB_COPILOT_HEADERS: Record<string, string> = {
+  'User-Agent': 'GitHubCopilotChat/0.26.7',
+  'Editor-Version': 'vscode/1.99.3',
+  'Editor-Plugin-Version': 'copilot-chat/0.26.7',
+  'Copilot-Integration-Id': 'vscode-chat',
+}
+
+function isGithubMode(): boolean {
+  const values = [
+    process.env.NETRUNNER_USE_GITHUB,
+    process.env.CLAUDE_CODE_USE_GITHUB,
+  ]
+  return values.some(value => {
+    if (!value) return false
+    const normalized = value.trim().toLowerCase()
+    return normalized !== '' && normalized !== '0' && normalized !== 'false' && normalized !== 'no'
+  })
 }
 
 function convertSystemPrompt(
@@ -703,7 +724,19 @@ class OpenAIShimMessages {
       ...(options?.headers ?? {}),
     }
 
-    const apiKey = process.env.OPENAI_API_KEY ?? ''
+    const githubMode = isGithubMode()
+    const githubEndpointType = githubMode
+      ? getGithubEndpointType(request.baseUrl)
+      : 'custom'
+    const apiKey =
+      githubMode
+        ? (
+            process.env.GITHUB_TOKEN ??
+            process.env.GH_TOKEN ??
+            process.env.OPENAI_API_KEY ??
+            ''
+          )
+        : (process.env.OPENAI_API_KEY ?? '')
     const isAzure = /cognitiveservices\.azure\.com|openai\.azure\.com/.test(request.baseUrl)
 
     if (apiKey) {
@@ -712,6 +745,15 @@ class OpenAIShimMessages {
         headers['api-key'] = apiKey
       } else {
         headers.Authorization = `Bearer ${apiKey}`
+      }
+    }
+
+    if (githubMode) {
+      if (githubEndpointType === 'copilot') {
+        Object.assign(headers, GITHUB_COPILOT_HEADERS)
+      } else {
+        headers.Accept = 'application/vnd.github+json'
+        headers['X-GitHub-Api-Version'] = '2026-03-10'
       }
     }
 
@@ -852,6 +894,10 @@ export function createOpenAIShimClient(options: {
     if (process.env.GEMINI_MODEL && !process.env.OPENAI_MODEL) {
       process.env.OPENAI_MODEL = process.env.GEMINI_MODEL
     }
+  } else if (isGithubMode()) {
+    process.env.OPENAI_BASE_URL ??= GITHUB_MODELS_BASE_HOST
+    process.env.OPENAI_API_KEY ??=
+      process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? ''
   }
 
   const beta = new OpenAIShimBeta({

@@ -1,8 +1,11 @@
 import { feature } from 'bun:bundle';
 import {
-  resolveCodexApiCredentials,
-  resolveProviderRequest,
-} from '../services/api/providerConfig.js'
+  applyProfileEnvToProcessEnv,
+  buildStartupEnvFromProfile,
+} from '../utils/providerProfile.js'
+import {
+  validateProviderEnvForStartupOrExit,
+} from '../utils/providerValidation.js'
 
 // Bugfix for corepack auto-pinning, which adds yarnpkg to peoples' package.jsons
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
@@ -35,53 +38,6 @@ function isEnvTruthy(value: string | undefined): boolean {
   return normalized !== '' && normalized !== '0' && normalized !== 'false' && normalized !== 'no'
 }
 
-function isLocalProviderUrl(baseUrl: string | undefined): boolean {
-  if (!baseUrl) return false
-  try {
-    const parsed = new URL(baseUrl)
-    return parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1' || parsed.hostname === '::1'
-  } catch {
-    return false
-  }
-}
-
-function validateProviderEnvOrExit(): void {
-  if (!isEnvTruthy(process.env.NETRUNNER_USE_OPENAI)) {
-    return
-  }
-
-  const request = resolveProviderRequest({
-    model: process.env.OPENAI_MODEL,
-    baseUrl: process.env.OPENAI_BASE_URL,
-  })
-
-  if (process.env.OPENAI_API_KEY === 'SUA_CHAVE') {
-    console.error('Invalid OPENAI_API_KEY: placeholder value SUA_CHAVE detected. Set a real key or unset for local providers.')
-    process.exit(1)
-  }
-
-  if (request.transport === 'codex_responses') {
-    const credentials = resolveCodexApiCredentials()
-    if (!credentials.apiKey) {
-      const authHint = credentials.authPath
-        ? ` or put auth.json at ${credentials.authPath}`
-        : ''
-      console.error(`Codex auth is required for ${request.requestedModel}. Set CODEX_API_KEY${authHint}.`)
-      process.exit(1)
-    }
-    if (!credentials.accountId) {
-      console.error('Codex auth is missing chatgpt_account_id. Re-login with Codex or set CHATGPT_ACCOUNT_ID/CODEX_ACCOUNT_ID.')
-      process.exit(1)
-    }
-    return
-  }
-
-  if (!process.env.OPENAI_API_KEY && !isLocalProviderUrl(request.baseUrl)) {
-    console.error('OPENAI_API_KEY is required when NETRUNNER_USE_OPENAI=1 and OPENAI_BASE_URL is not local.')
-    process.exit(1)
-  }
-}
-
 /**
  * Bootstrap entrypoint - checks for special flags before loading the full CLI.
  * All imports are dynamic to minimize module evaluation for fast paths.
@@ -98,7 +54,17 @@ async function main(): Promise<void> {
     return;
   }
 
-  validateProviderEnvOrExit()
+  const startupEnv = await buildStartupEnvFromProfile({
+    processEnv: process.env,
+  })
+  if (startupEnv !== process.env) {
+    applyProfileEnvToProcessEnv(process.env, startupEnv)
+  }
+
+  await validateProviderEnvForStartupOrExit(process.env, {
+    args,
+    stdoutIsTTY: process.stdout.isTTY,
+  })
 
   // Print the gradient startup screen before the Ink UI loads
   const { printStartupScreen } = await import('../components/StartupScreen.js')

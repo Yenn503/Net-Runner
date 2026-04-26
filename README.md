@@ -30,6 +30,8 @@ The architecture follows the [Code Execution with MCP](https://www.anthropic.com
 
 The current opensource baseline is local-first and type-safe: the repository now typechecks cleanly, the CLI supports direct provider credentials, and the FastMCP server can be run directly from source for red-team-style tool driving, evidence capture, and workflow control.
 
+On a clean first interactive startup, if no provider/model has been configured yet, Net-Runner now launches a built-in provider walkthrough. It guides the user through selecting a provider, choosing a model, saves the result to `.net-runner-profile.json`, auto-loads it on future starts, and allows later changes through `/provider`.
+
 ---
 
 ## 🔍 What It Does
@@ -132,7 +134,7 @@ bun run build
 ### 2. Configure model provider
 
 For the open-source build, the primary supported paths are direct provider credentials and local runtimes.
-`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, Ollama, and the local FastMCP server should work without any hosted Net-Runner web dependency.
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GITHUB_TOKEN`, Ollama, and the local FastMCP server should work without any hosted Net-Runner web dependency.
 OAuth, hosted connector discovery, remote-session sync, and other Claude-Code-derived first-party service flows are optional and may require infrastructure that is not bundled with this repository.
 
 `ANTHROPIC_API_KEY`
@@ -157,6 +159,16 @@ node dist/cli.mjs
 ```bash
 export GEMINI_API_KEY="AIza..."
 export GEMINI_MODEL="gemini-2.5-pro"
+node dist/cli.mjs
+```
+
+`GITHUB_TOKEN` (GitHub Models)
+
+```bash
+export NETRUNNER_USE_GITHUB="1"
+export GITHUB_TOKEN="ghp_..."
+export OPENAI_BASE_URL="https://models.github.ai/inference"
+export OPENAI_MODEL="openai/gpt-4.1"
 node dist/cli.mjs
 ```
 

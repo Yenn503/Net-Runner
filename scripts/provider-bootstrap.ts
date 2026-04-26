@@ -1,6 +1,4 @@
 // @ts-nocheck
-import { writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import {
   resolveCodexApiCredentials,
 } from '../src/services/api/providerConfig.js'
@@ -12,9 +10,11 @@ import {
 import {
   buildCodexProfileEnv,
   buildGeminiProfileEnv,
+  buildGithubProfileEnv,
   buildOllamaProfileEnv,
   buildOpenAIProfileEnv,
   createProfileFile,
+  saveProfileFile,
   selectAutoProfile,
   type ProfileFile,
   type ProviderProfile,
@@ -34,7 +34,7 @@ function parseArg(name: string): string | null {
 
 function parseProviderArg(): ProviderProfile | 'auto' {
   const p = parseArg('--provider')?.toLowerCase()
-  if (p === 'openai' || p === 'ollama' || p === 'codex' || p === 'gemini') return p
+  if (p === 'openai' || p === 'ollama' || p === 'codex' || p === 'gemini' || p === 'github') return p
   return 'auto'
 }
 
@@ -84,6 +84,20 @@ async function main(): Promise<void> {
     if (!builtEnv) {
       console.error('Gemini profile requires an API key. Use --api-key or set GEMINI_API_KEY.')
       console.error('Get a free key at: https://aistudio.google.com/apikey')
+      process.exit(1)
+    }
+
+    env = builtEnv
+  } else if (selected === 'github') {
+    const builtEnv = buildGithubProfileEnv({
+      model: argModel || null,
+      baseUrl: argBaseUrl || null,
+      token: argApiKey || null,
+      processEnv: process.env,
+    })
+
+    if (!builtEnv) {
+      console.error('GitHub profile requires GITHUB_TOKEN/GH_TOKEN or --api-key with a token that can access GitHub Models.')
       process.exit(1)
     }
 
@@ -147,8 +161,7 @@ async function main(): Promise<void> {
 
   const profile = createProfileFile(selected, env)
 
-  const outputPath = resolve(process.cwd(), '.net-runner-profile.json')
-  writeFileSync(outputPath, JSON.stringify(profile, null, 2), { encoding: 'utf8', mode: 0o600 })
+  const outputPath = saveProfileFile(profile)
 
   console.log(`Saved profile: ${selected}`)
   console.log(`Goal: ${goal}`)

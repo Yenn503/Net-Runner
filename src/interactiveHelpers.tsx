@@ -108,9 +108,23 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     return false;
   }
 
-  const usesAnthropicSetup = usesAnthropicAccountFlow();
+  let usesAnthropicSetup = usesAnthropicAccountFlow();
   const config = getGlobalConfig();
   let onboardingShown = false;
+
+  {
+    const {
+      shouldShowStartupProviderWizard,
+      StartupProviderWizard
+    } = await import('./commands/provider/provider.js');
+    if (shouldShowStartupProviderWizard()) {
+      onboardingShown = true;
+      await showSetupDialog(root, done => <StartupProviderWizard onDone={done} onChangeAPIKey={() => {}} />, {
+        onChangeAppState
+      });
+      usesAnthropicSetup = usesAnthropicAccountFlow();
+    }
+  }
 
   // Skip onboarding dialog for third-party providers (no Anthropic account needed)
   if (usesAnthropicSetup && (!config.theme || !config.hasCompletedOnboarding) // always show onboarding at least once

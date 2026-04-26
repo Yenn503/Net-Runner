@@ -31,6 +31,8 @@ bun run dev:code
 
 If everything is healthy, Net-Runner starts directly.
 
+On a clean first interactive run with no configured provider/model, Net-Runner will open a built-in setup walkthrough automatically. It saves the selected provider and model to `.net-runner-profile.json` and loads it automatically on future starts. To change the saved setup later, run `/provider` inside the CLI.
+
 ## 3. One-Time Setup (If Needed)
 
 ### 3.1 Initialize a local profile
@@ -124,6 +126,20 @@ Expected behavior:
 
 - Real API key required.
 - Placeholder values fail fast.
+
+## 5.3 GitHub Models mode
+
+```powershell
+$env:GITHUB_TOKEN="ghp_..."
+bun run profile:init -- --provider github --model openai/gpt-4.1
+bun run dev:github
+```
+
+Expected behavior:
+
+- Uses GitHub-backed model access through `GITHUB_TOKEN` / `GH_TOKEN`.
+- Default base URL is `https://models.github.ai/inference`.
+- `bun run doctor:runtime` should confirm GitHub provider mode and reachability.
 
 ## 6. Troubleshooting Matrix
 
@@ -300,11 +316,13 @@ bun run dev:profile
 # profile
 bun run profile:init -- --provider ollama --model llama3.1:8b
 bun run profile:init -- --provider openai --api-key sk-... --model gpt-4o
+bun run profile:init -- --provider github --api-key ghp_... --model openai/gpt-4.1
 
 # launch
 bun run dev:profile
 bun run dev:ollama
 bun run dev:openai
+bun run dev:github
 
 # diagnostics
 bun run doctor:runtime

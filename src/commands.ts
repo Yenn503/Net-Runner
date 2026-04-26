@@ -113,6 +113,7 @@ import files from './commands/files/index.js'
 import branch from './commands/branch/index.js'
 import agents from './commands/agents/index.js'
 import plugin from './commands/plugin/index.js'
+import provider from './commands/provider/index.js'
 import reloadPlugins from './commands/reload-plugins/index.js'
 import rewind from './commands/rewind/index.js'
 import heapDump from './commands/heapdump/index.js'
@@ -274,6 +275,7 @@ const COMMANDS = memoize((): Command[] => [
   outputStyle,
   remoteEnv,
   plugin,
+  provider,
   pr_comments,
   report,
   releaseNotes,

@@ -134,12 +134,38 @@ function checkOpenAIEnv(): CheckResult[] {
   const useGemini =
     isTruthy(process.env.NETRUNNER_USE_GEMINI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
+  const useGithub =
+    isTruthy(process.env.NETRUNNER_USE_GITHUB) ||
+    isTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const useOpenAI =
     isTruthy(process.env.NETRUNNER_USE_OPENAI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
 
   if (useGemini) {
     return checkGeminiEnv()
+  }
+
+  if (useGithub) {
+    const request = resolveProviderRequest({
+      model: process.env.OPENAI_MODEL,
+      baseUrl: process.env.OPENAI_BASE_URL,
+    })
+    const githubToken =
+      process.env.GITHUB_TOKEN ??
+      process.env.GH_TOKEN ??
+      process.env.OPENAI_API_KEY
+
+    results.push(pass('Provider mode', 'GitHub Models provider enabled.'))
+    results.push(pass('OPENAI_MODEL', request.resolvedModel))
+    results.push(pass('OPENAI_BASE_URL', request.baseUrl))
+
+    if (!githubToken) {
+      results.push(fail('GITHUB_TOKEN', 'Missing. Set GITHUB_TOKEN or GH_TOKEN with GitHub Models access.'))
+    } else {
+      results.push(pass('GITHUB_TOKEN', 'Configured.'))
+    }
+
+    return results
   }
 
   if (!useOpenAI) {
@@ -210,11 +236,14 @@ async function checkBaseUrlReachability(): Promise<CheckResult> {
   const useGemini =
     isTruthy(process.env.NETRUNNER_USE_GEMINI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
+  const useGithub =
+    isTruthy(process.env.NETRUNNER_USE_GITHUB) ||
+    isTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const useOpenAI =
     isTruthy(process.env.NETRUNNER_USE_OPENAI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
 
-  if (!useGemini && !useOpenAI) {
+  if (!useGemini && !useOpenAI && !useGithub) {
     return pass('Provider reachability', 'Skipped (OpenAI-compatible mode disabled).')
   }
 
@@ -226,9 +255,11 @@ async function checkBaseUrlReachability(): Promise<CheckResult> {
     model: process.env.OPENAI_MODEL,
     baseUrl: resolvedBaseUrl ?? process.env.OPENAI_BASE_URL,
   })
-  const endpoint = request.transport === 'codex_responses'
-    ? `${request.baseUrl}/responses`
-    : `${request.baseUrl}/models`
+  const endpoint = useGithub
+    ? `${request.baseUrl}/chat/completions`
+    : request.transport === 'codex_responses'
+      ? `${request.baseUrl}/responses`
+      : `${request.baseUrl}/models`
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 4000)
@@ -238,7 +269,22 @@ async function checkBaseUrlReachability(): Promise<CheckResult> {
     let method = 'GET'
     let body: string | undefined
 
-    if (request.transport === 'codex_responses') {
+    if (useGithub) {
+      const token =
+        process.env.GITHUB_TOKEN ??
+        process.env.GH_TOKEN ??
+        process.env.OPENAI_API_KEY
+      headers.Authorization = `Bearer ${token ?? ''}`
+      headers.Accept = 'application/vnd.github+json'
+      headers['X-GitHub-Api-Version'] = '2026-03-10'
+      headers['Content-Type'] = 'application/json'
+      method = 'POST'
+      body = JSON.stringify({
+        model: request.resolvedModel,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 8,
+      })
+    } else if (request.transport === 'codex_responses') {
       const credentials = resolveCodexApiCredentials(process.env)
       if (credentials.apiKey) {
         headers.Authorization = `Bearer ${credentials.apiKey}`
@@ -294,8 +340,11 @@ function checkOllamaProcessorMode(): CheckResult {
   const useGemini =
     isTruthy(process.env.NETRUNNER_USE_GEMINI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
+  const useGithub =
+    isTruthy(process.env.NETRUNNER_USE_GITHUB) ||
+    isTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
 
-  if (!useOpenAI || useGemini) {
+  if (!useOpenAI || useGemini || useGithub) {
     return pass('Ollama processor mode', 'Skipped (OpenAI-compatible mode disabled).')
   }
 
@@ -337,6 +386,9 @@ function serializeSafeEnvSummary(): Record<string, string | boolean> {
   const useGemini =
     isTruthy(process.env.NETRUNNER_USE_GEMINI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
+  const useGithub =
+    isTruthy(process.env.NETRUNNER_USE_GITHUB) ||
+    isTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const useOpenAI =
     isTruthy(process.env.NETRUNNER_USE_OPENAI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
@@ -347,6 +399,20 @@ function serializeSafeEnvSummary(): Record<string, string | boolean> {
       GEMINI_MODEL: process.env.GEMINI_MODEL ?? '(unset, default: gemini-2.0-flash)',
       GEMINI_BASE_URL: process.env.GEMINI_BASE_URL ?? 'https://generativelanguage.googleapis.com/v1beta/openai',
       GEMINI_API_KEY_SET: Boolean(process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY),
+    }
+  }
+  if (useGithub) {
+    const request = resolveProviderRequest({
+      model: process.env.OPENAI_MODEL,
+      baseUrl: process.env.OPENAI_BASE_URL,
+    })
+    return {
+      NETRUNNER_USE_GITHUB: true,
+      OPENAI_MODEL: request.resolvedModel,
+      OPENAI_BASE_URL: request.baseUrl,
+      GITHUB_TOKEN_SET: Boolean(
+        process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? process.env.OPENAI_API_KEY,
+      ),
     }
   }
   const request = resolveProviderRequest({
