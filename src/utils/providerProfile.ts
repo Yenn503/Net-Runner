@@ -366,13 +366,19 @@ export async function buildLaunchEnv(options: {
     // api.githubcopilot.com plus a short-lived OPENAI_API_KEY (the Copilot
     // service token, refreshed by the launcher before reaching here) and the
     // long-lived GITHUB_COPILOT_TOKEN used to mint new service tokens.
+    //
+    // NETRUNNER_USE_GITHUB is set so the OpenAI shim's GitHub-mode branch
+    // fires; combined with the api.githubcopilot.com host that branch
+    // attaches the required Editor-Version / Copilot-Integration-Id headers
+    // (without those headers Copilot rejects requests with 'missing
+    // Editor-Version header for IDE auth').
     const env: NodeJS.ProcessEnv = {
       ...processEnv,
       NETRUNNER_USE_OPENAI: '1',
+      NETRUNNER_USE_GITHUB: '1',
       NETRUNNER_USE_COPILOT: '1',
     }
     delete env.NETRUNNER_USE_GEMINI
-    delete env.NETRUNNER_USE_GITHUB
 
     env.OPENAI_BASE_URL =
       processEnv.OPENAI_BASE_URL ||

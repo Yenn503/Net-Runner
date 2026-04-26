@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 import {
   resolveCodexApiCredentials,
@@ -295,12 +295,18 @@ async function main(): Promise<void> {
     }
   }
 
-  // Skip the rebuild step when a usable bundle already exists. This makes
-  // repeat launches near-instant and matches the upstream `openclaude`
-  // experience where the binary is already compiled. Force a rebuild with
-  // NETRUNNER_FORCE_BUILD=1 or by deleting dist/cli.mjs.
+  // Rebuild when needed. We rebuild if any of:
+  //   - NETRUNNER_FORCE_BUILD=1 (explicit)
+  //   - dist/cli.mjs missing (fresh checkout)
+  //   - any source/package file newer than dist/cli.mjs (stale build, e.g.
+  //     after `git pull` introduced fixes that need to be re-bundled). This
+  //     is what bites users who pull a banner / shim fix and don't see it
+  //     because the launcher reuses a stale dist.
   const distEntry = resolvePath(process.cwd(), 'dist/cli.mjs')
-  const needsBuild = process.env.NETRUNNER_FORCE_BUILD === '1' || !existsSync(distEntry)
+  const needsBuild =
+    process.env.NETRUNNER_FORCE_BUILD === '1' ||
+    !existsSync(distEntry) ||
+    isDistStale(distEntry)
   if (needsBuild) {
     const buildCode = await runProcess('bun', ['run', 'build'], env)
     if (buildCode !== 0) {
@@ -310,6 +316,63 @@ async function main(): Promise<void> {
 
   const devCode = await runProcess('node', ['dist/cli.mjs', ...options.passthroughArgs], env)
   process.exit(devCode)
+}
+
+function isDistStale(distEntry: string): boolean {
+  try {
+    const distMtime = statSync(distEntry).mtimeMs
+    const candidates = [
+      'src',
+      'scripts',
+      'package.json',
+      'bun.lock',
+      'package-lock.json',
+    ]
+    for (const c of candidates) {
+      const full = resolvePath(process.cwd(), c)
+      if (!existsSync(full)) continue
+      const stat = statSync(full)
+      if (stat.isDirectory()) {
+        if (newestMtimeInDir(full) > distMtime) return true
+      } else if (stat.mtimeMs > distMtime) {
+        return true
+      }
+    }
+    return false
+  } catch {
+    // If anything goes wrong with the comparison, force a rebuild rather
+    // than risk launching from a stale dist.
+    return true
+  }
+}
+
+function newestMtimeInDir(dir: string): number {
+  let newest = 0
+  const stack = [dir]
+  while (stack.length > 0) {
+    const current = stack.pop()!
+    let entries: { name: string; isDirectory: () => boolean; isFile: () => boolean }[]
+    try {
+      entries = readdirSync(current, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name.startsWith('.')) continue
+      const full = resolvePath(current, entry.name)
+      if (entry.isDirectory()) {
+        stack.push(full)
+      } else if (entry.isFile()) {
+        try {
+          const m = statSync(full).mtimeMs
+          if (m > newest) newest = m
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+  return newest
 }
 
 async function refreshCopilotTokenIfExpired(env: NodeJS.ProcessEnv): Promise<void> {
