@@ -13,7 +13,7 @@ import { Dialog } from '../design-system/Dialog.js';
 
 // Skills are always PromptCommands with CommandBase properties
 type SkillCommand = CommandBase & PromptCommand;
-type SkillSource = SettingSource | 'plugin' | 'mcp';
+type SkillSource = SettingSource | 'plugin' | 'mcp' | 'bundled';
 type Props = {
   onExit: (result?: string, options?: {
     display?: CommandResultDisplay;
@@ -27,6 +27,9 @@ function getSourceTitle(source: SkillSource): string {
   if (source === 'mcp') {
     return 'MCP skills';
   }
+  if (source === 'bundled') {
+    return 'Built-in skills';
+  }
   return `${capitalize(getSettingSourceName(source))} skills`;
 }
 function getSourceSubtitle(source: SkillSource, skills: SkillCommand[]): string | undefined {
@@ -38,6 +41,11 @@ function getSourceSubtitle(source: SkillSource, skills: SkillCommand[]): string 
       return idx > 0 ? s.name.slice(0, idx) : null;
     }).filter((n): n is string => n != null))];
     return servers.length > 0 ? servers.join(', ') : undefined;
+  }
+  if (source === 'bundled') {
+    // Bundled skills are compiled into the CLI binary — no filesystem path
+    // applies. The subtitle just clarifies provenance.
+    return 'shipped with net-runner';
   }
   const skillsPath = getDisplayPath(getSkillsPath(source, 'skills'));
   const hasCommandsSkills = skills.some(s => s.loadedFrom === 'commands_DEPRECATED');
@@ -71,7 +79,8 @@ export function SkillsMenu(t0: Props) {
       localSettings: [],
       flagSettings: [],
       plugin: [],
-      mcp: []
+      mcp: [],
+      bundled: []
     };
     for (const skill of skills) {
       const source = skill.source as SkillSource;
