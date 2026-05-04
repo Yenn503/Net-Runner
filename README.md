@@ -118,7 +118,7 @@ Full reference: [Intelligence Engine Docs](docs/intelligence-engine/README.md)
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -197,7 +197,7 @@ bun run scripts/system-check.ts
 
 ---
 
-## 🧭 OSS Runtime Status
+## OSS Runtime Status
 
 The strongest supported path in this repository is **local-first**:
 
@@ -218,7 +218,7 @@ If you already have a compatible `cc://` endpoint from another environment, the 
 
 ---
 
-## ⚙️ Execution Flow
+## Execution Flow
 
 1. Net-Runner detects assessment intent and target type from your prompt
 2. Creates a `.netrunner/` project folder with engagement config and run state
@@ -243,7 +243,7 @@ The recon stack includes cloud and identity enumeration tools: `cloud_enum`, `GH
 
 ---
 
-## 🧰 Tool Catalog
+## Tool Catalog
 
 **153 red-team tools** across 12 categories — [full catalog](docs/capabilities/tool-catalog.md)
 
@@ -264,7 +264,7 @@ The recon stack includes cloud and identity enumeration tools: `cloud_enum`, `GH
 
 ---
 
-## 📁 Runtime Layout
+## Runtime Layout
 
 ```text
 .netrunner/
