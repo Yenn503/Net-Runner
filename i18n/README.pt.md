@@ -58,7 +58,6 @@ Avalie https://target.example. Comece com recon, mapeie a superfície de ataque,
 
 - README completo em inglês: [README.md](README.md)
 - Como funciona e workflows: [docs/workflows/overview.md](docs/workflows/overview.md)
-- Catálogo completo de ferramentas: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - Alinhamento com a pesquisa: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - Proveniência do projeto: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - Simulação APT: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

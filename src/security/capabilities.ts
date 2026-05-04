@@ -5,7 +5,7 @@ import {
   type CapabilityPackName,
   type SecurityWorkflow,
 } from './workflows.js'
-import { IMPORTED_PENTEST_CAPABILITIES } from './pentestToolCatalog.js'
+import { IMPORTED_PENTEST_CAPABILITIES } from './catalog/index.js'
 
 export type NetRunnerCapabilityId =
   | 'linux-command-execution'
@@ -14,6 +14,11 @@ export type NetRunnerCapabilityId =
   | 'scripting-automation'
   | 'security-header-inspection'
   | 'google-search-intel'
+  | 'maigret-digital-footprint'
+  | 'identity-correlation-graph'
+  | 'wordpress-attack-chain'
+  | 'headless-browser-validation'
+  | 'bug-bounty-validation-pipeline'
   | 'retrieval-augmented-research'
   | 'http-curl'
   | 'http-wget'
@@ -50,6 +55,9 @@ export type NetRunnerCapabilityId =
   | 'crypto-enumeration'
   | 'structured-reasoning-log'
   | 'command-and-control-session'
+  | 'c2-redirector-fronting'
+  | 'c2-implant-generation'
+  | 'c2-beacon-operations'
   | 'mcp-api-endpoint-integration'
   | `kali-${string}`
 
@@ -221,6 +229,126 @@ const CORE_CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
     executionModel: 'hybrid',
     netRunnerTools: ['WebSearch', 'WebFetch'],
     optionalMcpServers: ['search', 'intel'],
+  },
+  {
+    id: 'maigret-digital-footprint',
+    label: 'Maigret Digital Footprint Assessment',
+    description:
+      'Username and profile OSINT capability using Maigret across 3000+ sites with JSON/HTML/TXT report artifacts, recursive identity pivoting, and false-positive triage.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['recon', 'evidence', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'Read', 'Write', 'Edit', 'Grep', 'Glob', 'TodoWrite'],
+    requiredCommands: ['maigret'],
+    commandExamples: [
+      'maigret username --json .netrunner/artifacts/digital-footprint/username/maigret.json --html .netrunner/artifacts/digital-footprint/username/maigret.html --txt .netrunner/artifacts/digital-footprint/username/maigret.txt',
+      'maigret username --permute --json .netrunner/artifacts/digital-footprint/username/permuted.json',
+      'maigret --parse https://example.com/profile/user --json .netrunner/artifacts/digital-footprint/user/parsed.json',
+    ],
+  },
+  {
+    id: 'identity-correlation-graph',
+    label: 'Identity Correlation Graph',
+    description:
+      'Employee and public-account correlation capability using LinkedInDumper, Maigret, Holehe, and GHunt to map names, usernames, emails, and service exposure into evidence-backed identity pivots.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['recon', 'evidence', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'Read', 'Write', 'Edit', 'Grep', 'Glob', 'TodoWrite', 'WebSearch', 'WebFetch'],
+    requiredCommands: ['python3'],
+    commandExamples: [
+      'python3 <LinkedInDumper-repo>/linkedindumper.py --url https://www.linkedin.com/company/example --cookie "$LINKEDIN_COOKIE_LI_AT" --jitter --output-json .netrunner/artifacts/identity-correlation/example/linkedin.json --output-csv .netrunner/artifacts/identity-correlation/example/linkedin.csv',
+      'maigret username --json .netrunner/artifacts/identity-correlation/example/maigret-username.json',
+      'holehe user@example.com --only-used > .netrunner/artifacts/identity-correlation/example/holehe.txt',
+    ],
+  },
+  {
+    id: 'headless-browser-validation',
+    label: 'Headless Browser Validation',
+    description:
+      'Real-rendering-engine validation capability using Camofox stealth-browser REST API or local Playwright/Chromium for DOM XSS confirmation, CSP behaviour, SPA route discovery, and anti-bot OSINT.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['web', 'api', 'recon', 'evidence', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+      'exploit-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'Read', 'Write', 'Edit', 'WebFetch', 'TodoWrite', 'Grep'],
+    requiredCommands: ['curl'],
+    optionalMcpServers: ['camofox', 'playwright'],
+    commandExamples: [
+      'curl -s "${CAMOFOX_URL:-http://localhost:9377}/health"',
+      'curl -s -X POST "${CAMOFOX_URL:-http://localhost:9377}/tabs" -H \'content-type: application/json\' -d \'{"userId":"netrunner","sessionKey":"engagement","url":"https://target.example"}\'',
+      'google-chrome --headless --disable-gpu --dump-dom --screenshot=.netrunner/artifacts/headless-browser/target/screenshot.png https://target.example',
+    ],
+  },
+  {
+    id: 'bug-bounty-validation-pipeline',
+    label: 'Bug Bounty Validation Pipeline',
+    description:
+      'Orchestrated bug-bounty validation capability chaining recon, parameter mining, XSS candidates, headless DOM confirmation, and OOB validation into evidence-tagged findings.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['recon', 'web', 'api', 'evidence', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+      'exploit-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'Read', 'Write', 'Edit', 'Grep', 'TodoWrite', 'WebFetch', 'WebSearch'],
+    requiredCommands: ['subfinder', 'httpx', 'katana'],
+    commandExamples: [
+      'subfinder -d <root> -all -silent | tee .netrunner/artifacts/bug-bounty/<root>/subdomains.txt',
+      'cat .netrunner/artifacts/bug-bounty/<root>/historical-urls.txt | uro | grep "=" > .netrunner/artifacts/bug-bounty/<root>/with-params.txt',
+      'dalfox file .netrunner/artifacts/bug-bounty/<root>/xss-candidates.txt --skip-bav --skip-mining-all -o .netrunner/artifacts/bug-bounty/<root>/dalfox.json',
+    ],
+  },
+  {
+    id: 'wordpress-attack-chain',
+    label: 'WordPress Attack Chain',
+    description:
+      'WordPress-focused attack-path capability covering fingerprinting, WPScan enumeration, REST and XML-RPC exposure checks, plugin/theme validation, and guarded auth-path escalation with evidence-first outputs.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['recon', 'web', 'exploitation', 'evidence', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'web-testing-specialist',
+      'exploit-specialist',
+      'retest-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'skills-and-tools',
+    netRunnerTools: ['Bash', 'WebFetch', 'Read', 'Write', 'Grep', 'TodoWrite'],
+    requiredCommands: ['wpscan', 'curl', 'nuclei'],
+    commandExamples: [
+      'wpscan --url https://target.example -e vp,vt,tt,cb,dbe,u,m --plugins-detection mixed --random-user-agent',
+      'curl https://target.example/wp-json/wp/v2/users',
+      'nuclei -u https://target.example -t http/vulnerabilities/wordpress/',
+    ],
   },
   {
     id: 'retrieval-augmented-research',
@@ -812,6 +940,60 @@ const CORE_CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
     executionModel: 'hybrid',
     netRunnerTools: ['Bash', 'Task', 'Agent'],
     optionalMcpServers: ['lab-control', 'remote-shell'],
+  },
+  {
+    id: 'c2-redirector-fronting',
+    label: 'C2 Redirector & Fronting',
+    description:
+      'Adversary-emulation redirector planning capability for approved domains, TLS handling, upstream listener routing, and teardown-safe exposure controls.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['coordination', 'lab-control', 'network', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'network-testing-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'hybrid',
+    netRunnerTools: ['Bash', 'Read', 'Write', 'Edit', 'TodoWrite', 'WebFetch'],
+    requiredCommands: ['curl'],
+    optionalMcpServers: ['lab-control', 'remote-shell'],
+  },
+  {
+    id: 'c2-implant-generation',
+    label: 'C2 Implant Generation',
+    description:
+      'Guarded payload and listener generation capability using approved Sliver or Mythic operator workflows, with transport/profile metadata captured as evidence.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['coordination', 'lab-control', 'exploitation', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'exploit-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'hybrid',
+    netRunnerTools: ['Bash', 'Read', 'Write', 'Edit', 'TodoWrite', 'WebFetch'],
+    optionalMcpServers: ['sliver', 'mythic', 'c2'],
+  },
+  {
+    id: 'c2-beacon-operations',
+    label: 'C2 Beacon Operations',
+    description:
+      'Guarded callback, listener, and pivot operation capability for authorized adversary-emulation activity with operator-role separation and evidence capture.',
+    implementationPath: 'src/skills/bundled/index.ts',
+    capabilityPacks: ['coordination', 'lab-control', 'lateral-movement', 'privilege-escalation', 'reporting'],
+    recommendedAgents: [
+      'engagement-lead',
+      'exploit-specialist',
+      'privilege-escalation-specialist',
+      'lateral-movement-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+    executionModel: 'hybrid',
+    netRunnerTools: ['Bash', 'Agent', 'SendMessage', 'Read', 'Write', 'TodoWrite', 'WebFetch'],
+    optionalMcpServers: ['sliver', 'mythic', 'c2', 'remote-shell'],
   },
   {
     id: 'mcp-api-endpoint-integration',

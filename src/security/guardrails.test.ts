@@ -60,6 +60,38 @@ test('guardrails review out-of-scope target references', () => {
   assert.deepEqual(decision.matchedPatterns, ['scope-mismatch'])
 })
 
+test('guardrails block C2 operations without explicit adversary-emulation authorization', () => {
+  const decision = assessActionAgainstImpact(
+    'start sliver-client listener and register callback redirector',
+    'intrusive',
+    'confirmed',
+    {
+      engagementStatus: 'active',
+      restrictions: ['intrusive testing in scope; callback infrastructure absent from scope notes'],
+    },
+  )
+
+  assert.equal(decision.action, 'block')
+  assert.equal(decision.tripwireTriggered, true)
+  assert.deepEqual(decision.matchedPatterns, ['command-and-control'])
+})
+
+test('guardrails allow C2 operations when restrictions explicitly authorize adversary emulation', () => {
+  const decision = assessActionAgainstImpact(
+    'start sliver-client listener and register callback redirector',
+    'intrusive',
+    'confirmed',
+    {
+      engagementStatus: 'active',
+      restrictions: ['approved adversary emulation and command-and-control callback infrastructure for this operation'],
+    },
+  )
+
+  assert.equal(decision.action, 'allow')
+  assert.equal(decision.tripwireTriggered, false)
+  assert.deepEqual(decision.matchedPatterns, [])
+})
+
 test('untrusted data wrapper is explicit and bounded', () => {
   const wrapped = wrapUntrustedData('payload')
 

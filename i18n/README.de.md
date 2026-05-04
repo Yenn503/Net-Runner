@@ -58,7 +58,6 @@ Bewerte https://target.example. Starte mit Recon, mappe die Angriffsfläche, val
 
 - Vollständiges englisches README: [README.md](README.md)
 - Arbeitsweise und Workflows: [docs/workflows/overview.md](docs/workflows/overview.md)
-- Vollständiger Tool-Katalog: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - Forschungsbezug: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - Herkunft des Projekts: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - APT-Simulation: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

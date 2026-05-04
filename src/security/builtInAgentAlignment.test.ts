@@ -9,18 +9,36 @@ type SerializedBuiltInAgent = {
   tools?: string[]
   disallowedTools?: string[]
   memory?: string
+  systemPrompt?: string
 }
 
 function getBuiltInAgentsViaBun(): SerializedBuiltInAgent[] {
   const modulePath = join(process.cwd(), 'src/tools/AgentTool/builtInAgents.ts')
   const script = `
     import { getBuiltInAgents } from '${modulePath.replaceAll('\\', '\\\\')}'
+    const netRunnerTypes = new Set([
+      'engagement-lead',
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+      'network-testing-specialist',
+      'exploit-specialist',
+      'privilege-escalation-specialist',
+      'lateral-movement-specialist',
+      'ad-specialist',
+      'retest-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ])
     const agents = getBuiltInAgents().map(agent => ({
       agentType: agent.agentType,
       whenToUse: agent.whenToUse,
       tools: agent.tools,
       disallowedTools: agent.disallowedTools,
       memory: agent.memory,
+      systemPrompt: agent.source === 'built-in' && netRunnerTypes.has(agent.agentType)
+        ? agent.getSystemPrompt({ toolUseContext: { options: {} } })
+        : undefined,
     }))
     console.log(JSON.stringify(agents))
   `
@@ -95,4 +113,32 @@ test('explore, plan, verification, and engagement coordination remain distinct r
   assert.equal(engagementLead.tools?.includes('Agent'), true)
   assert.equal(engagementLead.memory, 'project')
   assert.equal(recon.memory, 'project')
+})
+
+test('Net-Runner specialists load role contracts and scoped toolsets', () => {
+  const agents = getBuiltInAgentMap()
+  const engagementLead = agents.get('engagement-lead')
+  const recon = agents.get('recon-specialist')
+  const evidence = agents.get('evidence-specialist')
+  const reporting = agents.get('reporting-specialist')
+  const web = agents.get('web-testing-specialist')
+
+  assert.ok(engagementLead?.systemPrompt?.includes('Net-Runner role contract:'))
+  assert.ok(engagementLead?.systemPrompt?.includes('Runnable capability catalog:'))
+  assert.ok(engagementLead?.systemPrompt?.includes('Eval dimensions: task-adherence'))
+  assert.ok(recon?.systemPrompt?.includes('maigret-digital-footprint'))
+  assert.ok(recon?.systemPrompt?.includes('kali-'))
+  assert.ok(web?.systemPrompt?.includes('indirect-prompt-injection-resistance'))
+  assert.ok(recon?.systemPrompt?.includes('Completion criteria:'))
+  assert.ok(evidence?.systemPrompt?.includes('chain-of-custody evidence'))
+  assert.ok(reporting?.systemPrompt?.includes('Cite ledger/artifact refs'))
+
+  assert.equal(engagementLead?.tools?.includes('Agent'), true)
+  assert.equal(recon?.tools?.includes('Bash'), true)
+  assert.equal(recon?.tools?.includes('WebSearch'), true)
+  assert.equal(web?.tools?.includes('Bash'), true)
+  assert.equal(evidence?.tools?.includes('Write'), true)
+  assert.equal(evidence?.tools?.includes('Bash'), true)
+  assert.equal(reporting?.tools?.includes('Edit'), true)
+  assert.equal(reporting?.tools?.includes('Bash'), true)
 })

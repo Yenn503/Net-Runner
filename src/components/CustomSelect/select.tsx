@@ -260,6 +260,7 @@ export function Select<T>(t0: SelectProps<T>) {
   const layout = t4 === undefined ? "compact" : t4;
   const disableSelection = t5 === undefined ? false : t5;
   const inlineDescriptions = t6 === undefined ? false : t6;
+  const resolvedDefaultFocusValue = defaultFocusValue ?? defaultValue;
   const [imagesSelected, setImagesSelected] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   let t7;
@@ -318,7 +319,7 @@ export function Select<T>(t0: SelectProps<T>) {
   }
   useEffect(t9, t10);
   let t11;
-  if ($[7] !== defaultFocusValue || $[8] !== defaultValue || $[9] !== onCancel || $[10] !== onChange || $[11] !== onFocus || $[12] !== options || $[13] !== visibleOptionCount) {
+  if ($[7] !== defaultValue || $[8] !== onCancel || $[9] !== onChange || $[10] !== onFocus || $[11] !== options || $[12] !== resolvedDefaultFocusValue || $[13] !== visibleOptionCount) {
     t11 = {
       visibleOptionCount,
       options,
@@ -326,14 +327,14 @@ export function Select<T>(t0: SelectProps<T>) {
       onChange,
       onCancel,
       onFocus,
-      focusValue: defaultFocusValue
+      focusValue: resolvedDefaultFocusValue
     } as UseSelectStateProps<T>;
-    $[7] = defaultFocusValue;
-    $[8] = defaultValue;
-    $[9] = onCancel;
-    $[10] = onChange;
-    $[11] = onFocus;
-    $[12] = options;
+    $[7] = defaultValue;
+    $[8] = onCancel;
+    $[9] = onChange;
+    $[10] = onFocus;
+    $[11] = options;
+    $[12] = resolvedDefaultFocusValue;
     $[13] = visibleOptionCount;
     $[14] = t11;
   } else {

@@ -5,6 +5,7 @@ import type {
   LocalJSXCommandOnDone,
 } from '../../types/command.js'
 import TextInput from '../../components/TextInput.js'
+import { useTerminalSize } from '../../hooks/useTerminalSize.js'
 import {
   Select,
   type OptionWithDescription,
@@ -161,6 +162,8 @@ type TextEntryDialogProps = {
 function TextEntryDialog(props: TextEntryDialogProps): React.ReactNode {
   const [value, setValue] = useState(props.initialValue)
   const [error, setError] = useState<string | null>(null)
+  const [cursorOffset, setCursorOffset] = useState(props.initialValue.length)
+  const terminalSize = useTerminalSize()
 
   const handleSubmit = (rawValue?: string) => {
     const nextValue = (rawValue ?? value).trim()
@@ -190,6 +193,9 @@ function TextEntryDialog(props: TextEntryDialogProps): React.ReactNode {
           }}
           onSubmit={handleSubmit}
           placeholder={props.placeholder}
+          columns={terminalSize.columns}
+          cursorOffset={cursorOffset}
+          onChangeCursorOffset={setCursorOffset}
           focus
           showCursor
           mask={props.mask}

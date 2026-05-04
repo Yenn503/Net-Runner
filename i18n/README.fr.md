@@ -58,7 +58,6 @@ Exemple :
 
 - README complet en anglais : [README.md](README.md)
 - Fonctionnement et workflows : [docs/workflows/overview.md](docs/workflows/overview.md)
-- Catalogue complet des outils : [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - Alignement avec la recherche : [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - Provenance du projet : [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - Simulation APT : [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

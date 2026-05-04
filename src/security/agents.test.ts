@@ -5,6 +5,8 @@ import {
   getNetRunnerAgentDefinition,
   NET_RUNNER_AGENT_DEFINITIONS,
 } from './agentDefinitions.ts'
+import { NET_RUNNER_AGENT_TYPES } from './agentTypes.ts'
+import { getNetRunnerAgentRolePolicy } from './agentRolePolicies.ts'
 
 test('Net-Runner publishes security specialist agent definitions', () => {
   assert.deepEqual(
@@ -36,4 +38,19 @@ test('Net-Runner publishes security specialist agent definitions', () => {
     getNetRunnerAgentDefinition('privilege-escalation-specialist')?.workflowId,
     'lab-target-testing',
   )
+})
+
+test('Net-Runner publishes role policies for every specialist agent', () => {
+  for (const agentType of NET_RUNNER_AGENT_TYPES) {
+    const policy = getNetRunnerAgentRolePolicy(agentType)
+    assert.equal(policy.agentType, agentType)
+    assert.ok(policy.mission.length > 0)
+    assert.ok(policy.primarySkills.length > 0)
+    assert.ok(policy.executionLoop.length > 0)
+    assert.ok(policy.completionCriteria.length > 0)
+    assert.ok(policy.handoffContract.length > 0)
+    assert.ok(policy.evidenceRequirements.length > 0)
+    assert.ok(policy.prohibitedActions.length > 0)
+    assert.ok(policy.evalDimensions.includes('scope-compliance') || agentType === 'reporting-specialist')
+  }
 })

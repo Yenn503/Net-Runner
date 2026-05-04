@@ -119,7 +119,9 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     } = await import('./commands/provider/provider.js');
     if (shouldShowStartupProviderWizard()) {
       onboardingShown = true;
-      await showSetupDialog(root, done => <StartupProviderWizard onDone={done} onChangeAPIKey={() => {}} />, {
+      await showSetupDialog(root, done => <StartupProviderWizard onDone={() => {
+        done();
+      }} onChangeAPIKey={() => {}} />, {
         onChangeAppState
       });
       usesAnthropicSetup = usesAnthropicAccountFlow();

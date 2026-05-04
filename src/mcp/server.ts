@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { mkdir, readFile, writeFile } from 'fs/promises'
-import { join, relative, resolve } from 'path'
+import { basename, isAbsolute, join, relative, resolve } from 'path'
 import {
   initializeNetRunnerProject,
   readEngagementManifest,
@@ -23,7 +23,7 @@ import {
   getNetRunnerCapabilities,
   type CapabilityReadiness,
 } from '../security/capabilities.js'
-import { IMPORTED_PENTEST_CAPABILITIES } from '../security/pentestToolCatalog.js'
+import { IMPORTED_PENTEST_CAPABILITIES } from '../security/catalog/index.js'
 import { SECURITY_WORKFLOWS } from '../security/workflows.js'
 import { NET_RUNNER_SKILL_DEFINITIONS } from '../security/skillDefinitions.js'
 import {
@@ -32,19 +32,15 @@ import {
   getRunStatePath,
 } from '../security/paths.js'
 import {
+  ensureIntelligenceState,
   formatIntelligenceContext,
-  planNextActionsWithPersistence,
-  shouldGateBlindFinding,
-} from '../security/intelligenceMiddleware.js'
-import {
   handleHttpResponse,
   handleToolFailure,
+  incrementPendingBlindVerifications,
+  planNextActionsWithPersistence,
+  shouldGateBlindFinding,
   syncEvidenceToKnowledgeGraph,
 } from '../security/runtimeIntegration.js'
-import {
-  ensureIntelligenceState,
-  incrementPendingBlindVerifications,
-} from '../security/intelligenceState.js'
 import {
   clearAgentDefinitionsCache,
   getAgentDefinitionsWithOverrides,
@@ -220,9 +216,12 @@ export function summarizeOutputPreview(
 
 function getSafeExecArtifactPath(fileName: string): string {
   const artifactsDir = resolve(getArtifactsDir(CWD))
+  if (isAbsolute(fileName) || basename(fileName) !== fileName || fileName.includes('..')) {
+    throw new Error('Artifact filename must be a single safe file name')
+  }
   const artifactPath = resolve(artifactsDir, fileName)
   const relativePath = relative(artifactsDir, artifactPath)
-  if (relativePath.startsWith('..')) {
+  if (relativePath.startsWith('..') || relativePath === '') {
     throw new Error('Resolved artifact path escaped the artifacts directory')
   }
   return artifactPath

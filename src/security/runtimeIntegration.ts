@@ -1,3 +1,16 @@
+/**
+ * Net-Runner Intelligence Runtime — the single seam through which callers
+ * interact with engagement guardrails, evidence capture, and the intelligence
+ * middleware (failure classification, WAF detection, knowledge graph, MCTS,
+ * blind-finding gating, intelligence-state formatting).
+ *
+ * External callers SHOULD import from this module only. Reaching past it into
+ * `intelligenceMiddleware.ts` or `intelligenceState.ts` breaks the seam and
+ * makes implementation refactors painful.
+ *
+ * See ADR-0002 (runtime intelligence as middleware) and CONTEXT.md →
+ * "Intelligence Runtime".
+ */
 import { appendEvidenceEntry, readEvidenceEntries } from './evidence.js'
 import { assessPlannedAction, readEngagementManifest } from './engagement.js'
 import type { GuardrailDecision } from './guardrails.js'
@@ -14,6 +27,25 @@ import {
   type EnrichedFailureResult,
   type WafAutoDetectResult,
 } from './intelligenceMiddleware.js'
+
+// Re-export the full intelligence facade. Callers should prefer these over
+// reaching into `intelligenceMiddleware.ts` or `intelligenceState.ts` directly.
+export {
+  formatIntelligenceContext,
+  ingestEvidenceToGraphWithPersistence,
+  planNextActionsWithPersistence,
+  processToolFailure,
+  shouldGateBlindFinding,
+  type ToolFailureContext,
+  type EnrichedFailureResult,
+  type WafAutoDetectResult,
+} from './intelligenceMiddleware.js'
+export {
+  ensureIntelligenceState,
+  incrementPendingBlindVerifications,
+  readIntelligenceState,
+  type IntelligenceState,
+} from './intelligenceState.js'
 
 const SECURITY_AGENT_TYPES = new Set<string>(NET_RUNNER_AGENT_TYPES)
 

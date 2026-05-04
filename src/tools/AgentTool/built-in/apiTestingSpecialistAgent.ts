@@ -1,27 +1,6 @@
-import { BASH_TOOL_NAME } from 'src/tools/BashTool/toolName.js'
-import { FILE_READ_TOOL_NAME } from 'src/tools/FileReadTool/prompt.js'
-import { FILE_EDIT_TOOL_NAME } from 'src/tools/FileEditTool/constants.js'
-import { FILE_WRITE_TOOL_NAME } from 'src/tools/FileWriteTool/prompt.js'
-import { GLOB_TOOL_NAME } from 'src/tools/GlobTool/prompt.js'
-import { GREP_TOOL_NAME } from 'src/tools/GrepTool/prompt.js'
-import { LIST_MCP_RESOURCES_TOOL_NAME } from 'src/tools/ListMcpResourcesTool/prompt.js'
-import { READ_MCP_RESOURCE_TOOL_NAME } from 'src/tools/ReadMcpResourceTool/prompt.js'
-import { SEND_MESSAGE_TOOL_NAME } from 'src/tools/SendMessageTool/constants.js'
-import { SKILL_TOOL_NAME } from 'src/tools/SkillTool/constants.js'
-import { TODO_WRITE_TOOL_NAME } from 'src/tools/TodoWriteTool/constants.js'
-import { WEB_FETCH_TOOL_NAME } from 'src/tools/WebFetchTool/prompt.js'
-import { WEB_SEARCH_TOOL_NAME } from 'src/tools/WebSearchTool/prompt.js'
-import { getNetRunnerAgentDefinition } from '../../../security/agentDefinitions.js'
-import { AGENT_TOOL_NAME } from '../constants.js'
-import type { BuiltInAgentDefinition } from '../loadAgentsDir.js'
+import { defineNetRunnerSpecialist } from './defineNetRunnerSpecialist.js'
 
-const definition = getNetRunnerAgentDefinition('api-testing-specialist')
-if (!definition) {
-  throw new Error('Missing Net-Runner agent definition: api-testing-specialist')
-}
-
-function getApiTestingSpecialistSystemPrompt(): string {
-  return `You are an API testing specialist for Net-Runner.
+const SYSTEM_PROMPT = `You are an API testing specialist for Net-Runner.
 
 Your role is to validate API behavior, state transitions, auth controls, and data exposure paths with evidence-backed output.
 
@@ -53,29 +32,10 @@ Finding classification (include with every finding you report):
 - MITRE ATT&CK: technique ID (e.g. T1190 Exploit Public-Facing Application, T1078 Valid Accounts)
 - OWASP: 2021 category (e.g. A01:2021-Broken-Access-Control, A07:2021-Identification-and-Authentication-Failures)
 `
-}
 
-export const API_TESTING_SPECIALIST_AGENT: BuiltInAgentDefinition = {
-  agentType: definition.agentType,
+export const API_TESTING_SPECIALIST_AGENT = defineNetRunnerSpecialist({
+  agentType: 'api-testing-specialist',
   whenToUse:
     'Use this agent for API reconnaissance, endpoint validation, auth/session checks, and state-transition testing.',
-  tools: [
-    AGENT_TOOL_NAME,
-    BASH_TOOL_NAME,
-    FILE_EDIT_TOOL_NAME,
-    FILE_READ_TOOL_NAME,
-    FILE_WRITE_TOOL_NAME,
-    GLOB_TOOL_NAME,
-    GREP_TOOL_NAME,
-    LIST_MCP_RESOURCES_TOOL_NAME,
-    READ_MCP_RESOURCE_TOOL_NAME,
-    SEND_MESSAGE_TOOL_NAME,
-    SKILL_TOOL_NAME,
-    TODO_WRITE_TOOL_NAME,
-    WEB_FETCH_TOOL_NAME,
-    WEB_SEARCH_TOOL_NAME,
-  ],
-  source: 'built-in',
-  baseDir: 'built-in',
-  getSystemPrompt: getApiTestingSpecialistSystemPrompt,
-}
+  systemPrompt: SYSTEM_PROMPT,
+})

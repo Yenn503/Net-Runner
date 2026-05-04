@@ -58,7 +58,6 @@ https://target.example का असेसमेंट करो। recon से
 
 - पूरा अंग्रेज़ी README: [README.md](README.md)
 - यह कैसे काम करता है और workflows: [docs/workflows/overview.md](docs/workflows/overview.md)
-- पूरा tool catalog: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - research alignment: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - project provenance: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - APT simulation: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

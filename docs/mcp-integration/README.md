@@ -85,7 +85,7 @@ If you are only exposing Net-Runner as an inbound MCP server, you do not need a 
 
 | Tool | Purpose |
 |---|---|
-| `nr_exec` | **Shell execution — the workhorse.** All 153 pentest tools run here. |
+| `nr_exec` | **Shell execution — the workhorse.** All 153+ pentest tools and harness commands such as Maigret run here. |
 | `nr_engagement_init` | Initialize `.netrunner/` engagement with workflow, targets, scope |
 | `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
 | `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
@@ -119,6 +119,22 @@ Runtime behavior:
 - **Context budget tracking** — cumulative returned output is tracked per MCP session and warns when the transcript becomes expensive
 - **No tool-surface bloat** — composite execution is implemented inside `nr_exec`, not as extra MCP tools
 - **Operator-grade runtime logs** — the MCP server terminal shows command execution, artifact persistence, evidence saves, intelligence triggers, and session-budget snapshots in real time
+
+Example Maigret digital-footprint run through the same harness surface:
+
+```json
+{
+  "commands": [
+    "command -v maigret && maigret --version",
+    "mkdir -p .netrunner/artifacts/digital-footprint/exampleuser",
+    "maigret exampleuser --json .netrunner/artifacts/digital-footprint/exampleuser/maigret.json --html .netrunner/artifacts/digital-footprint/exampleuser/maigret.html --txt .netrunner/artifacts/digital-footprint/exampleuser/maigret.txt"
+  ],
+  "summary_only": true,
+  "stop_on_error": true
+}
+```
+
+If `maigret` is missing, install it with `python3 -m pip install --user maigret`, rerun `/engagement capabilities`, then execute the assessment. The `/digital-footprint-assessment` skill uses this same command path and writes artifacts under `.netrunner/artifacts/digital-footprint/`.
 
 ### Client configurations
 

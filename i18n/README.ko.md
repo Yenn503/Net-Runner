@@ -58,7 +58,6 @@ https://target.example를 평가하세요. recon부터 시작해서 공격면을
 
 - 전체 영어 README: [README.md](README.md)
 - 작동 방식과 워크플로우: [docs/workflows/overview.md](docs/workflows/overview.md)
-- 전체 도구 카탈로그: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - 연구 정렬 문서: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - 프로젝트 출처 문서: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - APT 시뮬레이션: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

@@ -2,6 +2,15 @@ export type NetRunnerSkillName =
   | 'engagement-setup'
   | 'scope-guard'
   | 'recon-plan'
+  | 'digital-footprint-assessment'
+  | 'identity-correlation'
+  | 'c2-infrastructure'
+  | 'c2-operations'
+  | 'wordpress-attack-tree'
+  | 'headless-browser-validation'
+  | 'bug-bounty-validation'
+  | 'http-smuggling-cache-poisoning'
+  | 'serverless-edge-recon'
   | 'target-fingerprinting'
   | 'evidence-capture'
   | 'vuln-assessment'
@@ -15,6 +24,7 @@ export type NetRunnerSkillName =
   | 'waf-detection'
   | 'mcts-planning'
   | 'oob-verification'
+  | 'caveman-harness'
 
 export type NetRunnerSkillDefinition = {
   name: NetRunnerSkillName
@@ -43,6 +53,69 @@ export const NET_RUNNER_SKILL_DEFINITIONS: NetRunnerSkillDefinition[] = [
     title: 'Recon Plan',
     description:
       'Build a phased reconnaissance and enumeration plan for the current target.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'digital-footprint-assessment',
+    title: 'Digital Footprint Assessment',
+    description:
+      'Run username and profile OSINT with Maigret-backed checks, recursive identity pivoting, report exports, and evidence-safe correlation.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'identity-correlation',
+    title: 'Identity Correlation',
+    description:
+      'Correlate employee, username, email, and public-account signals using LinkedInDumper, Maigret, Holehe, and GHunt to build evidence-backed target identity graphs.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'c2-infrastructure',
+    title: 'C2 Infrastructure',
+    description:
+      'Plan and validate adversary-emulation command-and-control infrastructure: redirectors, listener transports, domain approvals, profile parameters, payload generation, and teardown requirements.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'c2-operations',
+    title: 'C2 Operations',
+    description:
+      'Run guarded C2 operator workflows for payload handling, listener lifecycle, callback operations, pivot enablement, evidence capture, and operator-role separation.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'wordpress-attack-tree',
+    title: 'WordPress Attack Tree',
+    description:
+      'Run WordPress-specific fingerprinting, enumeration, guarded credential testing, XML-RPC and REST exposure checks, and plugin/theme attack-path validation with WPScan-backed evidence capture.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'headless-browser-validation',
+    title: 'Headless Browser Validation',
+    description:
+      'Validate findings inside a real rendering engine using a Camofox stealth-browser REST endpoint or local Playwright/Chromium so DOM XSS, CSP behaviour, SPA routes, and anti-bot OSINT can be confirmed beyond static HTTP scrapes.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'bug-bounty-validation',
+    title: 'Bug Bounty Validation Pipeline',
+    description:
+      'Orchestrate a real bug-bounty validation pipeline: recon, parameter mining, dalfox/qsreplace XSS candidates, headless browser DOM confirmation, OOB verification, and evidence-first triage with false-positive notes.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'http-smuggling-cache-poisoning',
+    title: 'HTTP Smuggling & Cache Poisoning',
+    description:
+      'Probe authorized web targets for HTTP request smuggling (CL.TE/TE.CL/TE.TE) and cache poisoning vectors using smuggler, header fuzzing, and OOB confirmation, with strict guardrails around impact and evidence capture.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'serverless-edge-recon',
+    title: 'Serverless & Edge Recon',
+    description:
+      'Map Vercel, Netlify, Cloudflare Workers, AWS Lambda, and Azure Functions exposure: app deployments, function endpoints, environment leakage, edge route enumeration, and SSRF/AC misconfigs with nuclei-template-driven validation.',
     primaryExecutionModel: 'skills-and-tools',
   },
   {
@@ -134,6 +207,13 @@ export const NET_RUNNER_SKILL_DEFINITIONS: NetRunnerSkillDefinition[] = [
     title: 'Out-of-Band Verification',
     description:
       'Generate and track OOB callback payloads for blind vulnerability confirmation (blind XXE, SSRF, RCE, SQLi, Log4Shell). Produces structured payloads and monitors callback status.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'caveman-harness',
+    title: 'Caveman Harness',
+    description:
+      'Compress agent communication and handoffs using caveman-style brevity while preserving exact technical terms, evidence refs, commands, paths, URLs, and code.',
     primaryExecutionModel: 'skills-and-tools',
   },
 ] as const

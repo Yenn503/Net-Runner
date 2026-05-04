@@ -1,27 +1,6 @@
-import { BASH_TOOL_NAME } from 'src/tools/BashTool/toolName.js'
-import { FILE_READ_TOOL_NAME } from 'src/tools/FileReadTool/prompt.js'
-import { FILE_EDIT_TOOL_NAME } from 'src/tools/FileEditTool/constants.js'
-import { FILE_WRITE_TOOL_NAME } from 'src/tools/FileWriteTool/prompt.js'
-import { GLOB_TOOL_NAME } from 'src/tools/GlobTool/prompt.js'
-import { GREP_TOOL_NAME } from 'src/tools/GrepTool/prompt.js'
-import { LIST_MCP_RESOURCES_TOOL_NAME } from 'src/tools/ListMcpResourcesTool/prompt.js'
-import { READ_MCP_RESOURCE_TOOL_NAME } from 'src/tools/ReadMcpResourceTool/prompt.js'
-import { SEND_MESSAGE_TOOL_NAME } from 'src/tools/SendMessageTool/constants.js'
-import { SKILL_TOOL_NAME } from 'src/tools/SkillTool/constants.js'
-import { TODO_WRITE_TOOL_NAME } from 'src/tools/TodoWriteTool/constants.js'
-import { WEB_FETCH_TOOL_NAME } from 'src/tools/WebFetchTool/prompt.js'
-import { WEB_SEARCH_TOOL_NAME } from 'src/tools/WebSearchTool/prompt.js'
-import { getNetRunnerAgentDefinition } from '../../../security/agentDefinitions.js'
-import { AGENT_TOOL_NAME } from '../constants.js'
-import type { BuiltInAgentDefinition } from '../loadAgentsDir.js'
+import { defineNetRunnerSpecialist } from './defineNetRunnerSpecialist.js'
 
-const definition = getNetRunnerAgentDefinition('engagement-lead')
-if (!definition) {
-  throw new Error('Missing Net-Runner agent definition: engagement-lead')
-}
-
-function getEngagementLeadSystemPrompt(): string {
-  return `You are the engagement lead for Net-Runner, a security-first testing framework.
+const SYSTEM_PROMPT = `You are the engagement lead for Net-Runner, a security-first testing framework.
 
 Your role is to coordinate an authorized testing workflow, keep the work inside scope, and route specialist work to the right subagents.
 
@@ -90,29 +69,10 @@ Runtime intelligence (automatic):
 - When choosing next steps in complex engagements, check the MCTS plan recommendation in [Intelligence State] before routing
 - Blind injection findings (time-based, boolean-based, OOB) require statistical verification before being promoted to confirmed
 `
-}
 
-export const ENGAGEMENT_LEAD_AGENT: BuiltInAgentDefinition = {
-  agentType: definition.agentType,
+export const ENGAGEMENT_LEAD_AGENT = defineNetRunnerSpecialist({
+  agentType: 'engagement-lead',
   whenToUse:
     'Use this agent to coordinate an authorized security testing engagement, route specialist work, and maintain scope discipline across the session.',
-  tools: [
-    AGENT_TOOL_NAME,
-    BASH_TOOL_NAME,
-    FILE_EDIT_TOOL_NAME,
-    FILE_READ_TOOL_NAME,
-    FILE_WRITE_TOOL_NAME,
-    GLOB_TOOL_NAME,
-    GREP_TOOL_NAME,
-    LIST_MCP_RESOURCES_TOOL_NAME,
-    READ_MCP_RESOURCE_TOOL_NAME,
-    SEND_MESSAGE_TOOL_NAME,
-    SKILL_TOOL_NAME,
-    TODO_WRITE_TOOL_NAME,
-    WEB_FETCH_TOOL_NAME,
-    WEB_SEARCH_TOOL_NAME,
-  ],
-  source: 'built-in',
-  baseDir: 'built-in',
-  getSystemPrompt: getEngagementLeadSystemPrompt,
-}
+  systemPrompt: SYSTEM_PROMPT,
+})
