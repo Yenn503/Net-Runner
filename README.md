@@ -152,7 +152,7 @@ bun run dev:profile
 
 ```
 ? Select your provider:
-  1. GitHub Models   (free with any GitHub account)
+  1. GitHub Models   
   2. GitHub Copilot  (your existing Copilot subscription)
   3. OpenAI
   4. Google Gemini
