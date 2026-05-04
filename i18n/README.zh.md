@@ -58,7 +58,6 @@ node dist/cli.mjs
 
 - 英文完整 README：[README.md](README.md)
 - 工作方式与工作流：[docs/workflows/overview.md](docs/workflows/overview.md)
-- 完整工具目录：[docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - 与研究方向的对应关系：[docs/project/research-alignment.md](docs/project/research-alignment.md)
 - 项目来源说明：[docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - APT 模拟参考：[docs/apt-simulation/README.md](docs/apt-simulation/README.md)

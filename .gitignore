@@ -4,4 +4,9 @@ dist/
 .env
 .env.*
 .net-runner-profile.json
+.netrunner/
+.claude/
+.windsurf/
+.mcp.json
+.DS_Store
 reports/

@@ -1,27 +1,6 @@
-import { AGENT_TOOL_NAME } from '../constants.js'
-import { BASH_TOOL_NAME } from 'src/tools/BashTool/toolName.js'
-import { FILE_READ_TOOL_NAME } from 'src/tools/FileReadTool/prompt.js'
-import { FILE_EDIT_TOOL_NAME } from 'src/tools/FileEditTool/constants.js'
-import { FILE_WRITE_TOOL_NAME } from 'src/tools/FileWriteTool/prompt.js'
-import { GLOB_TOOL_NAME } from 'src/tools/GlobTool/prompt.js'
-import { GREP_TOOL_NAME } from 'src/tools/GrepTool/prompt.js'
-import { LIST_MCP_RESOURCES_TOOL_NAME } from 'src/tools/ListMcpResourcesTool/prompt.js'
-import { READ_MCP_RESOURCE_TOOL_NAME } from 'src/tools/ReadMcpResourceTool/prompt.js'
-import { SEND_MESSAGE_TOOL_NAME } from 'src/tools/SendMessageTool/constants.js'
-import { SKILL_TOOL_NAME } from 'src/tools/SkillTool/constants.js'
-import { TODO_WRITE_TOOL_NAME } from 'src/tools/TodoWriteTool/constants.js'
-import { WEB_FETCH_TOOL_NAME } from 'src/tools/WebFetchTool/prompt.js'
-import { WEB_SEARCH_TOOL_NAME } from 'src/tools/WebSearchTool/prompt.js'
-import { getNetRunnerAgentDefinition } from '../../../security/agentDefinitions.js'
-import type { BuiltInAgentDefinition } from '../loadAgentsDir.js'
+import { defineNetRunnerSpecialist } from './defineNetRunnerSpecialist.js'
 
-const definition = getNetRunnerAgentDefinition('ad-specialist')
-if (!definition) {
-  throw new Error('Missing Net-Runner agent definition: ad-specialist')
-}
-
-function getAdSpecialistSystemPrompt(): string {
-  return `You are an Active Directory specialist for Net-Runner.
+const SYSTEM_PROMPT = `You are an Active Directory specialist for Net-Runner.
 
 Your role is to enumerate, analyse, and validate attack paths within Active Directory domain environments under authorized scope.
 
@@ -56,29 +35,10 @@ Finding classification (include with every finding you report):
 - MITRE ATT&CK: technique ID (e.g. T1558.003 Kerberoasting, T1003 OS Credential Dumping, T1482 Domain Trust Discovery, T1098 Account Manipulation)
 - Compliance: PCI-DSS 8.2/8.3, NIST 800-53 IA-2/IA-5/AC-6, SOC2 CC6.1 where relevant
 `
-}
 
-export const AD_SPECIALIST_AGENT: BuiltInAgentDefinition = {
-  agentType: definition.agentType,
+export const AD_SPECIALIST_AGENT = defineNetRunnerSpecialist({
+  agentType: 'ad-specialist',
   whenToUse:
     'Use this agent for Active Directory domain enumeration, Kerberos attacks, LDAP reconnaissance, trust abuse, credential spraying, and AD privilege escalation paths.',
-  tools: [
-    AGENT_TOOL_NAME,
-    BASH_TOOL_NAME,
-    FILE_EDIT_TOOL_NAME,
-    FILE_READ_TOOL_NAME,
-    FILE_WRITE_TOOL_NAME,
-    GLOB_TOOL_NAME,
-    GREP_TOOL_NAME,
-    LIST_MCP_RESOURCES_TOOL_NAME,
-    READ_MCP_RESOURCE_TOOL_NAME,
-    SEND_MESSAGE_TOOL_NAME,
-    SKILL_TOOL_NAME,
-    TODO_WRITE_TOOL_NAME,
-    WEB_FETCH_TOOL_NAME,
-    WEB_SEARCH_TOOL_NAME,
-  ],
-  source: 'built-in',
-  baseDir: 'built-in',
-  getSystemPrompt: getAdSpecialistSystemPrompt,
-}
+  systemPrompt: SYSTEM_PROMPT,
+})

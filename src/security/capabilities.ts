@@ -5,7 +5,7 @@ import {
   type CapabilityPackName,
   type SecurityWorkflow,
 } from './workflows.js'
-import { IMPORTED_PENTEST_CAPABILITIES } from './pentestToolCatalog.js'
+import { IMPORTED_PENTEST_CAPABILITIES } from './catalog/index.js'
 
 export type NetRunnerCapabilityId =
   | 'linux-command-execution'

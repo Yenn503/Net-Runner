@@ -5,7 +5,7 @@ import {
   type NetRunnerCapabilityId,
   type NetRunnerCapabilityDefinition,
 } from './capabilities.js'
-import { IMPORTED_PENTEST_CAPABILITIES } from './pentestToolCatalog.js'
+import { IMPORTED_PENTEST_CAPABILITIES } from './catalog/index.js'
 import {
   NET_RUNNER_AGENT_DEFINITIONS,
   type NetRunnerAgentDefinition,

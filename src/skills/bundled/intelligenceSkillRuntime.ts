@@ -6,16 +6,14 @@ import {
   ingestEvidenceToGraphWithPersistence,
   planNextActionsWithPersistence,
   processToolFailure,
-} from '../../security/intelligenceMiddleware.js'
+  ensureIntelligenceState,
+  readIntelligenceState,
+} from '../../security/runtimeIntegration.js'
 import {
   detectWaf,
   formatWafGuidanceForAgent,
   type WafDetectionResult,
 } from '../../security/wafDetection.js'
-import {
-  ensureIntelligenceState,
-  readIntelligenceState,
-} from '../../security/intelligenceState.js'
 import {
   verifyResponseLengthDifferential,
   verifyTimeBased,

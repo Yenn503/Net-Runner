@@ -58,7 +58,6 @@ Evalúa https://objetivo.ejemplo. Empieza con reconocimiento, mapea la superfici
 
 - README completo en inglés: [README.md](README.md)
 - Cómo funciona y workflows: [docs/workflows/overview.md](docs/workflows/overview.md)
-- Catálogo completo de herramientas: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - Alineación con la investigación: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - Procedencia del proyecto: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - Simulación APT: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

@@ -58,7 +58,6 @@ node dist/cli.mjs
 
 - README الكامل بالإنجليزية: [README.md](README.md)
 - طريقة العمل وworkflows: [docs/workflows/overview.md](docs/workflows/overview.md)
-- فهرس الأدوات الكامل: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - مواءمة البحث: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - أصل المشروع: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - محاكاة APT: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

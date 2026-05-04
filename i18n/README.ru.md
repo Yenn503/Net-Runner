@@ -58,7 +58,6 @@ node dist/cli.mjs
 
 - Полный README на английском: [README.md](README.md)
 - Как это работает и workflows: [docs/workflows/overview.md](docs/workflows/overview.md)
-- Полный каталог инструментов: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - Связь с исследованием: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - Происхождение проекта: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - Симуляция APT: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

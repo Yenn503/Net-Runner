@@ -58,7 +58,6 @@ https://target.example を評価してください。まず recon から始め�
 
 - 英語版の完全な README: [README.md](README.md)
 - 仕組みと workflow: [docs/workflows/overview.md](docs/workflows/overview.md)
-- 完全なツールカタログ: [docs/capabilities/tool-catalog.md](docs/capabilities/tool-catalog.md)
 - 研究との整合: [docs/project/research-alignment.md](docs/project/research-alignment.md)
 - プロジェクトの出自: [docs/project/upstream-provenance.md](docs/project/upstream-provenance.md)
 - APT シミュレーション: [docs/apt-simulation/README.md](docs/apt-simulation/README.md)

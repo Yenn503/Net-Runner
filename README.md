@@ -30,6 +30,8 @@ The architecture follows the [Code Execution with MCP](https://www.anthropic.com
 
 The current opensource baseline is local-first and type-safe: the repository now typechecks cleanly, the CLI supports direct provider credentials, and the FastMCP server can be run directly from source for red-team-style tool driving, evidence capture, and workflow control.
 
+> **For contributors and AI agents:** [`CONTEXT.md`](./CONTEXT.md) is the canonical vocabulary (engagement, scope, evidence ledger, guardrail decision, capability pack, specialist agent, intelligence runtime). Load-bearing architecture decisions live in [`docs/adr/`](./docs/adr/README.md).
+
 ---
 
 ## 🔍 What It Does
@@ -237,7 +239,7 @@ The recon stack includes cloud and identity enumeration tools: `cloud_enum`, `GH
 
 ## 🧰 Tool Catalog
 
-**153 red-team tools** across 12 categories — [full catalog](docs/capabilities/tool-catalog.md)
+**153 red-team tools** across 12 categories — inspect live readiness with `/engagement capabilities` or `nr_discover`.
 
 | Category | Count | Examples |
 |----------|-------|----------|
@@ -436,7 +438,6 @@ Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
 - [Research Alignment](docs/project/research-alignment.md)
 - [Upstream Provenance](docs/project/upstream-provenance.md)
 - [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
-- [Pentest Tool Catalog](docs/capabilities/tool-catalog.md)
 - [Service Surfaces](docs/capabilities/service-surfaces.md)
 - [APT Simulation Reference](docs/apt-simulation/README.md)
 - [Industry → Threat Actor Map](docs/apt-simulation/industry-threat-map.md)

@@ -1,15 +1,13 @@
 import chalk from 'chalk';
-import figures from 'figures';
 import * as React from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useSetAppState } from 'src/state/AppState.js';
-import type { KeyboardEvent } from '../../ink/events/keyboard-event.js';
 import { Box, Text } from '../../ink.js';
-import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import type { Tools } from '../../Tool.js';
 import { type AgentColorName, setAgentColor } from '../../tools/AgentTool/agentColorManager.js';
 import { type AgentDefinition, getActiveAgentsFromList, isCustomAgent, isPluginAgent } from '../../tools/AgentTool/loadAgentsDir.js';
 import { editFileInEditor } from '../../utils/promptEditor.js';
+import { Select } from '../CustomSelect/select.js';
 import { getActualAgentFilePath, updateAgentFile } from './agentFileUtils.js';
 import { ColorPicker } from './ColorPicker.js';
 import { ModelSelector } from './ModelSelector.js';
@@ -22,6 +20,7 @@ type Props = {
   onBack: () => void;
 };
 type EditMode = 'menu' | 'edit-tools' | 'edit-color' | 'edit-model';
+type MenuAction = 'open-in-editor' | 'edit-tools' | 'edit-model' | 'edit-color';
 type SaveChanges = {
   tools?: string[];
   color?: AgentColorName;
@@ -35,7 +34,6 @@ export function AgentEditor({
 }: Props): React.ReactNode {
   const setAppState = useSetAppState();
   const [editMode, setEditMode] = useState<EditMode>('menu');
-  const [selectedMenuIndex, setSelectedMenuIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<AgentColorName | undefined>(agent.color as AgentColorName | undefined);
   const handleOpenInEditor = useCallback(async () => {
@@ -93,19 +91,22 @@ export function AgentEditor({
       return false;
     }
   }, [agent, selectedColor, onSaved, setAppState]);
-  const menuItems = useMemo(() => [{
+  const menuItems = useMemo<Array<{
+    label: string;
+    value: MenuAction;
+  }>>(() => [{
     label: 'Open in editor',
-    action: handleOpenInEditor
+    value: 'open-in-editor'
   }, {
     label: 'Edit tools',
-    action: () => setEditMode('edit-tools')
+    value: 'edit-tools'
   }, {
     label: 'Edit model',
-    action: () => setEditMode('edit-model')
+    value: 'edit-model'
   }, {
     label: 'Edit color',
-    action: () => setEditMode('edit-color')
-  }], [handleOpenInEditor]);
+    value: 'edit-color'
+  }], []);
   const handleEscape = useCallback(() => {
     setError(null);
     if (editMode === 'menu') {
@@ -114,32 +115,28 @@ export function AgentEditor({
       setEditMode('menu');
     }
   }, [editMode, onBack]);
-  const handleMenuKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'up') {
-      e.preventDefault();
-      setSelectedMenuIndex(index => Math.max(0, index - 1));
-    } else if (e.key === 'down') {
-      e.preventDefault();
-      setSelectedMenuIndex(index_0 => Math.min(menuItems.length - 1, index_0 + 1));
-    } else if (e.key === 'return') {
-      e.preventDefault();
-      const selectedItem = menuItems[selectedMenuIndex];
-      if (selectedItem) {
-        void selectedItem.action();
-      }
+  const handleMenuSelect = useCallback((value: MenuAction) => {
+    setError(null);
+    switch (value) {
+      case 'open-in-editor':
+        void handleOpenInEditor();
+        break;
+      case 'edit-tools':
+        setEditMode('edit-tools');
+        break;
+      case 'edit-model':
+        setEditMode('edit-model');
+        break;
+      case 'edit-color':
+        setEditMode('edit-color');
+        break;
     }
-  }, [menuItems, selectedMenuIndex]);
-  useKeybinding('confirm:no', handleEscape, {
-    context: 'Confirmation'
-  });
-  const renderMenu = (): React.ReactNode => <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleMenuKeyDown}>
+  }, [handleOpenInEditor]);
+  const renderMenu = (): React.ReactNode => <Box flexDirection="column">
       <Text dimColor>Source: {getAgentSourceDisplayName(agent.source)}</Text>
 
       <Box marginTop={1} flexDirection="column">
-        {menuItems.map((item, index_1) => <Text key={item.label} color={index_1 === selectedMenuIndex ? 'suggestion' : undefined}>
-            {index_1 === selectedMenuIndex ? `${figures.pointer} ` : '  '}
-            {item.label}
-          </Text>)}
+        <Select options={menuItems} onChange={handleMenuSelect} onCancel={handleEscape} />
       </Box>
 
       {error && <Box marginTop={1}>
