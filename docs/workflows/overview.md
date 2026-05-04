@@ -7,6 +7,7 @@ The strongest supported path in the OSS build is the local workflow runtime. Exp
 That local runtime can be driven in two seamless ways:
 
 - through the Net-Runner CLI with direct provider credentials or local runtimes
+- through the Net-Runner CLI with first-party Anthropic account login via the existing `auth login` and `/login` flows when you want CLI OAuth rather than an API key
 - through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 8 `nr_*` tools
 
 ## Workflow registry
@@ -19,6 +20,10 @@ That local runtime can be driven in two seamless ways:
   Android app review and dynamic testing. This workflow now covers static analysis and runtime tooling such as `adb`, `apktool`, `jadx`, `frida`, `objection`, `MobSF`, `drozer`, and `apkleaks`.
 - `lab-target-testing`
   HTB-style targets, internal labs, service enumeration, privilege escalation, and lateral movement.
+- `adversary-emulation`
+  Guarded command-and-control and post-compromise workflow for explicitly authorized adversary-emulation operations.
+- `bug-bounty-recon-validation`
+  External bug-bounty workflow chaining recon, parameter mining, headless DOM validation, and OOB verification with evidence-tagged findings.
 - `ctf-mode`
   Faster challenge-style runs where iteration matters more than formal reporting.
 - `ad-testing`
@@ -34,6 +39,7 @@ The recon side now also includes:
 - `GHunt` for Google account OSINT
 - `holehe` for email-to-account mapping
 - `haklistgen` for target-derived wordlists
+- `Maigret` for scoped username/profile digital-footprint assessment across 3000+ sites with JSON, HTML, and TXT evidence artifacts
 
 These fill gaps that matter in external bug bounty, mobile, and enterprise-target workflows.
 
@@ -41,14 +47,15 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 
 1. The operator gives a plain-language instruction with a target.
 2. Net-Runner initializes `.netrunner/engagement.json` if needed.
-3. The runtime injects workflow, scope, impact, and retrieved context into the session.
-4. The operator or external MCP client drives execution through the shared harness runtime.
-5. The main agent uses built-in tools directly. Experimental coordinator-mode paths may delegate bounded tool work to workers where that surface is available.
-6. Guardrails review or block higher-impact actions.
-7. Evidence, artifacts, findings, and execution notes are written into the same project state.
-8. Runtime intelligence can react to HTTP responses, failures, and blind-finding patterns while the session is still active.
-9. Background memory consolidation can update persistent memory between runs.
-10. Reports are generated from the evidence chain in `.netrunner/`.
+3. The runtime injects workflow, scope, impact, role contracts, and retrieved context into the session.
+4. The workflow loads shared base skills such as `/engagement-setup`, `/scope-guard`, `/recon-plan`, `/digital-footprint-assessment`, `/target-fingerprinting`, `/evidence-capture`, `/report-generation`, and `/caveman-harness`, then layers target-specific skills on top.
+5. The operator or external MCP client drives execution through the shared harness runtime.
+6. The main agent and specialists use built-in tools directly: shell commands, Maigret OSINT, file operations, web requests, MCP resources, and specialist handoffs.
+7. Guardrails review or block higher-impact actions.
+8. Evidence, artifacts, findings, and execution notes are written into the same project state.
+9. Runtime intelligence can react to HTTP responses, failures, and blind-finding patterns while the session is still active.
+10. Background memory consolidation can update persistent memory between runs.
+11. Reports are generated from the evidence chain in `.netrunner/`.
 
 ## Specialist agents
 
@@ -90,5 +97,6 @@ Before a deeper run:
 
 - use `/engagement capabilities [workflow]` to check missing commands or env requirements
 - use `/engagement alignment` to inspect workflow and agent coverage in the current build
+- install Maigret with `python3 -m pip install --user maigret` when `/engagement capabilities` reports `maigret-digital-footprint` missing
 
 If you want to test agent teams in the OSS build, enable them explicitly through `agentTeamsEnabled`, `NETRUNNER_EXPERIMENTAL_AGENT_TEAMS=1`, or `--agent-teams`.

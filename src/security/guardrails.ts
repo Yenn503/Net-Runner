@@ -37,6 +37,14 @@ const PERSISTENCE_PATTERNS: PatternMatcher[] = [
   },
 ]
 
+const C2_PATTERNS: PatternMatcher[] = [
+  {
+    name: 'command-and-control',
+    pattern:
+      /\b(?:c2|command.?and.?control|beacon|callback|listener|redirector|teamserver|sliver-client|mythic-cli|mythic|sliver)\b/i,
+  },
+]
+
 const STATE_CHANGE_PATTERNS: PatternMatcher[] = [
   {
     name: 'state-change',
@@ -142,6 +150,10 @@ export function assessActionAgainstImpact(
     /\b(no|do not|never|forbid|forbidden)\b[\s\S]{0,80}\b(persist|persistence|cron|authorized_keys|useradd|adduser)\b/.test(
       restrictionsText,
     )
+  const restrictionsAllowC2 =
+    /\b(?:allow|allowed|authorized|approved|permitted|permit)\b[\s\S]{0,120}\b(?:adversary emulation|command.?and.?control|c2|beacon|callback|listener|redirector|teamserver)\b/.test(
+      restrictionsText,
+    )
   if (persistenceMatches.length > 0) {
     return {
       action:
@@ -155,6 +167,17 @@ export function assessActionAgainstImpact(
             ? 'Persistence changes are blocked by declared engagement restrictions.'
           : 'Persistence-related changes require a guardrail review before execution.',
       matchedPatterns: persistenceMatches,
+      tripwireTriggered: true,
+    }
+  }
+
+  const c2Matches = matchPatterns(plannedAction, C2_PATTERNS)
+  if (c2Matches.length > 0 && !restrictionsAllowC2) {
+    return {
+      action: 'block',
+      reason:
+        'Command-and-control infrastructure or callback operations are blocked unless the engagement restrictions explicitly authorize adversary emulation.',
+      matchedPatterns: c2Matches,
       tripwireTriggered: true,
     }
   }

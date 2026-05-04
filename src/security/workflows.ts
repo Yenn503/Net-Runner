@@ -37,6 +37,8 @@ export type SecurityWorkflow = {
     | 'api-testing'
     | 'mobile-app-testing'
     | 'lab-target-testing'
+    | 'adversary-emulation'
+    | 'bug-bounty-recon-validation'
     | 'ctf-mode'
     | 'ad-testing'
     | 'wifi-testing'
@@ -46,6 +48,17 @@ export type SecurityWorkflow = {
   defaultSkills: NetRunnerSkillName[]
   specialistAgents: NetRunnerAgentType[]
 }
+
+const BASE_WORKFLOW_SKILLS: NetRunnerSkillName[] = [
+  'engagement-setup',
+  'scope-guard',
+  'recon-plan',
+  'digital-footprint-assessment',
+  'target-fingerprinting',
+  'evidence-capture',
+  'report-generation',
+  'caveman-harness',
+]
 
 export const CAPABILITY_PACKS: CapabilityPack[] = [
   {
@@ -161,7 +174,19 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification'],
+    defaultSkills: [
+      ...BASE_WORKFLOW_SKILLS,
+      'identity-correlation',
+      'wordpress-attack-tree',
+      'headless-browser-validation',
+      'serverless-edge-recon',
+      'http-smuggling-cache-poisoning',
+      'vuln-assessment',
+      'feedback-loop',
+      'waf-detection',
+      'statistical-verification',
+      'oob-verification',
+    ],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -184,7 +209,17 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification'],
+    defaultSkills: [
+      ...BASE_WORKFLOW_SKILLS,
+      'identity-correlation',
+      'headless-browser-validation',
+      'serverless-edge-recon',
+      'vuln-assessment',
+      'feedback-loop',
+      'waf-detection',
+      'statistical-verification',
+      'oob-verification',
+    ],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -209,7 +244,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation'],
+    defaultSkills: [...BASE_WORKFLOW_SKILLS, 'identity-correlation', 'vuln-assessment'],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -237,7 +272,17 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification', 'mcts-planning'],
+    defaultSkills: [
+      ...BASE_WORKFLOW_SKILLS,
+      'exploit-validation',
+      'post-exploitation-plan',
+      'attack-path-analysis',
+      'feedback-loop',
+      'waf-detection',
+      'statistical-verification',
+      'oob-verification',
+      'mcts-planning',
+    ],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -247,6 +292,77 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'lateral-movement-specialist',
       'ad-specialist',
       'retest-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+  },
+  {
+    id: 'adversary-emulation',
+    label: 'Adversary Emulation',
+    description: 'Guarded command-and-control and post-compromise workflow for explicitly authorized adversary-emulation operations.',
+    capabilityPacks: [
+      'recon',
+      'coordination',
+      'lab-control',
+      'network',
+      'exploitation',
+      'privilege-escalation',
+      'lateral-movement',
+      'evidence',
+      'reporting',
+    ],
+    defaultSkills: [
+      ...BASE_WORKFLOW_SKILLS,
+      'identity-correlation',
+      'c2-infrastructure',
+      'c2-operations',
+      'exploit-validation',
+      'post-exploitation-plan',
+      'attack-path-analysis',
+      'feedback-loop',
+      'mcts-planning',
+    ],
+    specialistAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'network-testing-specialist',
+      'exploit-specialist',
+      'privilege-escalation-specialist',
+      'lateral-movement-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+  },
+  {
+    id: 'bug-bounty-recon-validation',
+    label: 'Bug Bounty Recon & Validation',
+    description: 'External bug-bounty workflow chaining recon, parameter mining, headless DOM XSS confirmation, and OOB verification with evidence-tagged findings.',
+    capabilityPacks: [
+      'recon',
+      'web',
+      'api',
+      'evidence',
+      'reporting',
+    ],
+    defaultSkills: [
+      ...BASE_WORKFLOW_SKILLS,
+      'identity-correlation',
+      'bug-bounty-validation',
+      'headless-browser-validation',
+      'serverless-edge-recon',
+      'http-smuggling-cache-poisoning',
+      'vuln-assessment',
+      'feedback-loop',
+      'waf-detection',
+      'statistical-verification',
+      'oob-verification',
+    ],
+    specialistAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'web-testing-specialist',
+      'api-testing-specialist',
+      'exploit-specialist',
       'evidence-specialist',
       'reporting-specialist',
     ],
@@ -268,7 +384,16 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'evidence',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'feedback-loop', 'statistical-verification', 'oob-verification', 'mcts-planning'],
+    defaultSkills: [
+      ...BASE_WORKFLOW_SKILLS,
+      'exploit-validation',
+      'post-exploitation-plan',
+      'attack-path-analysis',
+      'feedback-loop',
+      'statistical-verification',
+      'oob-verification',
+      'mcts-planning',
+    ],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -298,7 +423,17 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation', 'feedback-loop', 'waf-detection', 'statistical-verification', 'oob-verification', 'mcts-planning'],
+    defaultSkills: [
+      ...BASE_WORKFLOW_SKILLS,
+      'exploit-validation',
+      'post-exploitation-plan',
+      'attack-path-analysis',
+      'feedback-loop',
+      'waf-detection',
+      'statistical-verification',
+      'oob-verification',
+      'mcts-planning',
+    ],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
@@ -325,7 +460,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'reporting',
       'coordination',
     ],
-    defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'vuln-assessment', 'report-generation'],
+    defaultSkills: [...BASE_WORKFLOW_SKILLS, 'vuln-assessment'],
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',

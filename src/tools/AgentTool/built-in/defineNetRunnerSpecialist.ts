@@ -12,6 +12,10 @@ import { TODO_WRITE_TOOL_NAME } from 'src/tools/TodoWriteTool/constants.js'
 import { WEB_FETCH_TOOL_NAME } from 'src/tools/WebFetchTool/prompt.js'
 import { WEB_SEARCH_TOOL_NAME } from 'src/tools/WebSearchTool/prompt.js'
 import { getNetRunnerAgentDefinition } from '../../../security/agentDefinitions.js'
+import {
+  formatNetRunnerAgentRolePolicy,
+  getNetRunnerAgentRolePolicy,
+} from '../../../security/agentRolePolicies.js'
 import type { NetRunnerAgentType } from '../../../security/agentTypes.js'
 import { AGENT_TOOL_NAME } from '../constants.js'
 import type { BuiltInAgentDefinition } from '../loadAgentsDir.js'
@@ -63,7 +67,10 @@ export function defineNetRunnerSpecialist(
     )
   }
   const tools = [...(options.tools ?? NET_RUNNER_SPECIALIST_TOOLSET)]
-  const prompt = options.systemPrompt
+  const rolePolicy = getNetRunnerAgentRolePolicy(options.agentType)
+  const prompt = `${options.systemPrompt}
+
+${formatNetRunnerAgentRolePolicy(rolePolicy)}`
   return {
     agentType: definition.agentType,
     whenToUse: options.whenToUse,

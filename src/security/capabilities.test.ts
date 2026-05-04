@@ -17,6 +17,7 @@ test('capability registry covers full assessment pipeline stages', () => {
   assert.ok(capabilityIds.includes('scripting-automation'))
   assert.ok(capabilityIds.includes('security-header-inspection'))
   assert.ok(capabilityIds.includes('google-search-intel'))
+  assert.ok(capabilityIds.includes('maigret-digital-footprint'))
   assert.ok(capabilityIds.includes('retrieval-augmented-research'))
   assert.ok(capabilityIds.includes('exploitation-webshell-simulation'))
   assert.ok(capabilityIds.includes('privilege-escalation-validation'))
@@ -49,6 +50,11 @@ test('workflow and agent capability projections are populated', () => {
   assert.ok(getCapabilitiesForWorkflow('ctf-mode').length > 0)
   assert.ok(getCapabilitiesForAgent('reporting-specialist').length > 0)
   assert.ok(getCapabilitiesForAgent('lateral-movement-specialist').length > 0)
+  assert.ok(
+    getCapabilitiesForAgent('recon-specialist').some(
+      capability => capability.id === 'maigret-digital-footprint',
+    ),
+  )
 })
 
 test('readiness snapshot reports missing env vars and commands deterministically', async () => {
@@ -64,4 +70,5 @@ test('readiness snapshot reports missing env vars and commands deterministically
   assert.ok(summary.total > 0)
   assert.ok(summary.missing > 0)
   assert.ok(summary.missingCapabilityIds.length > 0)
+  assert.ok(summary.missingCapabilityIds.includes('maigret-digital-footprint'))
 })

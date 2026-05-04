@@ -14,7 +14,7 @@ red team automation, AI security assessment, LLM security testing
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/License-Educational%20Use-red?style=for-the-badge)](#license)
 
-**12 Specialist Agents · 153 Red-Team Tools · 18 Capability Packs · 16 Pentest Skills · 7 Workflows · 10 APT Simulations**
+**12 Specialist Agents · 153+ Red-Team Tools · 18 Capability Packs · 26 Skills · 9 Workflows · 10 APT Simulations**
 
 *Red-team runtime with workflow control, evidence, memory, and specialist agents.*
 
@@ -24,7 +24,7 @@ red team automation, AI security assessment, LLM security testing
 
 </div>
 
-Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment — picking workflows, launching specialist agents, running 153+ red-team tools, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
+Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment — picking workflows, launching specialist agents, running 153+ red-team tools including Maigret-backed digital-footprint OSINT, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
 The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic — instead of exposing 153 tools as individual MCP definitions (which would consume ~150K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM — GitHub Copilot, Claude Desktop, Cursor — can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
 
@@ -41,7 +41,7 @@ Give Net-Runner a target in plain language. It sets up a `.netrunner/` project f
 - **Persistent memory** — the LLM and each specialist agent remember what they found in previous sessions, so multi-day assessments stay coherent
 - **Evidence-first workflow** — every finding, artifact, and report is saved to the `.netrunner/` project folder automatically
 - **Guardrail enforcement** — every action is checked against your declared scope and impact level before it runs
-- **Specialist delegation** — 12 domain agents for recon, web, API, network, AD, exploit, evidence, and reporting
+- **Specialist delegation** — 12 domain agents for recon, web, API, network, AD, exploit, evidence, and reporting, each loaded with role contracts, completion criteria, evidence requirements, and scoped tool access
 - **Auto-engagement setup** — type a target and goal in plain English; Net-Runner detects the intent and starts the assessment
 
 ---
@@ -53,7 +53,7 @@ Net-Runner deploys 12 domain-focused agents when specific expertise is needed. E
 | Agent | Role | Coverage |
 |-------|------|----------|
 | **Engagement Lead** | Coordinates scoped testing engagements and workflow execution | Workflow orchestration, scope validation, task routing |
-| **Recon Specialist** | Discovery and attack surface mapping | External recon, asset discovery, cloud and identity enumeration |
+| **Recon Specialist** | Discovery and attack surface mapping | External recon, asset discovery, Maigret digital footprinting, cloud and identity enumeration |
 | **Web Testing Specialist** | HTTP and web application security validation | Route discovery, content fuzzing, web vuln validation |
 | **API Testing Specialist** | API endpoint discovery and security testing | API schemas, auth/state testing, GraphQL and JWT checks |
 | **Network Testing Specialist** | Network and service assessment | Service enumeration, protocol testing, packet capture |
@@ -108,6 +108,8 @@ Six modules that give the LLM runtime adaptive decision-making, formal verificat
 | **MCTS Attack Planner** | `/mcts-planning` | Monte Carlo Tree Search over the attack state — ranks next actions and assigns specialist agents |
 | **Knowledge Graph** | — | In-memory entity/relation graph tracking hosts, services, vulns, and credentials with BFS path-finding |
 | **OOB Verification** | `/oob-verification` | Generates callback payloads for blind vulns (XXE, SSRF, RCE, SQLi, Log4Shell) and tracks confirmation status |
+| **Digital Footprint Assessment** | `/digital-footprint-assessment` | Runs scoped Maigret username/profile OSINT with JSON/HTML/TXT artifacts and identity correlation |
+| **Caveman Harness** | `/caveman-harness` | Compresses agent handoffs and reports while preserving exact commands, evidence refs, paths, URLs, code, and warnings |
 
 These modules operate at two levels:
 
@@ -135,7 +137,7 @@ bun run build
 
 For the open-source build, the primary supported paths are direct provider credentials and local runtimes.
 `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, Ollama, and the local FastMCP server should work without any hosted Net-Runner web dependency.
-OAuth, hosted connector discovery, remote-session sync, and other Claude-Code-derived first-party service flows are optional and may require infrastructure that is not bundled with this repository.
+CLI OAuth login is also present for first-party Anthropic account flows through the existing `auth login` and `/login` surfaces. Hosted connector discovery, remote-session sync, and other Claude-Code-derived first-party service flows remain optional and may require infrastructure that is not bundled with this repository.
 
 `ANTHROPIC_API_KEY`
 
@@ -216,8 +218,8 @@ If you already have a compatible `cc://` endpoint from another environment, the 
 
 1. Net-Runner detects assessment intent and target type from your prompt
 2. Creates a `.netrunner/` project folder with engagement config and run state
-3. Loads the matching workflow, scope rules, skills, and any memory from previous sessions
-4. Runs tools autonomously — shell commands, file operations, web requests, and specialist agents
+3. Loads the matching workflow, scope rules, always-on digital footprint and caveman harness skills, role contracts, and any memory from previous sessions
+4. Runs tools autonomously — shell commands, Maigret OSINT, file operations, web requests, and specialist agents
 5. Checks every action against your scope and impact rules before executing
 6. Saves evidence, findings, artifacts, and reports throughout the assessment
 
@@ -229,17 +231,19 @@ If you already have a compatible `cc://` endpoint from another environment, the 
 - `api-testing` — endpoint discovery, schema checks, auth/state testing
 - `mobile-app-testing` — Android app analysis with `adb`, `apktool`, `jadx`, `frida`, `objection`, `MobSF`, `drozer`, `apkleaks`
 - `lab-target-testing` — host/service enumeration, privilege escalation, lateral movement
+- `adversary-emulation` — guarded C2 infrastructure, post-compromise paths, and explicitly authorized operator workflows
+- `bug-bounty-recon-validation` — recon, parameter mining, headless validation, OOB confirmation, and evidence-tagged bug-bounty triage
 - `ctf-mode` — challenge-focused runs with rapid iteration
 - `ad-testing` — Active Directory, Kerberos, trust paths, AD CS
 - `wifi-testing` — wireless assessments, handshake capture, rogue AP testing, 802.11 analysis
 
-The recon stack includes cloud and identity enumeration tools: `cloud_enum`, `GHunt`, `holehe`, `haklistgen`.
+The recon stack includes cloud and identity enumeration tools: `Maigret`, `cloud_enum`, `GHunt`, `holehe`, `haklistgen`.
 
 ---
 
 ## 🧰 Tool Catalog
 
-**153 red-team tools** across 12 categories — inspect live readiness with `/engagement capabilities` or `nr_discover`.
+**153+ red-team tools** across 12 categories plus core harness capabilities — inspect live readiness with `/engagement capabilities` or `nr_discover`.
 
 | Category | Count | Examples |
 |----------|-------|----------|
@@ -289,7 +293,7 @@ For this repository, the default expectation is **local-first MCP**:
 - connect an external MCP client to `src/mcp/server.ts`
 - or run the Net-Runner CLI and let it connect to external MCP servers you configure
 
-Hosted OAuth-backed connector discovery and Claude.ai-managed MCP surfaces still exist in parts of the codebase, but they are optional hosted integrations rather than required local runtime dependencies for the OSS workflow.
+Hosted OAuth-backed connector discovery and Claude.ai-managed MCP surfaces still exist in parts of the codebase, but they are optional hosted integrations rather than required local runtime dependencies for the OSS workflow. The OSS snapshot does still include first-party CLI OAuth login for local Anthropic account sessions.
 
 For OSS use, keep the setup model simple:
 
