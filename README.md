@@ -26,7 +26,7 @@ red team automation, AI security assessment, LLM security testing
 
 Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment,  picking workflows, launching specialist agents, running 153+ red-team tools, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
-The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic instead of exposing 153 tools as individual MCP definitions (which would consume ~50K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM — GitHub Copilot, Claude Desktop, or Cursor — can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
+The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic instead of exposing 153 tools as individual MCP definitions (which would consume ~50K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM: GitHub Copilot, Claude Desktop, or Cursor  can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
 
 The CLI supports direct provider credentials, and the FastMCP server can be run directly from source for red-team-style tool-driving, evidence capture, and workflow control.
 
@@ -34,7 +34,7 @@ On a clean first interactive startup, if no provider/model has been configured y
 
 ---
 
-## 🔍 What It Does
+## What It Does
 
 Give Net-Runner a target in plain language. It sets up a `.netrunner/` project folder, picks the right workflow, and runs the full assessment — capturing evidence as it goes.
 
@@ -46,7 +46,7 @@ Give Net-Runner a target in plain language. It sets up a `.netrunner/` project f
 
 ---
 
-## 🤖 Specialist Agents
+## Specialist Agents
 
 Net-Runner deploys 12 domain-focused agents when specific expertise is needed. Each agent has its own memory and tool patterns.
 
@@ -67,7 +67,7 @@ Net-Runner deploys 12 domain-focused agents when specific expertise is needed. E
 
 ---
 
-## 🎭 APT Simulation
+## APT Simulation
 
 Net-Runner includes a built-in APT threat simulation engine with **40 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
 
@@ -96,7 +96,7 @@ Full reference: [APT Simulation Docs](docs/apt-simulation/README.md) · [Industr
 
 ---
 
-## 🧠 Intelligence Engine
+## Intel Engine
 
 Six modules that give the LLM runtime adaptive decision-making, formal verification, and automated bypass capabilities during live engagements.
 
