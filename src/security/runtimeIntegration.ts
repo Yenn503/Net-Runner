@@ -8,8 +8,7 @@
  * `intelligenceMiddleware.ts` or `intelligenceState.ts` breaks the seam and
  * makes implementation refactors painful.
  *
- * See ADR-0002 (runtime intelligence as middleware) and CONTEXT.md →
- * "Intelligence Runtime".
+ * See CONTEXT.md → "Intelligence Runtime".
  */
 import { appendEvidenceEntry, readEvidenceEntries } from './evidence.js'
 import { assessPlannedAction, readEngagementManifest } from './engagement.js'

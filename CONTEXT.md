@@ -1,6 +1,6 @@
 # Net-Runner Context
 
-Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms over synonyms. If a term here conflicts with code, the code is wrong — open an ADR before drifting.
+Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms over synonyms. If a term here conflicts with code, the code is wrong — fix the code or update this document, do not drift silently.
 
 ## Core domain
 
@@ -26,7 +26,7 @@ Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms ove
 
 ## Execution surface
 
-- **MCP Surface** — the 8 `nr_*` tools exposed to external MCP clients (Windsurf, Claude Desktop). Deliberately minimal per ADR-0001. `nr_exec` is the shell workhorse; everything else is engagement state, evidence, guardrails, or progressive discovery.
+- **MCP Surface** — the 8 `nr_*` tools exposed to external MCP clients (Windsurf, Claude Desktop). Deliberately minimal. `nr_exec` is the shell workhorse; everything else is engagement state, evidence, guardrails, or progressive discovery.
 
 - **Skill** — a named composable playbook that sequences tools and captures intent (`engagement-setup`, `scope-guard`, `recon-plan`, `evidence-capture`, `vuln-assessment`, `exploit-validation`, `post-exploitation-plan`, `report-generation`, `attack-path-analysis`, `apt-simulation`, `target-fingerprinting`). Source: `src/security/skillDefinitions.ts`. Exposed to users via `SkillTool` and composed into Workflows.
 
@@ -47,5 +47,5 @@ Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms ove
 - One Engagement owns exactly one `.netrunner/` directory.
 - Every `review`/`block` Guardrail Decision **must** produce an Evidence Ledger entry.
 - Specialist Agents **must not** bypass the Engagement Lead for scope changes.
-- MCP Surface **must not** grow beyond the documented 8 tools without an ADR.
+- MCP Surface **must not** grow beyond the documented 8 tools.
 - Evidence Ledger is append-only. Never mutate past entries.

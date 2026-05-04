@@ -23,7 +23,6 @@ import type { BuiltInAgentDefinition } from '../loadAgentsDir.js'
 /**
  * Default tool subset assigned to every Net-Runner specialist agent.
  * Specialists can override by passing `tools` to defineNetRunnerSpecialist.
- * See ADR-0005: Skill-First Workflow Routing.
  */
 export const NET_RUNNER_SPECIALIST_TOOLSET: readonly string[] = [
   AGENT_TOOL_NAME,
