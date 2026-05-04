@@ -24,9 +24,9 @@ red team automation, AI security assessment, LLM security testing
 
 </div>
 
-Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment — picking workflows, launching specialist agents, running 153+ red-team tools including Maigret-backed digital-footprint OSINT, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
+Net-Runner is a final-year university project and research prototype — an AI security testing framework for autonomous penetration testing. An LLM runs the full security assessment, picking workflows, launching specialist agents, running 153+ red-team tools, including Maigret-backed digital-footprint OSINT, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
-The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic — instead of exposing 153 tools as individual MCP definitions (which would consume ~150K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM — GitHub Copilot, Claude Desktop, Cursor — can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
+The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic instead of exposing 153 tools as individual MCP definitions (which would consume 50K+ tokens of context), Net-Runner presents a minimal MCP surface (8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM GitHub Copilot, Claude, or Cursor can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
 
 The current opensource baseline is local-first and type-safe: the repository now typechecks cleanly, the CLI supports direct provider credentials, and the FastMCP server can be run directly from source for red-team-style tool driving, evidence capture, and workflow control.
 
@@ -34,10 +34,10 @@ The current opensource baseline is local-first and type-safe: the repository now
 
 ## What It Does
 
-Give Net-Runner a target in plain language. It sets up a `.netrunner/` project folder, picks the right workflow, and runs the full assessment — capturing evidence as it goes.
+Give Net-Runner a target in plain language. It sets up a `.netrunner/` project folder, picks the right workflow, and runs the full assessment, capturing evidence as it goes.
 
 - **Persistent memory** — the LLM and each specialist agent remember what they found in previous sessions, so multi-day assessments stay coherent
-- **Evidence-first workflow** — every finding, artifact, and report is saved to the `.netrunner/` project folder automatically
+- **Evidence-first workflow** — every finding, artefact, and report is saved to the `.netrunner/` project folder automatically
 - **Guardrail enforcement** — every action is checked against your declared scope and impact level before it runs
 - **Specialist delegation** — 12 domain agents for recon, web, API, network, AD, exploit, evidence, and reporting, each loaded with role contracts, completion criteria, evidence requirements, and scoped tool access
 - **Auto-engagement setup** — type a target and goal in plain English; Net-Runner detects the intent and starts the assessment
@@ -219,7 +219,7 @@ If you already have a compatible `cc://` endpoint from another environment, the 
 3. Loads the matching workflow, scope rules, always-on digital footprint and caveman harness skills, role contracts, and any memory from previous sessions
 4. Runs tools autonomously — shell commands, Maigret OSINT, file operations, web requests, and specialist agents
 5. Checks every action against your scope and impact rules before executing
-6. Saves evidence, findings, artifacts, and reports throughout the assessment
+6. Saves evidence, findings, artefacts, and reports throughout the assessment
 
 ---
 
@@ -229,7 +229,7 @@ If you already have a compatible `cc://` endpoint from another environment, the 
 - `api-testing` — endpoint discovery, schema checks, auth/state testing
 - `mobile-app-testing` — Android app analysis with `adb`, `apktool`, `jadx`, `frida`, `objection`, `MobSF`, `drozer`, `apkleaks`
 - `lab-target-testing` — host/service enumeration, privilege escalation, lateral movement
-- `adversary-emulation` — guarded C2 infrastructure, post-compromise paths, and explicitly authorized operator workflows
+- `adversary-emulation` — guarded C2 infrastructure, post-compromise paths, and explicitly authorised operator workflows
 - `bug-bounty-recon-validation` — recon, parameter mining, headless validation, OOB confirmation, and evidence-tagged bug-bounty triage
 - `ctf-mode` — challenge-focused runs with rapid iteration
 - `ad-testing` — Active Directory, Kerberos, trust paths, AD CS
@@ -291,7 +291,7 @@ For this repository, the default expectation is **local-first MCP**:
 - connect an external MCP client to `src/mcp/server.ts`
 - or run the Net-Runner CLI and let it connect to external MCP servers you configure
 
-Hosted OAuth-backed connector discovery and Claude.ai-managed MCP surfaces still exist in parts of the codebase, but they are optional hosted integrations rather than required local runtime dependencies for the OSS workflow. The OSS snapshot does still include first-party CLI OAuth login for local Anthropic account sessions.
+Hosted OAuth-backed connector discovery and Claude. ai-managed MCP surfaces still exist in parts of the codebase, but they are optional hosted integrations rather than required local runtime dependencies for the OSS workflow. The OSS snapshot does still include first-party CLI OAuth login for local Anthropic account sessions.
 
 For OSS use, keep the setup model simple:
 
@@ -313,7 +313,7 @@ For OSS use, keep the setup model simple:
 | Tool | Purpose |
 |---|---|
 | `nr_exec` | **Shell execution — the workhorse.** All 153 pentest tools run here. |
-| `nr_engagement_init` | Initialize `.netrunner/` engagement with workflow, targets, scope |
+| `nr_engagement_init` | Initialise `.netrunner/` engagement with workflow, targets, scope |
 | `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
 | `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
 | `nr_save_finding` | Record security finding with severity, evidence, CWE |
@@ -451,10 +451,10 @@ Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
 
 ## Provenance
 
-Net-Runner is built on top of the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime. All red-team features — agents, workflows, skills, guardrails, evidence capture, and the tool catalog — are Net-Runner additions. Research and provenance notes are under `docs/project/`.
+Net-Runner is built on top of the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime. All red-team features, agents, workflows, skills, guardrails, evidence capture, and the tool catalogue are Net-Runner additions. Research and provenance notes are under `docs/project/`.
 
 ---
 
 ## License
 
-This repository is for educational use and authorized security testing only.
+This repository is for educational use and authorised security testing only.
