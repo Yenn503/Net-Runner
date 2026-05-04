@@ -24,13 +24,11 @@ red team automation, AI security assessment, LLM security testing
 
 </div>
 
-Net-Runner is a final-year university project and a research prototype of an AI security testing framework for autonomous penetration testing. An LLM conducts a comprehensive security assessment, selecting workflows, launching specialised agents, executing over 153 red-team tools, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
+Net-Runner is a **final-year university project** and research prototype — an **AI security testing framework** for **autonomous penetration testing**. An LLM runs the full security assessment — picking workflows, launching specialist agents, running 153+ red-team tools including Maigret-backed digital-footprint OSINT, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
-The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic instead of exposing 153 tools as individual MCP definitions (which would consume ~50K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM: GitHub Copilot, Claude Desktop, or Cursor  can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
+The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic — instead of exposing 153 tools as individual MCP definitions (which would consume ~150K+ tokens of context), Net-Runner presents a minimal MCP surface (~8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM — GitHub Copilot, Claude Desktop, Cursor — can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
 
-The CLI supports direct provider credentials, first-party Anthropic account login through the existing `auth login` and `/login` flows, and the FastMCP server can be run directly from source for red-team-style tool-driving, evidence capture, and workflow control.
-
-On a clean first interactive startup, if no provider/model has been configured yet, Net-Runner now launches a built-in provider walkthrough. It guides the user through selecting a provider and choosing a model, saves the result to `.net-runner-profile.json`, auto-loads it on future starts, and allows later changes via `/provider`.
+The current opensource baseline is local-first and type-safe: the repository now typechecks cleanly, the CLI supports direct provider credentials, and the FastMCP server can be run directly from source for red-team-style tool driving, evidence capture, and workflow control.
 
 ---
 
@@ -39,7 +37,7 @@ On a clean first interactive startup, if no provider/model has been configured y
 Give Net-Runner a target in plain language. It sets up a `.netrunner/` project folder, picks the right workflow, and runs the full assessment — capturing evidence as it goes.
 
 - **Persistent memory** — the LLM and each specialist agent remember what they found in previous sessions, so multi-day assessments stay coherent
-- **Evidence-first workflow** — every finding, artefact, and report is saved to the `.netrunner/` project folder automatically
+- **Evidence-first workflow** — every finding, artifact, and report is saved to the `.netrunner/` project folder automatically
 - **Guardrail enforcement** — every action is checked against your declared scope and impact level before it runs
 - **Specialist delegation** — 12 domain agents for recon, web, API, network, AD, exploit, evidence, and reporting, each loaded with role contracts, completion criteria, evidence requirements, and scoped tool access
 - **Auto-engagement setup** — type a target and goal in plain English; Net-Runner detects the intent and starts the assessment
@@ -71,7 +69,7 @@ Net-Runner deploys 12 domain-focused agents when specific expertise is needed. E
 
 Net-Runner includes a built-in APT threat simulation engine with **40 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
 
-Pick an industry or a threat actor, and Net-Runner loads the matching attack chain, assigns specialist agents to each phase, and walks through the intrusion step by step.
+Pick an industry or a threat actor and Net-Runner loads the matching attack chain, assigns specialist agents to each phase, and walks through the intrusion step by step.
 
 | Simulation | Threat Actor | Industry |
 |---|---|---|
@@ -96,7 +94,8 @@ Full reference: [APT Simulation Docs](docs/apt-simulation/README.md) · [Industr
 
 ---
 
-## Intel Engine
+## Intelligence Engine
+
 Six modules that give the LLM runtime adaptive decision-making, formal verification, and automated bypass capabilities during live engagements.
 
 | Module | Skill | Purpose |
@@ -107,6 +106,8 @@ Six modules that give the LLM runtime adaptive decision-making, formal verificat
 | **MCTS Attack Planner** | `/mcts-planning` | Monte Carlo Tree Search over the attack state — ranks next actions and assigns specialist agents |
 | **Knowledge Graph** | — | In-memory entity/relation graph tracking hosts, services, vulns, and credentials with BFS path-finding |
 | **OOB Verification** | `/oob-verification` | Generates callback payloads for blind vulns (XXE, SSRF, RCE, SQLi, Log4Shell) and tracks confirmation status |
+| **Digital Footprint Assessment** | `/digital-footprint-assessment` | Runs scoped Maigret username/profile OSINT with JSON/HTML/TXT artifacts and identity correlation |
+| **Caveman Harness** | `/caveman-harness` | Compresses agent handoffs and reports while preserving exact commands, evidence refs, paths, URLs, code, and warnings |
 
 These modules operate at two levels:
 
@@ -119,81 +120,74 @@ Full reference: [Intelligence Engine Docs](docs/intelligence-engine/README.md)
 
 ## Getting Started
 
-### Prerequisites
+<details>
+<summary><strong>Open setup and first run</strong></summary>
 
-- **[Bun](https://bun.sh)** — install with one command:
-  ```bash
-  curl -fsSL https://bun.sh/install | bash   # macOS / Linux
-  # Windows: powershell -c "irm bun.sh/install.ps1 | iex"
-  ```
-- **Git** — to clone the repo
-
----
-
-### Step 1 — Clone and install
+### 1. Install and build
 
 ```bash
-git clone https://github.com/Yenn503/Net-Runners.git
-cd Net-Runners
 bun install
 bun run typecheck
 bun run build
 ```
 
----
+### 2. Configure model provider
 
-### Step 2 — Run
+For the open-source build, the primary supported paths are direct provider credentials and local runtimes.
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, Ollama, and the local FastMCP server should work without any hosted Net-Runner web dependency.
+CLI OAuth login is also present for first-party Anthropic account flows through the existing `auth login` and `/login` surfaces. Hosted connector discovery, remote-session sync, and other Claude-Code-derived first-party service flows remain optional and may require infrastructure that is not bundled with this repository.
+
+`ANTHROPIC_API_KEY`
 
 ```bash
-bun run dev:profile
+export ANTHROPIC_API_KEY="sk-ant-..."
+node dist/cli.mjs
 ```
 
-**That's it.** On the first run, Net-Runner detects that no provider has been configured and launches a built-in setup wizard:
+If you are using Net-Runner only as an inbound MCP server, you can run `src/mcp/server.ts` without configuring a separate Net-Runner login flow. Provider credentials matter when the CLI itself is acting as the LLM runtime.
 
+`OPENAI_API_KEY`
+
+```bash
+export OPENAI_API_KEY="sk-..."
+export OPENAI_MODEL="gpt-4o"
+node dist/cli.mjs
 ```
-? Select your provider:
-  1. GitHub Models   
-  2. GitHub Copilot  (your existing Copilot subscription)
-  3. OpenAI
-  4. Google Gemini
-  5. Ollama (local)
+
+`GEMINI_API_KEY`
+
+```bash
+export GEMINI_API_KEY="AIza..."
+export GEMINI_MODEL="gemini-2.5-pro"
+node dist/cli.mjs
 ```
 
-Follow the prompts — it fetches the live model list, lets you pick a model, and saves everything to `.net-runner-profile.json`. Future starts skip the wizard and load straight into the CLI.
+Ollama
 
----
+```bash
+ollama serve
+ollama pull llama3.1:8b
+export OPENAI_BASE_URL="http://localhost:11434/v1"
+export OPENAI_MODEL="llama3.1:8b"
+node dist/cli.mjs
+```
 
-### Provider cheat-sheet
+Any OpenAI-compatible API
 
-| Provider | What you need |
-|---|---|
-| **GitHub Models** | A GitHub account — free tier, no credit card |
-| **GitHub Copilot** | An active Copilot subscription (Individual / Business / Enterprise) |
-| **OpenAI** | `OPENAI_API_KEY` from [platform.openai.com](https://platform.openai.com) |
-| **Google Gemini** | `GEMINI_API_KEY` from [aistudio.google.com](https://aistudio.google.com) |
-| **Ollama** | `ollama serve` running locally — no key needed |
+```bash
+export OPENAI_API_KEY="your-key"
+export OPENAI_BASE_URL="https://your-provider.com/v1"
+export OPENAI_MODEL="your-model-name"
+node dist/cli.mjs
+```
 
----
-
-### Step 3 — Run an assessment
-
-Once you're at the Net-Runner prompt:
+### 3. Run an assessment
 
 ```text
 Assess https://target.example. Start with recon, map the attack surface, validate findings, and capture evidence.
 ```
 
-Type `/skills` to see all built-in skills, `/help` for all commands, or `/provider` to switch providers later.
-
----
-
-### Diagnostics
-
-If something isn't working, run the system doctor:
-
-```bash
-bun run scripts/system-check.ts
-```
+</details>
 
 ---
 
@@ -205,7 +199,7 @@ The strongest supported path in this repository is **local-first**:
 - **Inbound MCP** — the FastMCP server in `src/mcp/server.ts`
 - **Outbound MCP** — external MCP servers configured through `.mcp.json` or `net-runner mcp ...`
 - **Security harness core** — workflows, specialist agents, evidence capture, intelligence modules, and APT simulation
-- **Agent teams/swarm** — available as a pilot for external builds through `agentTeamsEnabled`, `NETRUNNER_EXPERIMENTAL_AGENT_TEAMS=1`, or `--agent-teams`
+- **Agent teams / swarm** — available as a pilot for external builds through `agentTeamsEnabled`, `NETRUNNER_EXPERIMENTAL_AGENT_TEAMS=1`, or `--agent-teams`
 
 Not bundled as stable OSS runtime paths in this snapshot:
 
@@ -225,11 +219,11 @@ If you already have a compatible `cc://` endpoint from another environment, the 
 3. Loads the matching workflow, scope rules, always-on digital footprint and caveman harness skills, role contracts, and any memory from previous sessions
 4. Runs tools autonomously — shell commands, Maigret OSINT, file operations, web requests, and specialist agents
 5. Checks every action against your scope and impact rules before executing
-6. Saves evidence, findings, artefacts, and reports throughout the assessment
+6. Saves evidence, findings, artifacts, and reports throughout the assessment
 
 ---
 
-## 🎯 Workflows
+## Workflows
 
 - `web-app-testing` — route mapping, auth testing, and vulnerability validation
 - `api-testing` — endpoint discovery, schema checks, auth/state testing
@@ -288,7 +282,7 @@ Everything the LLM finds, logs, and produces stays here. Agents store their memo
 
 ---
 
-## 🔌 MCP Integration
+## MCP Integration
 
 Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat.
 
@@ -440,7 +434,7 @@ Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - [Workflow Overview](docs/workflows/overview.md)
 - [Research Alignment](docs/project/research-alignment.md)
@@ -455,12 +449,12 @@ Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
 
 ---
 
-## 🔗 Provenance
+## Provenance
 
-Net-Runner is built on top of the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime. All red-team features — agents, workflows, skills, guardrails, evidence capture, and the tool catalogue are Net-Runner additions. Research and provenance notes are under `docs/project/`.
+Net-Runner is built on top of the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime. All red-team features — agents, workflows, skills, guardrails, evidence capture, and the tool catalog — are Net-Runner additions. Research and provenance notes are under `docs/project/`.
 
 ---
 
-## 📜 License
+## License
 
-This repository is for educational use and authorised security testing only.
+This repository is for educational use and authorized security testing only.
