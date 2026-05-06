@@ -91,7 +91,7 @@ test('runtime prompt context includes scope envelope and impact defaults', async
   )
   assert.match(
     contextBlock,
-    /specialist_agents=engagement-lead, recon-specialist, web-testing-specialist/,
+    /specialist_agents=engagement-lead, recon-specialist/,
   )
   assert.match(
     contextBlock,

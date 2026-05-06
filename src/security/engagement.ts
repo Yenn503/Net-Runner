@@ -326,16 +326,16 @@ export function formatEngagementContextForPrompt(
   const specialistAgents = [
     'engagement-lead',
     'recon-specialist',
-    'web-testing-specialist',
-    'api-testing-specialist',
-    'network-testing-specialist',
-    'exploit-specialist',
-    'privilege-escalation-specialist',
-    'lateral-movement-specialist',
-    'ad-specialist',
-    'retest-specialist',
-    'evidence-specialist',
-    'reporting-specialist',
+    'app-testing-specialist',
+    'app-testing-specialist',
+    'infra-specialist',
+    'infra-specialist',
+    'infra-specialist',
+    'infra-specialist',
+    'infra-specialist',
+    'evidence-reporting-specialist',
+    'evidence-reporting-specialist',
+    'evidence-reporting-specialist',
   ].join(', ')
   const routingGuidance =
     'Prefer skills and direct local tools before MCP when the local path is sufficient. Use Plan for multi-phase work or when a written execution plan will reduce drift. Use Explore for broad discovery, repo mapping, or open-ended investigation. Use engagement-lead to coordinate security phases and route domain-specific tasks. Delegate to specialists when the task boundary is clear, expertise changes, or parallel work materially helps. Use verification or retest before claiming exploitability, remediation status, or final completion.'

@@ -48,8 +48,8 @@ test('workflow and agent capability projections are populated', () => {
   assert.ok(getCapabilitiesForWorkflow('mobile-app-testing').length > 0)
   assert.ok(getCapabilitiesForWorkflow('lab-target-testing').length > 0)
   assert.ok(getCapabilitiesForWorkflow('ctf-mode').length > 0)
-  assert.ok(getCapabilitiesForAgent('reporting-specialist').length > 0)
-  assert.ok(getCapabilitiesForAgent('lateral-movement-specialist').length > 0)
+  assert.ok(getCapabilitiesForAgent('evidence-reporting-specialist').length > 0)
+  assert.ok(getCapabilitiesForAgent('infra-specialist').length > 0)
   assert.ok(
     getCapabilitiesForAgent('recon-specialist').some(
       capability => capability.id === 'maigret-digital-footprint',

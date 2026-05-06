@@ -32,7 +32,7 @@ Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms ove
 
 - **Workflow** — an end-to-end engagement template mapping Scope intent to Capability Packs, Specialist Agents, and Skill ordering. Workflows: `web-app-testing`, `api-testing`, `mobile-app-testing`, `lab-target-testing`, `adversary-emulation`, `bug-bounty-recon-validation`, `ctf-mode`, `ad-testing`, `wifi-testing`, `dfir-incident-response`, `code-audit-review`, `cloud-assessment`. Source: `src/security/workflows.ts`.
 
-- **Specialist Agent** — a Net-Runner built-in agent type with a focused system prompt and scoped tool allowlist. Specialists: `engagement-lead`, `recon-specialist`, `web-testing-specialist`, `api-testing-specialist`, `network-testing-specialist`, `exploit-specialist`, `privilege-escalation-specialist`, `lateral-movement-specialist`, `ad-specialist`, `retest-specialist`, `evidence-specialist`, `reporting-specialist`, `forensics-specialist`, `code-audit-specialist`, `wifi-specialist`, `mobile-testing-specialist`, `binary-specialist`. Source: `src/tools/AgentTool/built-in/`.
+- **Specialist Agent** — a Net-Runner built-in agent type with a focused system prompt and full shared toolset. Specialists: `engagement-lead`, `recon-specialist` (+ wifi), `app-testing-specialist` (web + API + mobile), `infra-specialist` (network + exploit + privesc + lateral + AD + binary), `code-forensics-specialist` (SAST + DFIR), `evidence-reporting-specialist` (evidence + retest + reports). Source: `src/tools/AgentTool/built-in/`.
 
 - **Engagement Lead** — the coordinator Specialist Agent. Routes work to other specialists, owns scope adherence, and terminates the engagement.
 

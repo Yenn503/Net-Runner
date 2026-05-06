@@ -22,7 +22,7 @@ export const APT_SIMULATION_WORKFLOWS: AptSimulationWorkflow[] = [
     attackChainId: 'apt29',
     capabilityPacks: ['recon', 'web', 'exploitation', 'privilege-escalation', 'lateral-movement', 'cloud', 'active-directory', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'web-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'ad-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'app-testing-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating APT29 (Cozy Bear / Midnight Blizzard / NOBELIUM) tradecraft.
 
@@ -53,7 +53,7 @@ Follow each phase sequentially. Document findings and evidence at every step. Fl
     attackChainId: 'apt28',
     capabilityPacks: ['recon', 'web', 'exploitation', 'privilege-escalation', 'lateral-movement', 'active-directory', 'network', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'web-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'ad-specialist', 'network-testing-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'app-testing-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating APT28 (Fancy Bear / Forest Blizzard / Sofacy) tradecraft.
 
@@ -86,7 +86,7 @@ Follow each phase sequentially. Document findings and evidence at every step.`,
     attackChainId: 'volt-typhoon',
     capabilityPacks: ['recon', 'network', 'exploitation', 'privilege-escalation', 'lateral-movement', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'network-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'limited',
     simulationGuidance: `You are simulating Volt Typhoon tradecraft.
 
@@ -118,7 +118,7 @@ CISA Advisory: https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-03
     attackChainId: 'sandworm',
     capabilityPacks: ['recon', 'web', 'network', 'exploitation', 'privilege-escalation', 'lateral-movement', 'active-directory', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'network-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'ad-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating Sandworm (APT44 / ELECTRUM / IRIDIUM) tradecraft.
 
@@ -148,7 +148,7 @@ MITRE ATT&CK: https://attack.mitre.org/groups/G0034/`,
     attackChainId: 'apt38',
     capabilityPacks: ['recon', 'web', 'network', 'exploitation', 'privilege-escalation', 'lateral-movement', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'web-testing-specialist', 'network-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'app-testing-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating APT38 (BeagleBoyz / Bluenoroff / Stardust Chollima) tradecraft.
 
@@ -178,7 +178,7 @@ MITRE ATT&CK: https://attack.mitre.org/groups/G0082/`,
     attackChainId: 'scattered-spider',
     capabilityPacks: ['recon', 'web', 'cloud', 'exploitation', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'web-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'app-testing-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating Scattered Spider (UNC3944 / Octo Tempest) tradecraft.
 
@@ -207,7 +207,7 @@ MITRE ATT&CK: https://attack.mitre.org/groups/G1015/`,
     attackChainId: 'salt-typhoon',
     capabilityPacks: ['recon', 'network', 'exploitation', 'privilege-escalation', 'lateral-movement', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'network-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating Salt Typhoon tradecraft.
 
@@ -237,7 +237,7 @@ CISA Guidance: https://www.cisa.gov/news-events/alerts/2024/12/04/cisa-and-partn
     attackChainId: 'silk-typhoon',
     capabilityPacks: ['recon', 'web', 'cloud', 'exploitation', 'privilege-escalation', 'lateral-movement', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'web-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'app-testing-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating Silk Typhoon (HAFNIUM) tradecraft.
 
@@ -266,7 +266,7 @@ MITRE ATT&CK: https://attack.mitre.org/groups/G0125/`,
     attackChainId: 'lazarus',
     capabilityPacks: ['recon', 'web', 'network', 'exploitation', 'privilege-escalation', 'lateral-movement', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'web-testing-specialist', 'network-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'app-testing-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating Lazarus Group tradecraft against healthcare targets.
 
@@ -298,7 +298,7 @@ CISA Advisory: https://www.cisa.gov/news-events/cybersecurity-advisories/aa22-18
     attackChainId: 'apt41',
     capabilityPacks: ['recon', 'web', 'network', 'exploitation', 'privilege-escalation', 'lateral-movement', 'active-directory', 'database', 'evidence', 'reporting', 'coordination'],
     defaultSkills: ['engagement-setup', 'scope-guard', 'recon-plan', 'target-fingerprinting', 'evidence-capture', 'exploit-validation', 'post-exploitation-plan', 'attack-path-analysis', 'report-generation'],
-    specialistAgents: ['engagement-lead', 'recon-specialist', 'web-testing-specialist', 'network-testing-specialist', 'exploit-specialist', 'privilege-escalation-specialist', 'lateral-movement-specialist', 'ad-specialist', 'evidence-specialist', 'reporting-specialist'],
+    specialistAgents: ['engagement-lead', 'recon-specialist', 'app-testing-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'infra-specialist', 'evidence-reporting-specialist', 'evidence-reporting-specialist'],
     recommendedImpact: 'intrusive',
     simulationGuidance: `You are simulating APT41 (Brass Typhoon / Wicked Panda / Winnti) tradecraft.
 

@@ -38,7 +38,7 @@ test('recordSubagentExecution appends runtime execution notes into evidence ledg
 
   await recordSubagentExecution({
     cwd,
-    agentType: 'web-testing-specialist',
+    agentType: 'app-testing-specialist',
     status: 'completed',
     description: 'validate auth bypass path',
     prompt: 'Reproduce auth bypass with controlled requests.',
@@ -55,12 +55,12 @@ test('recordSubagentExecution appends runtime execution notes into evidence ledg
   assert.equal(runtimeSteps.length, 1)
   assert.equal(runtimeArtifacts.length, 1)
   if (runtimeSteps[0]?.type === 'execution_step') {
-    assert.equal(runtimeSteps[0].agentType, 'web-testing-specialist')
+    assert.equal(runtimeSteps[0].agentType, 'app-testing-specialist')
     assert.equal(runtimeSteps[0].status, 'completed')
   }
   assert.match(
     runtimeArtifacts[0]?.label ?? '',
-    /subagent-output:web-testing-specialist/,
+    /subagent-output:app-testing-specialist/,
   )
 })
 

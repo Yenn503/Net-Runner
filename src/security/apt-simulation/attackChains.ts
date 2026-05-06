@@ -49,7 +49,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Deliver spearphishing links to credential-harvesting pages targeting cloud SSO. Alternatively, abuse valid cloud credentials obtained through password spraying or token theft.',
       techniques: ['T1566.002', 'T1078.004', 'T1195.002'],
       suggestedTools: ['gophish', 'nuclei', 'httpx'],
-      suggestedAgents: ['web-testing-specialist', 'exploit-specialist'],
+      suggestedAgents: ['app-testing-specialist', 'infra-specialist'],
     },
     {
       order: 4,
@@ -58,7 +58,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Execute commands via cloud management APIs, PowerShell, or remote management tools.',
       techniques: ['T1059.001', 'T1059.003'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -67,7 +67,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Create additional cloud credentials, register OAuth applications, or add cloud accounts for persistent access.',
       techniques: ['T1098.001', 'T1136.003', 'T1078.004'],
       suggestedTools: ['evil-winrm', 'crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -76,7 +76,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Use stolen tokens to bypass MFA, disable security logging, and blend into legitimate admin activity.',
       techniques: ['T1550.001', 'T1562.001', 'T1070.004'],
       suggestedTools: [],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 7,
@@ -85,7 +85,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Harvest OAuth tokens, steal application access tokens, extract credentials from cloud vaults, and conduct password spraying.',
       techniques: ['T1528', 'T1539', 'T1110.003', 'T1621'],
       suggestedTools: ['crackmapexec', 'hydra'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 8,
@@ -94,7 +94,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Enumerate cloud infrastructure, tenant configurations, privileged accounts, and connected services.',
       techniques: ['T1087.002', 'T1069.002', 'T1580', 'T1082'],
       suggestedTools: ['bloodhound', 'ldapsearch'],
-      suggestedAgents: ['recon-specialist', 'ad-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist'],
     },
     {
       order: 9,
@@ -103,7 +103,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Move between cloud tenants, on-prem to cloud, and across federated identity boundaries using stolen tokens and pass-the-hash.',
       techniques: ['T1550.002', 'T1021.001', 'T1021.006'],
       suggestedTools: ['evil-winrm', 'crackmapexec', 'impacket'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 10,
@@ -112,7 +112,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Access email via Graph API, download documents from SharePoint/OneDrive, and collect data from cloud storage.',
       techniques: ['T1114.002', 'T1530', 'T1005', 'T1560.001'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 11,
@@ -121,7 +121,7 @@ export const APT29_GOV_CHAIN: AptAttackChain = {
       description: 'Exfiltrate collected data over encrypted HTTPS channels or to attacker-controlled cloud storage.',
       techniques: ['T1041', 'T1567.002'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist', 'reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist', 'evidence-reporting-specialist'],
     },
   ],
 }
@@ -150,7 +150,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Deliver spearphishing attachments with exploits or links to credential-harvesting sites. Exploit public-facing email/VPN appliances when zero-days are available.',
       techniques: ['T1566.001', 'T1566.002', 'T1190', 'T1133'],
       suggestedTools: ['gophish', 'nuclei', 'httpx'],
-      suggestedAgents: ['web-testing-specialist', 'exploit-specialist'],
+      suggestedAgents: ['app-testing-specialist', 'infra-specialist'],
     },
     {
       order: 3,
@@ -159,7 +159,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Execute payloads via macro-enabled documents, PowerShell, and exploitation of client applications.',
       techniques: ['T1059.001', 'T1059.003', 'T1059.005', 'T1204.002', 'T1203'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -168,7 +168,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Install registry run keys, create Windows services, and establish scheduled tasks for persistent callback.',
       techniques: ['T1547.001', 'T1053.005', 'T1543.003'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -177,7 +177,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Exploit local vulnerabilities or use process injection to escalate to SYSTEM. Abuse DLL search-order hijacking.',
       techniques: ['T1068', 'T1055', 'T1574.001'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -186,7 +186,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Dump LSASS memory, conduct password spraying, harvest credentials from files, and intercept authentication.',
       techniques: ['T1003.001', 'T1110.001', 'T1110.003', 'T1552.001', 'T1557'],
       suggestedTools: ['crackmapexec', 'mimikatz', 'hydra', 'responder'],
-      suggestedAgents: ['privilege-escalation-specialist', 'ad-specialist'],
+      suggestedAgents: ['infra-specialist', 'infra-specialist'],
     },
     {
       order: 7,
@@ -195,7 +195,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Enumerate AD structure, domain trusts, network shares, and connected systems.',
       techniques: ['T1087.002', 'T1082', 'T1083', 'T1016', 'T1049'],
       suggestedTools: ['bloodhound', 'ldapsearch', 'nmap', 'enum4linux'],
-      suggestedAgents: ['recon-specialist', 'ad-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist'],
     },
     {
       order: 8,
@@ -204,7 +204,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Move through the network using RDP, SMB, pass-the-hash, and lateral tool transfer.',
       techniques: ['T1021.001', 'T1021.002', 'T1550.002', 'T1570'],
       suggestedTools: ['crackmapexec', 'impacket', 'evil-winrm'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 9,
@@ -213,7 +213,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Collect email archives, documents from file shares, and capture keystrokes and screenshots.',
       techniques: ['T1560.001', 'T1005', 'T1039', 'T1114.002', 'T1056.001', 'T1113'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 10,
@@ -222,7 +222,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Maintain C2 over HTTPS with encrypted channels and proxy infrastructure.',
       techniques: ['T1071.001', 'T1573.001', 'T1090.002', 'T1105'],
       suggestedTools: [],
-      suggestedAgents: ['network-testing-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 11,
@@ -231,7 +231,7 @@ export const APT28_GOV_CHAIN: AptAttackChain = {
       description: 'Exfiltrate archived data over C2 channel or alternative protocols.',
       techniques: ['T1041', 'T1048'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist', 'reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist', 'evidence-reporting-specialist'],
     },
   ],
 }
@@ -264,7 +264,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Exploit public-facing network appliances (Fortinet, Ivanti, etc.) or abuse compromised valid credentials for VPN/remote access.',
       techniques: ['T1190', 'T1133', 'T1078'],
       suggestedTools: ['nuclei', 'httpx', 'nmap'],
-      suggestedAgents: ['exploit-specialist', 'network-testing-specialist'],
+      suggestedAgents: ['infra-specialist', 'infra-specialist'],
     },
     {
       order: 3,
@@ -273,7 +273,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Execute commands using only built-in OS tools — PowerShell, cmd.exe, WMI. No malware deployment.',
       techniques: ['T1059.001', 'T1059.003', 'T1047'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -282,7 +282,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Create local accounts and maintain access through valid credential reuse. Minimize forensic artifacts.',
       techniques: ['T1078', 'T1136.001'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -291,7 +291,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Living-off-the-land: use only signed OS binaries, clear logs, disable security tools. Avoid file drops entirely.',
       techniques: ['T1218', 'T1036', 'T1070.004', 'T1202', 'T1562.001'],
       suggestedTools: [],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -300,7 +300,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Dump credentials from LSASS, extract from credential stores, and harvest credentials from configuration files.',
       techniques: ['T1003.001', 'T1552.001', 'T1555'],
       suggestedTools: ['crackmapexec', 'mimikatz'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 7,
@@ -309,7 +309,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Extensive internal discovery using native tools — systeminfo, ipconfig, net commands, nltest, tasklist.',
       techniques: ['T1082', 'T1083', 'T1087.002', 'T1046', 'T1135', 'T1016', 'T1049', 'T1033', 'T1007'],
       suggestedTools: ['nmap', 'enum4linux', 'ldapsearch'],
-      suggestedAgents: ['recon-specialist', 'network-testing-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist'],
     },
     {
       order: 8,
@@ -318,7 +318,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Move laterally using RDP, SSH, and pass-the-hash with harvested credentials.',
       techniques: ['T1021.001', 'T1021.004', 'T1550.002'],
       suggestedTools: ['crackmapexec', 'impacket', 'evil-winrm'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 9,
@@ -327,7 +327,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Collect network diagrams, OT documentation, configuration files, and architecture data from file shares.',
       techniques: ['T1560.001', 'T1005', 'T1039'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 10,
@@ -336,7 +336,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Maintain low-profile C2 using protocol tunneling, proxied connections, and encrypted channels over standard ports.',
       techniques: ['T1071.001', 'T1090.002', 'T1572', 'T1105'],
       suggestedTools: [],
-      suggestedAgents: ['network-testing-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 11,
@@ -345,7 +345,7 @@ export const VOLT_TYPHOON_INFRA_CHAIN: AptAttackChain = {
       description: 'Stage and exfiltrate collected data over the C2 channel.',
       techniques: ['T1041'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist', 'reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist', 'evidence-reporting-specialist'],
     },
   ],
 }
@@ -374,7 +374,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Gain initial foothold in the IT network via spearphishing, exploitation of public-facing applications, or supply-chain compromise.',
       techniques: ['T1566.001', 'T1190', 'T1195.002', 'T1133'],
       suggestedTools: ['nuclei', 'gophish'],
-      suggestedAgents: ['exploit-specialist', 'web-testing-specialist'],
+      suggestedAgents: ['infra-specialist', 'app-testing-specialist'],
     },
     {
       order: 3,
@@ -383,7 +383,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Deploy and execute custom malware, PowerShell scripts, and service-based execution methods.',
       techniques: ['T1059.001', 'T1059.003', 'T1053.005', 'T1569.002'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -392,7 +392,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Escalate to domain admin through exploitation, process injection, and credential abuse.',
       techniques: ['T1068', 'T1055', 'T1547.001'],
       suggestedTools: ['crackmapexec', 'mimikatz'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -401,7 +401,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Dump LSASS, extract NTDS.dit, and harvest credentials for OT-adjacent accounts.',
       techniques: ['T1003.001', 'T1003.003', 'T1552.001'],
       suggestedTools: ['crackmapexec', 'mimikatz', 'impacket'],
-      suggestedAgents: ['privilege-escalation-specialist', 'ad-specialist'],
+      suggestedAgents: ['infra-specialist', 'infra-specialist'],
     },
     {
       order: 6,
@@ -410,7 +410,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Map AD structure, identify OT jump hosts, engineering workstations, and SCADA endpoints.',
       techniques: ['T1087.002', 'T1082', 'T1046', 'T1135', 'T1016', 'T1018'],
       suggestedTools: ['bloodhound', 'nmap', 'ldapsearch', 'enum4linux'],
-      suggestedAgents: ['recon-specialist', 'ad-specialist', 'network-testing-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist', 'infra-specialist'],
     },
     {
       order: 7,
@@ -419,7 +419,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Cross from IT network to OT environment using harvested credentials, RDP to jump hosts, and SMB to engineering workstations.',
       techniques: ['T1021.001', 'T1021.002', 'T1550.002', 'T1570'],
       suggestedTools: ['crackmapexec', 'impacket', 'evil-winrm'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 8,
@@ -428,7 +428,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Collect OT network configurations, PLC programming files, and SCADA documentation.',
       techniques: ['T1005', 'T1039', 'T1560.001'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 9,
@@ -437,7 +437,7 @@ export const SANDWORM_ICS_CHAIN: AptAttackChain = {
       description: 'Execute destructive operations: wiper malware deployment, service disruption, data destruction, and inhibit system recovery. (SIMULATION ONLY — document what would happen)',
       techniques: ['T1485', 'T1486', 'T1489', 'T1490', 'T1491'],
       suggestedTools: [],
-      suggestedAgents: ['reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
   ],
 }
@@ -470,7 +470,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Deliver spearphishing attachments targeting bank employees. Alternatively, exploit public-facing banking web applications.',
       techniques: ['T1566.001', 'T1566.002', 'T1190'],
       suggestedTools: ['gophish', 'nuclei'],
-      suggestedAgents: ['web-testing-specialist', 'exploit-specialist'],
+      suggestedAgents: ['app-testing-specialist', 'infra-specialist'],
     },
     {
       order: 3,
@@ -479,7 +479,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Execute backdoors via macro documents, PowerShell, and service execution.',
       techniques: ['T1059.001', 'T1059.003', 'T1059.005', 'T1204.002', 'T1569.002'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -488,7 +488,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Establish persistent access through registry run keys, scheduled tasks, and Windows services.',
       techniques: ['T1547.001', 'T1053.005', 'T1543.003'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -497,7 +497,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Dump credentials from LSASS, harvest from files, and extract from credential stores to access SWIFT terminals.',
       techniques: ['T1003.001', 'T1552.001', 'T1555'],
       suggestedTools: ['crackmapexec', 'mimikatz'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -506,7 +506,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Map internal network to locate SWIFT Alliance Lite2 terminals, payment processing servers, and core banking systems.',
       techniques: ['T1082', 'T1083', 'T1046', 'T1016', 'T1049'],
       suggestedTools: ['nmap', 'enum4linux', 'ldapsearch'],
-      suggestedAgents: ['recon-specialist', 'network-testing-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist'],
     },
     {
       order: 7,
@@ -515,7 +515,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Move laterally to reach SWIFT operator workstations and payment processing infrastructure.',
       techniques: ['T1021.001', 'T1021.002', 'T1570'],
       suggestedTools: ['crackmapexec', 'impacket'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 8,
@@ -524,7 +524,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Study SWIFT message formats, capture credentials for SWIFT terminals, and collect transaction records.',
       techniques: ['T1005', 'T1560.001', 'T1119'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 9,
@@ -533,7 +533,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Execute fraudulent SWIFT transactions and attempt to cover tracks. (SIMULATION ONLY — document the attack path, do not execute real transactions)',
       techniques: ['T1657'],
       suggestedTools: [],
-      suggestedAgents: ['reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 10,
@@ -542,7 +542,7 @@ export const APT38_FINANCE_CHAIN: AptAttackChain = {
       description: 'Deploy wiper malware to destroy evidence of the intrusion and hinder forensic investigation.',
       techniques: ['T1485', 'T1489', 'T1490'],
       suggestedTools: [],
-      suggestedAgents: ['reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
   ],
 }
@@ -571,7 +571,7 @@ export const SCATTERED_SPIDER_FINANCE_CHAIN: AptAttackChain = {
       description: 'Social-engineer helpdesk for password reset, conduct SIM swap for MFA bypass, or deliver phishing links via SMS/messaging. Abuse trusted relationships through MSP portals.',
       techniques: ['T1566.002', 'T1566.003', 'T1078.004', 'T1199'],
       suggestedTools: ['gophish'],
-      suggestedAgents: ['web-testing-specialist'],
+      suggestedAgents: ['app-testing-specialist'],
     },
     {
       order: 3,
@@ -580,7 +580,7 @@ export const SCATTERED_SPIDER_FINANCE_CHAIN: AptAttackChain = {
       description: 'Steal OAuth/SAML tokens, conduct MFA fatigue attacks (push bombing), harvest session cookies, and intercept authentication flows.',
       techniques: ['T1528', 'T1539', 'T1621', 'T1110.003', 'T1557'],
       suggestedTools: ['hydra', 'responder'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -589,7 +589,7 @@ export const SCATTERED_SPIDER_FINANCE_CHAIN: AptAttackChain = {
       description: 'Register new cloud credentials, add additional MFA devices, create cloud admin accounts.',
       techniques: ['T1136.003', 'T1098.001', 'T1078.004'],
       suggestedTools: [],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -598,7 +598,7 @@ export const SCATTERED_SPIDER_FINANCE_CHAIN: AptAttackChain = {
       description: 'Use stolen application tokens to bypass MFA, disable security alerting, and impersonate legitimate admins.',
       techniques: ['T1550.001', 'T1562.001'],
       suggestedTools: [],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -616,7 +616,7 @@ export const SCATTERED_SPIDER_FINANCE_CHAIN: AptAttackChain = {
       description: 'Access cloud storage, download data from SaaS platforms, collect email from cloud mailboxes, and extract data from information repositories.',
       techniques: ['T1530', 'T1213', 'T1114.002'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 8,
@@ -625,7 +625,7 @@ export const SCATTERED_SPIDER_FINANCE_CHAIN: AptAttackChain = {
       description: 'Exfiltrate data to attacker-controlled cloud storage or transfer between cloud accounts.',
       techniques: ['T1567.002', 'T1537'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist', 'reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist', 'evidence-reporting-specialist'],
     },
     {
       order: 9,
@@ -634,7 +634,7 @@ export const SCATTERED_SPIDER_FINANCE_CHAIN: AptAttackChain = {
       description: 'Deploy ransomware for extortion, remove account access, or threaten data exposure. (SIMULATION ONLY)',
       techniques: ['T1486', 'T1531'],
       suggestedTools: [],
-      suggestedAgents: ['reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
   ],
 }
@@ -667,7 +667,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Exploit public-facing network appliances and telecom management interfaces. Abuse external remote services with compromised credentials.',
       techniques: ['T1190', 'T1133', 'T1078'],
       suggestedTools: ['nuclei', 'nmap', 'httpx'],
-      suggestedAgents: ['exploit-specialist', 'network-testing-specialist'],
+      suggestedAgents: ['infra-specialist', 'infra-specialist'],
     },
     {
       order: 3,
@@ -676,7 +676,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Execute commands through compromised network appliance CLIs and management interfaces.',
       techniques: ['T1059.001', 'T1059.003'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -685,7 +685,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Install web shells on management interfaces, modify network device configurations for persistent access.',
       techniques: ['T1505.003', 'T1543.003', 'T1547.001'],
       suggestedTools: [],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -694,7 +694,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Extract credentials from network device configurations and management databases.',
       techniques: ['T1003.001', 'T1552.001'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -703,7 +703,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Map the telecom core network — identify CDR databases, lawful-intercept systems, subscriber management, and interconnection points.',
       techniques: ['T1082', 'T1046', 'T1016', 'T1087.002'],
       suggestedTools: ['nmap', 'enum4linux'],
-      suggestedAgents: ['recon-specialist', 'network-testing-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist'],
     },
     {
       order: 7,
@@ -712,7 +712,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Pivot through the telecom network from management plane to data plane and interconnection systems.',
       techniques: ['T1021.001', 'T1021.004', 'T1570'],
       suggestedTools: ['crackmapexec', 'impacket'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 8,
@@ -721,7 +721,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Harvest call detail records, intercept communications data, and collect subscriber information at scale.',
       techniques: ['T1005', 'T1560.001', 'T1119'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 9,
@@ -730,7 +730,7 @@ export const SALT_TYPHOON_TELECOM_CHAIN: AptAttackChain = {
       description: 'Exfiltrate collected telecommunications data over encrypted channels.',
       techniques: ['T1041'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist', 'reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist', 'evidence-reporting-specialist'],
     },
   ],
 }
@@ -763,7 +763,7 @@ export const SILK_TYPHOON_SUPPLY_CHAIN: AptAttackChain = {
       description: 'Exploit zero-day vulnerabilities in public-facing applications. Chain multiple vulnerabilities for authentication bypass and remote code execution. Alternatively, compromise IT supply-chain providers.',
       techniques: ['T1190', 'T1195.002', 'T1199', 'T1078.004'],
       suggestedTools: ['nuclei', 'httpx'],
-      suggestedAgents: ['exploit-specialist', 'web-testing-specialist'],
+      suggestedAgents: ['infra-specialist', 'app-testing-specialist'],
     },
     {
       order: 3,
@@ -772,7 +772,7 @@ export const SILK_TYPHOON_SUPPLY_CHAIN: AptAttackChain = {
       description: 'Execute commands through web shells deployed on compromised servers.',
       techniques: ['T1059.001', 'T1059.003'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -781,7 +781,7 @@ export const SILK_TYPHOON_SUPPLY_CHAIN: AptAttackChain = {
       description: 'Deploy web shells on compromised servers. Create cloud accounts and add additional cloud credentials.',
       techniques: ['T1505.003', 'T1136.003', 'T1098.001'],
       suggestedTools: [],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -790,7 +790,7 @@ export const SILK_TYPHOON_SUPPLY_CHAIN: AptAttackChain = {
       description: 'Dump credentials from compromised servers, steal application access tokens, and extract secrets from cloud vaults.',
       techniques: ['T1003.001', 'T1528', 'T1552.001'],
       suggestedTools: ['crackmapexec', 'mimikatz'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -808,7 +808,7 @@ export const SILK_TYPHOON_SUPPLY_CHAIN: AptAttackChain = {
       description: 'Pivot from compromised on-prem servers to cloud infrastructure using stolen tokens and credentials.',
       techniques: ['T1021.002', 'T1550.001'],
       suggestedTools: ['crackmapexec', 'impacket'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 8,
@@ -817,7 +817,7 @@ export const SILK_TYPHOON_SUPPLY_CHAIN: AptAttackChain = {
       description: 'Access email mailboxes, download documents from cloud storage, and collect data from information repositories.',
       techniques: ['T1005', 'T1114.002', 'T1530', 'T1213'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 9,
@@ -826,7 +826,7 @@ export const SILK_TYPHOON_SUPPLY_CHAIN: AptAttackChain = {
       description: 'Exfiltrate data over C2 channel or to attacker-controlled cloud storage.',
       techniques: ['T1041', 'T1567.002'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist', 'reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist', 'evidence-reporting-specialist'],
     },
   ],
 }
@@ -859,7 +859,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Exploit public-facing healthcare web applications, deliver spearphishing to research staff, or abuse supply-chain trust.',
       techniques: ['T1190', 'T1566.001', 'T1566.002', 'T1195.002'],
       suggestedTools: ['nuclei', 'gophish'],
-      suggestedAgents: ['exploit-specialist', 'web-testing-specialist'],
+      suggestedAgents: ['infra-specialist', 'app-testing-specialist'],
     },
     {
       order: 3,
@@ -868,7 +868,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Deploy custom malware through multiple scripting interpreters and exploits.',
       techniques: ['T1059.001', 'T1059.003', 'T1059.006', 'T1204.002', 'T1203'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -877,7 +877,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Establish persistence via registry keys, scheduled tasks, services, and DLL hijacking.',
       techniques: ['T1547.001', 'T1053.005', 'T1543.003', 'T1574.001'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -886,7 +886,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Escalate privileges through exploitation, process injection, and token manipulation.',
       techniques: ['T1068', 'T1055', 'T1134'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -895,7 +895,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Dump credentials from LSASS, extract from files and credential stores.',
       techniques: ['T1003.001', 'T1552.001', 'T1555'],
       suggestedTools: ['crackmapexec', 'mimikatz'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 7,
@@ -904,7 +904,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Identify EHR systems, research databases, file servers with clinical trial data, and network shares.',
       techniques: ['T1082', 'T1083', 'T1087.002', 'T1046', 'T1016'],
       suggestedTools: ['nmap', 'ldapsearch', 'enum4linux'],
-      suggestedAgents: ['recon-specialist', 'network-testing-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist'],
     },
     {
       order: 8,
@@ -913,7 +913,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Move to research servers, EHR systems, and file shares containing clinical data.',
       techniques: ['T1021.001', 'T1021.002', 'T1550.002', 'T1570'],
       suggestedTools: ['crackmapexec', 'impacket', 'evil-winrm'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 9,
@@ -922,7 +922,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Collect clinical trial data, drug research, patient records, and financial data.',
       techniques: ['T1560.001', 'T1005', 'T1119'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 10,
@@ -931,7 +931,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Exfiltrate research data and financial records over encrypted channels.',
       techniques: ['T1041', 'T1048'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 11,
@@ -940,7 +940,7 @@ export const LAZARUS_HEALTHCARE_CHAIN: AptAttackChain = {
       description: 'Deploy ransomware for revenue generation, destroy evidence, and inhibit system recovery. (SIMULATION ONLY)',
       techniques: ['T1486', 'T1485', 'T1489', 'T1490'],
       suggestedTools: [],
-      suggestedAgents: ['reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
   ],
 }
@@ -973,7 +973,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Compromise software supply chain, exploit public-facing applications, or leverage trusted relationships with vendors.',
       techniques: ['T1195.002', 'T1190', 'T1199', 'T1566.001'],
       suggestedTools: ['nuclei', 'httpx', 'gophish'],
-      suggestedAgents: ['exploit-specialist', 'web-testing-specialist'],
+      suggestedAgents: ['infra-specialist', 'app-testing-specialist'],
     },
     {
       order: 3,
@@ -982,7 +982,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Execute through PowerShell, WMI, scheduled tasks, and custom tooling.',
       techniques: ['T1059.001', 'T1059.003', 'T1053.005', 'T1047'],
       suggestedTools: ['crackmapexec', 'evil-winrm'],
-      suggestedAgents: ['exploit-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 4,
@@ -991,7 +991,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Deploy web shells, create services, establish registry persistence, and manipulate accounts.',
       techniques: ['T1505.003', 'T1543.003', 'T1547.001', 'T1098'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 5,
@@ -1000,7 +1000,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Exploit local vulnerabilities, inject processes, and manipulate access tokens to escalate.',
       techniques: ['T1068', 'T1055', 'T1134'],
       suggestedTools: ['crackmapexec'],
-      suggestedAgents: ['privilege-escalation-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 6,
@@ -1009,7 +1009,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Dump LSASS and NTDS.dit, Kerberoast service accounts, and harvest credentials from files.',
       techniques: ['T1003.001', 'T1003.003', 'T1558.003', 'T1552.001'],
       suggestedTools: ['crackmapexec', 'mimikatz', 'impacket'],
-      suggestedAgents: ['privilege-escalation-specialist', 'ad-specialist'],
+      suggestedAgents: ['infra-specialist', 'infra-specialist'],
     },
     {
       order: 7,
@@ -1018,7 +1018,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Map AD structure, identify engineering file shares, CAD/CAM servers, and manufacturing databases.',
       techniques: ['T1087.002', 'T1082', 'T1083', 'T1046', 'T1135', 'T1069.002', 'T1482'],
       suggestedTools: ['bloodhound', 'nmap', 'ldapsearch', 'enum4linux'],
-      suggestedAgents: ['recon-specialist', 'ad-specialist'],
+      suggestedAgents: ['recon-specialist', 'infra-specialist'],
     },
     {
       order: 8,
@@ -1027,7 +1027,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Pivot to engineering workstations and file servers using harvested credentials and pass-the-hash.',
       techniques: ['T1021.001', 'T1021.002', 'T1550.002', 'T1570'],
       suggestedTools: ['crackmapexec', 'impacket', 'evil-winrm'],
-      suggestedAgents: ['lateral-movement-specialist'],
+      suggestedAgents: ['infra-specialist'],
     },
     {
       order: 9,
@@ -1036,7 +1036,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Collect engineering designs, manufacturing process data, trade secrets, and corporate strategy documents.',
       techniques: ['T1560.001', 'T1005', 'T1039', 'T1213'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist'],
     },
     {
       order: 10,
@@ -1045,7 +1045,7 @@ export const APT41_MANUFACTURING_CHAIN: AptAttackChain = {
       description: 'Exfiltrate collected IP over encrypted channels or to cloud storage.',
       techniques: ['T1041', 'T1567.002'],
       suggestedTools: [],
-      suggestedAgents: ['evidence-specialist', 'reporting-specialist'],
+      suggestedAgents: ['evidence-reporting-specialist', 'evidence-reporting-specialist'],
     },
   ],
 }

@@ -145,9 +145,9 @@ test('generateActions maps actions to correct agents', () => {
   const privesc = actions.find(a => a.type === 'privesc')
 
   assert.ok(webScan)
-  assert.equal(webScan.agent, 'web-testing-specialist')
+  assert.equal(webScan.agent, 'app-testing-specialist')
   assert.ok(privesc)
-  assert.equal(privesc.agent, 'privilege-escalation-specialist')
+  assert.equal(privesc.agent, 'infra-specialist')
 })
 
 // ---------------------------------------------------------------------------

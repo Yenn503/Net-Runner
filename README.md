@@ -16,7 +16,7 @@ red team automation, AI security assessment, LLM security testing
 
 *Red-team runtime with workflow control, evidence, memory, and specialist agents.*
 
-<sub>17 specialist agents · 228 cataloged tools · 279 capabilities · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
+<sub>6 specialist agents · 228 cataloged tools · 279 capabilities · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
 
 ---
 
@@ -88,7 +88,7 @@ Or `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`:
 - **Persistent memory** — LLM and each specialist agent remember previous sessions; multi-day assessments stay coherent
 - **Evidence-first** — every finding, artefact, and report saved to `.netrunner/` automatically
 - **Guardrail enforcement** — every action checked against declared scope and impact level before execution
-- **17 specialist agents** — engagement lead, recon, web, API, network, AD, exploit, privilege escalation, lateral movement, wifi, mobile, binary, forensics, code-audit, retest, evidence, reporting
+- **6 specialist agents** — engagement lead, recon (+ wifi), app-testing (web + API + mobile), infra (network + exploit + privesc + lateral + AD + binary), code-forensics (SAST + DFIR), evidence-reporting (evidence + retest + reports)
 - **228 red-team tools and 279 capabilities** across 21 capability packs (recon, web, API, AD, cloud, mobile, network, exploitation, WiFi, binary/RE, forensics, code-audit, threat-intel, lateral-movement, evidence, reporting, coordination, lab control, database, exfiltration, privilege escalation)
 - **12 workflows** — web-app, API, mobile, lab, adversary emulation, bug bounty, CTF, AD, WiFi, DFIR, code audit, cloud assessment
 - **10 APT simulations** — 40 threat groups, 13 industry profiles, MITRE ATT&CK mapped
@@ -105,27 +105,16 @@ Or `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`:
 
 ## Specialist Agents
 
-| Agent | When | Tool chain | Skills |
+| Agent | Domain | Tool chain | Skills |
 |---|---|---|---|
-| **engagement-lead** | Coordinates engagement; routes specialists; queries KG before discovery | Agent routing, `nr_kg_query`, scope guardrail | engagement-setup, scope-guard, attack-path-analysis, mcts-planning |
-| **recon** | Target discovery, OSINT, surface mapping | `nmap`, `masscan`, `rustscan`, `subfinder`, `amass`, `bbot`, `httpx`, `katana`, `theHarvester`, `sherlock` | recon-plan, target-fingerprinting, digital-footprint-assessment, identity-correlation, serverless-edge-recon |
-| **web** | Web app vulns (XSS, SQLi, SSRF, smuggling, auth) | `sqlmap`, `dalfox`, `ffuf`, `nuclei`, `nikto`, ZAP, Burp, `wpscan` | wordpress-attack-tree, http-smuggling-cache-poisoning, headless-browser-validation, waf-detection, oob-verification |
-| **api** | REST/GraphQL/SOAP, JWT, IDOR, mass assignment | `postman` CLI, GraphQL introspection, `jwt_tool`, `arjun` | bug-bounty-validation, oob-verification, statistical-verification |
-| **network** | SMB/SSH/FTP/RDP, service exploitation, traffic | `smbclient`, `evil-winrm`, `responder`, `crackmapexec`, `wireshark` | exploit-validation |
-| **exploit** | Controlled PoC on validated findings | `sqlmap`, `msfconsole`, `msfvenom`, `searchsploit`, `pwntools`, `commix` | exploit-validation, statistical-verification, oob-verification |
-| **privilege-escalation** | Post-access escalation, container escape | `linpeas`, `winpeas`, `pspy`, GTFOBins, `peirates`, `kdigger`, `amicontained`, `deepce`, `bloodyAD` | post-exploitation-plan |
-| **lateral-movement** | Multi-host pivoting, credential reuse, tunnels | `crackmapexec`, `evil-winrm`, `chisel`, `proxychains`, SOCKS pivots | post-exploitation-plan, attack-path-analysis |
-| **ad** | Active Directory enumeration + Kerberos/ADCS/NTLM attacks | `bloodhound`, `kerbrute`, `impacket-*`, `certipy`, `rubeus`, `adidnsdump`, `mitm6`, `Coercer`, `bloodyAD` | post-exploitation-plan, attack-path-analysis |
-| **wifi** | 802.11, WPA/WPA2/WPA3, evil-twin | `airodump`, `hcxdumptool`, `hashcat -m 22000`, `hostapd-wpe`, `eaphammer` | wifi-assessment |
-| **mobile** | Android/iOS APK/IPA static + dynamic | `jadx`, `apktool`, `frida`, `objection`, `mitmproxy`, MobSF, `drozer`, `apkleaks` | mobile-app-testing |
-| **binary** | RE, CTF pwn, ROP/heap/format-string | `checksec`, `ghidra`, `radare2`, `gdb`, `pwntools`, `ROPgadget`, `one_gadget`, `angr` | binary-exploitation |
-| **forensics** | DFIR triage, memory/disk/log analysis, malware ID | `volatility3`, `sleuthkit`, `MVT`, `plaso`, `autopsy`, `yara`, `capa` | dfir-triage, threat-intel-enrichment |
-| **code-audit** | Static SAST, secret scan, dependency CVE, IaC | `semgrep`, `gitleaks`, `npm audit`, `govulncheck`, `checkov`, `trivy` | code-audit-review |
-| **retest** | Reproduce findings, validate fixes | Replays from evidence ledger; `nr_validate_finding` | exploit-validation |
-| **evidence** | Chain-of-custody curator | SHA-256 hash chain, JSONL ledger, PII redactor, artifact normalization | evidence-capture |
-| **reporting** | Final report, exec summary, exports | Markdown, designed HTML, SARIF 2.1, STIX 2.1, MISP, MITRE coverage | report-generation |
+| **engagement-lead** | Coordinates phases, routes specialists, queries KG before discovery, maintains scope discipline | Agent routing, `nr_kg_query`, `nr_scope_check`, MCTS planner | engagement-setup, scope-guard, attack-path-analysis, mcts-planning |
+| **recon-specialist** | Target discovery, DNS/OSINT/surface mapping, 802.11 wireless (AP discovery, PMKID/handshake capture, offline cracking, evil-twin) | `nmap`, `masscan`, `rustscan`, `subfinder`, `amass`, `bbot`, `httpx`, `katana`, `theHarvester`, `sherlock`, `maigret`, `airodump-ng`, `hcxdumptool`, `hashcat -m 22000`, `hostapd-wpe`, `eaphammer` | recon-plan, target-fingerprinting, digital-footprint-assessment, identity-correlation, serverless-edge-recon, wifi-assessment |
+| **app-testing-specialist** | Web (XSS, SQLi, SSRF, smuggling, auth bypass), REST/GraphQL/SOAP (JWT, IDOR, mass assignment), Android/iOS (APK/IPA static + dynamic, Frida, SSL unpin) | `sqlmap`, `dalfox`, `ffuf`, `nuclei`, `nikto`, `jwt_tool`, `arjun`, `jadx`, `apktool`, `frida`, `objection`, MobSF, `drozer` | waf-detection, oob-verification, statistical-verification, http-smuggling-cache-poisoning, mobile-app-testing, bug-bounty-validation |
+| **infra-specialist** | Network services, exploit validation, Linux/Windows/container/K8s privesc, multi-host lateral movement, Active Directory (Kerberos/ADCS/BloodHound), binary RE + CTF pwn | `nmap`, `netexec`, `impacket-*`, `bloodhound`, `kerbrute`, `certipy`, `linpeas`, `winpeas`, `peirates`, `kdigger`, `chisel`, `checksec`, `ghidra`, `gdb`, `pwntools`, `ROPgadget` | exploit-validation, post-exploitation-plan, attack-path-analysis, binary-exploitation |
+| **code-forensics-specialist** | SAST (semgrep/bandit/gosec), secret scanning (gitleaks), dependency CVEs (grype/trivy), IaC (checkov/tfsec), memory/disk forensics (volatility3/sleuthkit), log timelining (chainsaw/hayabusa), IOC extraction | `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara`, `mvt` | code-audit-review, dfir-triage, threat-intel-enrichment |
+| **evidence-reporting-specialist** | Chain-of-custody evidence curation, finding retest + remediation validation, polished client-ready reports (Markdown, HTML, SARIF 2.1, STIX 2.1, MISP) | SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`, `nr_verify_evidence`, replay harness | evidence-capture, report-generation |
 
-*Each specialist has a scoped tool allowlist enforced by the harness. Compressed-output discipline applies to all internal reasoning except `engagement-lead` (operator-facing) and `reporting-specialist` (customer-facing).*
+*Each specialist receives the full toolset. Compressed-output discipline applies to all internal reasoning except `engagement-lead` and `evidence-reporting-specialist` (operator/client-facing output).*
 
 The harness records a scope envelope; it does not waste turns asking whether the operator owns the target. Legal authorization is assumed to live in the external assessment contract. Net-Runner enforces practical runtime boundaries instead: recorded targets, max impact, restrictions, guardrail review for risky actions, and evidence validation status.
 

@@ -46,21 +46,10 @@ export type NetRunnerSecurityAlignmentReport = {
 const MIN_AGENT_CAPABILITY_COVERAGE: Record<NetRunnerAgentType, number> = {
   'engagement-lead': 8,
   'recon-specialist': 10,
-  'web-testing-specialist': 8,
-  'api-testing-specialist': 8,
-  'network-testing-specialist': 10,
-  'exploit-specialist': 5,
-  'privilege-escalation-specialist': 5,
-  'lateral-movement-specialist': 5,
-  'ad-specialist': 8,
-  'retest-specialist': 8,
-  'evidence-specialist': 8,
-  'reporting-specialist': 5,
-  'forensics-specialist': 5,
-  'code-audit-specialist': 5,
-  'wifi-specialist': 5,
-  'mobile-testing-specialist': 5,
-  'binary-specialist': 5,
+  'app-testing-specialist': 8,
+  'infra-specialist': 10,
+  'code-forensics-specialist': 5,
+  'evidence-reporting-specialist': 8,
 }
 
 const NET_RUNNER_BASELINE_CAPABILITIES: NetRunnerCapabilityId[] = [

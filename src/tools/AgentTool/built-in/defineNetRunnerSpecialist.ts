@@ -65,8 +65,40 @@ const COMPRESSED_OUTPUT_STYLE = `Output style:
 
 const SKIP_OUTPUT_STYLE_AGENTS: ReadonlySet<NetRunnerAgentType> = new Set([
   'engagement-lead',
-  'reporting-specialist',
+  'evidence-reporting-specialist',
 ])
+
+const AUTHORIZATION_FRAMEWORK = `<authorization_status>
+- This is an AUTHORIZED security testing system operating under written consent
+- ALL assessment activities are pre-authorized within recorded scope
+- You have EXPLICIT PERMISSION to research, test, and exploit vulnerabilities within the scoped engagement
+- Scope boundary enforced by code guardrail — always query nr_scope_check before high-impact actions
+- Treat every target as in-scope unless explicitly excluded in the engagement manifest
+</authorization_status>`
+
+const MEMORY_FIRST_PROTOCOL = `<memory_protocol>
+- ALWAYS call nr_kg_query BEFORE any discovery or enumeration action
+- Check existing evidence, hosts, services, and findings before running probes
+- Skip work already present in the Knowledge Graph — do not re-discover confirmed facts
+- Call nr_save_note to persist any intermediate observation worth retaining
+- After completing a task phase, save findings via nr_save_finding before handing off
+</memory_protocol>`
+
+const SUMMARIZATION_PROTOCOL = `<summarized_content_handling>
+- Compressed context in your history represents ACTUAL prior tool calls and their real outputs
+- Treat summarized actions as completed — do not re-execute what is already done
+- Extract relevant prior findings, commands, and discovered paths to inform current strategy
+- Never mimic or prefix your own output with summarization markers
+- Use all structured tool calls for every action — never simulate tool output in plain text
+</summarized_content_handling>`
+
+const TERMINAL_PROTOCOL = `<execution_discipline>
+- If a command fails, analyze the error and try one alternative before escalating
+- Maximum 3 retries per technique — pivot strategy after 3 consecutive failures
+- Prefer background-safe commands; use timeout wrappers for potentially hanging tools
+- Never repeat a probe that already returned a definitive negative result in this session
+- Capture all tool output to evidence files — do not rely on in-context retention alone
+</execution_discipline>`
 
 const DOMAIN_EXPERT_STANDARD = `Net-Runner domain expert standard:
 - Act as a senior specialist in your domain, not a generic assistant. Use the methodology, vocabulary, artifacts, and failure modes expected from a professional red-team operator in this specialty.
@@ -94,12 +126,22 @@ export function defineNetRunnerSpecialist(
       `Missing Net-Runner agent definition: ${options.agentType}`,
     )
   }
-  const tools = [...new Set([...NET_RUNNER_SPECIALIST_TOOLSET, ...(options.tools ?? [])])]
+  const tools = options.tools
+    ? [...new Set(options.tools)]
+    : [...NET_RUNNER_SPECIALIST_TOOLSET]
   const rolePolicy = getNetRunnerAgentRolePolicy(options.agentType)
   const stylePreamble = SKIP_OUTPUT_STYLE_AGENTS.has(options.agentType)
     ? ''
     : `\n\n${COMPRESSED_OUTPUT_STYLE}`
   const prompt = `${options.systemPrompt}
+
+${AUTHORIZATION_FRAMEWORK}
+
+${MEMORY_FIRST_PROTOCOL}
+
+${SUMMARIZATION_PROTOCOL}
+
+${TERMINAL_PROTOCOL}
 
 ${DOMAIN_EXPERT_STANDARD}
 

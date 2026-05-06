@@ -14,21 +14,10 @@ test('Net-Runner publishes security specialist agent definitions', () => {
     [
       'engagement-lead',
       'recon-specialist',
-      'web-testing-specialist',
-      'api-testing-specialist',
-      'network-testing-specialist',
-      'exploit-specialist',
-      'privilege-escalation-specialist',
-      'lateral-movement-specialist',
-      'ad-specialist',
-      'retest-specialist',
-      'evidence-specialist',
-      'reporting-specialist',
-      'forensics-specialist',
-      'code-audit-specialist',
-      'wifi-specialist',
-      'mobile-testing-specialist',
-      'binary-specialist',
+      'app-testing-specialist',
+      'infra-specialist',
+      'code-forensics-specialist',
+      'evidence-reporting-specialist',
     ],
   )
   assert.equal(
@@ -36,11 +25,11 @@ test('Net-Runner publishes security specialist agent definitions', () => {
     'web-app-testing',
   )
   assert.equal(
-    getNetRunnerAgentDefinition('api-testing-specialist')?.workflowId,
-    'api-testing',
+    getNetRunnerAgentDefinition('app-testing-specialist')?.workflowId,
+    'web-app-testing',
   )
   assert.equal(
-    getNetRunnerAgentDefinition('privilege-escalation-specialist')?.workflowId,
+    getNetRunnerAgentDefinition('infra-specialist')?.workflowId,
     'lab-target-testing',
   )
 })
@@ -56,6 +45,6 @@ test('Net-Runner publishes role policies for every specialist agent', () => {
     assert.ok(policy.handoffContract.length > 0)
     assert.ok(policy.evidenceRequirements.length > 0)
     assert.ok(policy.prohibitedActions.length > 0)
-    assert.ok(policy.evalDimensions.includes('scope-compliance') || agentType === 'reporting-specialist')
+    assert.ok(policy.evalDimensions.includes('scope-compliance') || agentType === 'evidence-reporting-specialist')
   }
 })

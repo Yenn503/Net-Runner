@@ -7,26 +7,15 @@ import { loadAgentMemoryPrompt } from './agentMemory.js'
 import { NET_RUNNER_GUIDE_AGENT } from './built-in/netRunnerGuideAgent.js'
 import { ENGAGEMENT_LEAD_AGENT } from './built-in/engagementLeadAgent.js'
 import { EXPLORE_AGENT } from './built-in/exploreAgent.js'
-import { API_TESTING_SPECIALIST_AGENT } from './built-in/apiTestingSpecialistAgent.js'
-import { EVIDENCE_SPECIALIST_AGENT } from './built-in/evidenceSpecialistAgent.js'
-import { FORENSICS_SPECIALIST_AGENT } from './built-in/forensicsSpecialistAgent.js'
-import { CODE_AUDIT_SPECIALIST_AGENT } from './built-in/codeAuditSpecialistAgent.js'
-import { WIFI_SPECIALIST_AGENT } from './built-in/wifiSpecialistAgent.js'
-import { MOBILE_TESTING_SPECIALIST_AGENT } from './built-in/mobileTestingSpecialistAgent.js'
-import { BINARY_SPECIALIST_AGENT } from './built-in/binarySpecialistAgent.js'
-import { EXPLOIT_SPECIALIST_AGENT } from './built-in/exploitSpecialistAgent.js'
-import { GENERAL_PURPOSE_AGENT } from './built-in/generalPurposeAgent.js'
-import { AD_SPECIALIST_AGENT } from './built-in/adSpecialistAgent.js'
-import { LATERAL_MOVEMENT_SPECIALIST_AGENT } from './built-in/lateralMovementSpecialistAgent.js'
-import { NETWORK_TESTING_SPECIALIST_AGENT } from './built-in/networkTestingSpecialistAgent.js'
-import { PLAN_AGENT } from './built-in/planAgent.js'
-import { PRIVILEGE_ESCALATION_SPECIALIST_AGENT } from './built-in/privilegeEscalationSpecialistAgent.js'
 import { RECON_SPECIALIST_AGENT } from './built-in/reconSpecialistAgent.js'
-import { REPORTING_SPECIALIST_AGENT } from './built-in/reportingSpecialistAgent.js'
-import { RETEST_SPECIALIST_AGENT } from './built-in/retestSpecialistAgent.js'
+import { APP_TESTING_SPECIALIST_AGENT } from './built-in/appTestingSpecialistAgent.js'
+import { INFRA_SPECIALIST_AGENT } from './built-in/infraSpecialistAgent.js'
+import { CODE_FORENSICS_SPECIALIST_AGENT } from './built-in/codeForensicsSpecialistAgent.js'
+import { EVIDENCE_REPORTING_SPECIALIST_AGENT } from './built-in/evidenceReportingSpecialistAgent.js'
+import { GENERAL_PURPOSE_AGENT } from './built-in/generalPurposeAgent.js'
+import { PLAN_AGENT } from './built-in/planAgent.js'
 import { STATUSLINE_SETUP_AGENT } from './built-in/statuslineSetup.js'
 import { VERIFICATION_AGENT } from './built-in/verificationAgent.js'
-import { WEB_TESTING_SPECIALIST_AGENT } from './built-in/webTestingSpecialistAgent.js'
 import type { AgentDefinition, BuiltInAgentDefinition } from './loadAgentsDir.js'
 
 export function areExplorePlanAgentsEnabled(): boolean {
@@ -44,21 +33,10 @@ export function areNetRunnerSecurityAgentsEnabled(): boolean {
 const NET_RUNNER_SECURITY_AGENT_TYPES = new Set([
   'engagement-lead',
   'recon-specialist',
-  'web-testing-specialist',
-  'api-testing-specialist',
-  'network-testing-specialist',
-  'exploit-specialist',
-  'privilege-escalation-specialist',
-  'lateral-movement-specialist',
-  'ad-specialist',
-  'retest-specialist',
-  'evidence-specialist',
-  'reporting-specialist',
-  'forensics-specialist',
-  'code-audit-specialist',
-  'wifi-specialist',
-  'mobile-testing-specialist',
-  'binary-specialist',
+  'app-testing-specialist',
+  'infra-specialist',
+  'code-forensics-specialist',
+  'evidence-reporting-specialist',
 ])
 
 function withNetRunnerSecurityMemory(
@@ -122,21 +100,10 @@ export function getBuiltInAgents(): AgentDefinition[] {
     agents.push(
       ENGAGEMENT_LEAD_AGENT,
       RECON_SPECIALIST_AGENT,
-      WEB_TESTING_SPECIALIST_AGENT,
-      API_TESTING_SPECIALIST_AGENT,
-      NETWORK_TESTING_SPECIALIST_AGENT,
-      EXPLOIT_SPECIALIST_AGENT,
-      PRIVILEGE_ESCALATION_SPECIALIST_AGENT,
-      LATERAL_MOVEMENT_SPECIALIST_AGENT,
-      AD_SPECIALIST_AGENT,
-      RETEST_SPECIALIST_AGENT,
-      EVIDENCE_SPECIALIST_AGENT,
-      FORENSICS_SPECIALIST_AGENT,
-      CODE_AUDIT_SPECIALIST_AGENT,
-      WIFI_SPECIALIST_AGENT,
-      MOBILE_TESTING_SPECIALIST_AGENT,
-      BINARY_SPECIALIST_AGENT,
-      REPORTING_SPECIALIST_AGENT,
+      APP_TESTING_SPECIALIST_AGENT,
+      INFRA_SPECIALIST_AGENT,
+      CODE_FORENSICS_SPECIALIST_AGENT,
+      EVIDENCE_REPORTING_SPECIALIST_AGENT,
     )
   }
 

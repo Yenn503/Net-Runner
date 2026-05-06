@@ -7,23 +7,12 @@ import {
   getSecurityBuiltInAgentTooling,
   validateSecurityAgentToolCoverage,
 } from '../src/security/agentToolCoverage.ts'
-import { API_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/apiTestingSpecialistAgent.ts'
-import { AD_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/adSpecialistAgent.ts'
-import { BINARY_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/binarySpecialistAgent.ts'
-import { CODE_AUDIT_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/codeAuditSpecialistAgent.ts'
 import { ENGAGEMENT_LEAD_AGENT } from '../src/tools/AgentTool/built-in/engagementLeadAgent.ts'
-import { EVIDENCE_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/evidenceSpecialistAgent.ts'
-import { EXPLOIT_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/exploitSpecialistAgent.ts'
-import { FORENSICS_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/forensicsSpecialistAgent.ts'
-import { LATERAL_MOVEMENT_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/lateralMovementSpecialistAgent.ts'
-import { MOBILE_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/mobileTestingSpecialistAgent.ts'
-import { NETWORK_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/networkTestingSpecialistAgent.ts'
-import { PRIVILEGE_ESCALATION_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/privilegeEscalationSpecialistAgent.ts'
 import { RECON_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/reconSpecialistAgent.ts'
-import { REPORTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/reportingSpecialistAgent.ts'
-import { RETEST_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/retestSpecialistAgent.ts'
-import { WEB_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/webTestingSpecialistAgent.ts'
-import { WIFI_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/wifiSpecialistAgent.ts'
+import { APP_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/appTestingSpecialistAgent.ts'
+import { INFRA_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/infraSpecialistAgent.ts'
+import { CODE_FORENSICS_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/codeForensicsSpecialistAgent.ts'
+import { EVIDENCE_REPORTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/evidenceReportingSpecialistAgent.ts'
 import { getBuiltInAgents } from '../src/tools/AgentTool/builtInAgents.ts'
 import { AGENT_TOOL_NAME } from '../src/tools/AgentTool/constants.ts'
 import { SEND_MESSAGE_TOOL_NAME } from '../src/tools/SendMessageTool/constants.ts'
@@ -53,21 +42,10 @@ const builtInAgentTooling: Array<{
 }> = [
   ENGAGEMENT_LEAD_AGENT,
   RECON_SPECIALIST_AGENT,
-  WEB_TESTING_SPECIALIST_AGENT,
-  API_TESTING_SPECIALIST_AGENT,
-  NETWORK_TESTING_SPECIALIST_AGENT,
-  EXPLOIT_SPECIALIST_AGENT,
-  PRIVILEGE_ESCALATION_SPECIALIST_AGENT,
-  LATERAL_MOVEMENT_SPECIALIST_AGENT,
-  AD_SPECIALIST_AGENT,
-  RETEST_SPECIALIST_AGENT,
-  EVIDENCE_SPECIALIST_AGENT,
-  REPORTING_SPECIALIST_AGENT,
-  FORENSICS_SPECIALIST_AGENT,
-  CODE_AUDIT_SPECIALIST_AGENT,
-  WIFI_SPECIALIST_AGENT,
-  MOBILE_TESTING_SPECIALIST_AGENT,
-  BINARY_SPECIALIST_AGENT,
+  APP_TESTING_SPECIALIST_AGENT,
+  INFRA_SPECIALIST_AGENT,
+  CODE_FORENSICS_SPECIALIST_AGENT,
+  EVIDENCE_REPORTING_SPECIALIST_AGENT,
 ].map(agent => ({
   agentType: agent.agentType as NetRunnerAgentType,
   tools: [...(agent.tools ?? [])].sort(),

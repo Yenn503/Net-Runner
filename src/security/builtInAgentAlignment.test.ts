@@ -19,21 +19,10 @@ function getBuiltInAgentsViaBun(): SerializedBuiltInAgent[] {
     const netRunnerTypes = new Set([
       'engagement-lead',
       'recon-specialist',
-      'web-testing-specialist',
-      'api-testing-specialist',
-      'network-testing-specialist',
-      'exploit-specialist',
-      'privilege-escalation-specialist',
-      'lateral-movement-specialist',
-      'ad-specialist',
-      'retest-specialist',
-      'evidence-specialist',
-      'reporting-specialist',
-      'forensics-specialist',
-      'code-audit-specialist',
-      'wifi-specialist',
-      'mobile-testing-specialist',
-      'binary-specialist',
+      'app-testing-specialist',
+      'infra-specialist',
+      'code-forensics-specialist',
+      'evidence-reporting-specialist',
     ])
     const agents = getBuiltInAgents().map(agent => ({
       agentType: agent.agentType,
@@ -68,21 +57,10 @@ test('default built-in registry includes core runtime and Net-Runner specialist 
       'statusline-setup',
       'engagement-lead',
       'recon-specialist',
-      'web-testing-specialist',
-      'api-testing-specialist',
-      'network-testing-specialist',
-      'exploit-specialist',
-      'privilege-escalation-specialist',
-      'lateral-movement-specialist',
-      'retest-specialist',
-      'evidence-specialist',
-      'reporting-specialist',
-      'forensics-specialist',
-      'code-audit-specialist',
-      'ad-specialist',
-      'wifi-specialist',
-      'mobile-testing-specialist',
-      'binary-specialist',
+      'app-testing-specialist',
+      'infra-specialist',
+      'code-forensics-specialist',
+      'evidence-reporting-specialist',
       'Explore',
       'Plan',
       'verification',
@@ -130,48 +108,46 @@ test('Net-Runner specialists load role contracts and scoped toolsets', () => {
   const agents = getBuiltInAgentMap()
   const engagementLead = agents.get('engagement-lead')
   const recon = agents.get('recon-specialist')
-  const evidence = agents.get('evidence-specialist')
-  const reporting = agents.get('reporting-specialist')
-  const web = agents.get('web-testing-specialist')
+  const appTesting = agents.get('app-testing-specialist')
+  const infra = agents.get('infra-specialist')
+  const codeForensics = agents.get('code-forensics-specialist')
+  const evidenceReporting = agents.get('evidence-reporting-specialist')
 
   assert.ok(engagementLead?.systemPrompt?.includes('Net-Runner role contract:'))
   assert.ok(engagementLead?.systemPrompt?.includes('Net-Runner domain expert standard:'))
   assert.ok(engagementLead?.systemPrompt?.includes('Runnable capability catalog:'))
   assert.ok(engagementLead?.systemPrompt?.includes('Eval dimensions: task-adherence'))
+
   assert.ok(recon?.systemPrompt?.includes('maigret-digital-footprint'))
   assert.ok(recon?.systemPrompt?.includes('kali-'))
-  assert.ok(web?.systemPrompt?.includes('indirect-prompt-injection-resistance'))
   assert.ok(recon?.systemPrompt?.includes('Completion criteria:'))
-  assert.ok(evidence?.systemPrompt?.includes('chain-of-custody evidence'))
-  assert.ok(reporting?.systemPrompt?.includes('Cite ledger/artifact refs'))
-  assert.ok(reporting?.systemPrompt?.includes('Evidence Gaps'))
-  assert.ok(reporting?.systemPrompt?.includes('Validation status comes from typed validation entries'))
+
+  assert.ok(appTesting?.systemPrompt?.includes('indirect-prompt-injection-resistance'))
+
+  assert.ok(evidenceReporting?.systemPrompt?.includes('chain-of-custody evidence'))
+  assert.ok(evidenceReporting?.systemPrompt?.includes('Cite ledger/artifact refs'))
+  assert.ok(evidenceReporting?.systemPrompt?.includes('Evidence Gaps'))
+  assert.ok(evidenceReporting?.systemPrompt?.includes('Validation status comes from typed validation entries'))
 
   assert.equal(engagementLead?.tools?.includes('Agent'), true)
   assert.equal(recon?.tools?.includes('Bash'), true)
   assert.equal(recon?.tools?.includes('WebSearch'), true)
-  assert.equal(web?.tools?.includes('Bash'), true)
-  assert.equal(evidence?.tools?.includes('Write'), true)
-  assert.equal(evidence?.tools?.includes('Bash'), true)
-  assert.equal(reporting?.tools?.includes('Edit'), true)
-  assert.equal(reporting?.tools?.includes('Bash'), true)
+  assert.equal(appTesting?.tools?.includes('Bash'), true)
+  assert.equal(evidenceReporting?.tools?.includes('Write'), true)
+  assert.equal(evidenceReporting?.tools?.includes('Bash'), true)
+  assert.equal(evidenceReporting?.tools?.includes('Edit'), true)
 
-  const forensics = agents.get('forensics-specialist')
-  assert.ok(forensics)
-  assert.ok(forensics?.systemPrompt?.includes('Net-Runner role contract:'))
-  assert.ok(forensics?.systemPrompt?.includes('chain-of-custody') || forensics?.systemPrompt?.includes('hash'))
-  assert.equal(forensics?.tools?.includes('Bash'), true)
-  assert.equal(forensics?.tools?.includes('Write'), true)
-  assert.equal(forensics?.tools?.includes('Edit'), true)
-  assert.equal(forensics?.memory, 'project')
+  assert.ok(codeForensics)
+  assert.ok(codeForensics?.systemPrompt?.includes('Net-Runner role contract:'))
+  assert.ok(codeForensics?.systemPrompt?.includes('chain-of-custody') || codeForensics?.systemPrompt?.includes('hash'))
+  assert.ok(codeForensics?.systemPrompt?.includes('semgrep') || codeForensics?.systemPrompt?.includes('SAST'))
+  assert.equal(codeForensics?.tools?.includes('Bash'), true)
+  assert.equal(codeForensics?.tools?.includes('Write'), true)
+  assert.equal(codeForensics?.tools?.includes('Edit'), true)
+  assert.equal(codeForensics?.memory, 'project')
 
-  const codeAudit = agents.get('code-audit-specialist')
-  assert.ok(codeAudit)
-  assert.ok(codeAudit?.systemPrompt?.includes('Net-Runner role contract:'))
-  assert.ok(codeAudit?.systemPrompt?.includes('semgrep') || codeAudit?.systemPrompt?.includes('SAST'))
-  assert.equal(codeAudit?.tools?.includes('Bash'), true)
-  assert.equal(codeAudit?.tools?.includes('Write'), true)
-  // Edit is present: code-audit-specialist may apply autofixes and annotate source files
-  assert.equal(codeAudit?.tools?.includes('Edit'), true)
-  assert.equal(codeAudit?.memory, 'project')
+  assert.ok(infra)
+  assert.ok(infra?.systemPrompt?.includes('Net-Runner role contract:'))
+  assert.equal(infra?.tools?.includes('Bash'), true)
+  assert.equal(infra?.memory, 'project')
 })
