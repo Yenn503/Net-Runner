@@ -246,6 +246,33 @@ type CatalogModel = {
   tags?: string[]
 }
 
+async function testProviderConnection(
+  baseUrl: string,
+  token: string,
+  model: string,
+): Promise<{ ok: boolean; reason?: string }> {
+  try {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+      }),
+    })
+    if (res.status === 200 || res.status === 201) return { ok: true }
+    let detail = ''
+    try { detail = ((await res.json() as { error?: { message?: string } }).error?.message ?? '') } catch { /* ignore */ }
+    return { ok: false, reason: detail || `HTTP ${res.status}` }
+  } catch (err) {
+    return { ok: false, reason: (err as Error).message }
+  }
+}
+
 async function fetchGithubModelsCatalog(token: string): Promise<CatalogModel[] | null> {
   try {
     const res = await fetch('https://models.github.ai/catalog/models', {
@@ -462,6 +489,18 @@ async function main(): Promise<void> {
       console.log(red(`Setup aborted — no ${preset.tokenVar} provided.`))
       console.log(dim('  Re-run `bun run setup` and paste a token, or use --force to overwrite an existing profile.'))
       process.exit(1)
+    }
+
+    // Validate token for providers that support a simple completions probe.
+    if (token && provider !== 'copilot' && provider !== 'ollama') {
+      console.log(dim(`Verifying ${bold(model)} is reachable with your token ...`))
+      const probe = await testProviderConnection(preset.baseUrl, token, model)
+      if (probe.ok) {
+        console.log(green(`✔ Connection verified.`))
+      } else {
+        console.log(yellow(`⚠ Connection check failed: ${probe.reason}`))
+        console.log(dim('  Saving profile anyway — re-run setup if the launch fails.'))
+      }
     }
 
     const env: Record<string, string> = {

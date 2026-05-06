@@ -65,25 +65,16 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 
 ## Specialist agents
 
-- `engagement-lead`
-- `recon-specialist`
-- `web-testing-specialist`
-- `api-testing-specialist`
-- `network-testing-specialist`
-- `exploit-specialist`
-- `privilege-escalation-specialist`
-- `lateral-movement-specialist`
-- `ad-specialist`
-- `wifi-specialist`
-- `mobile-testing-specialist`
-- `binary-specialist`
-- `forensics-specialist`
-- `code-audit-specialist`
-- `retest-specialist`
-- `evidence-specialist`
-- `reporting-specialist`
+| Agent | Domain |
+|---|---|
+| `engagement-lead` | Coordinates phases, routes specialists, queries KG before discovery, enforces scope |
+| `recon-specialist` | Target discovery, DNS/OSINT/surface mapping, 802.11 wireless (AP discovery, PMKID/handshake, offline cracking, evil-twin) |
+| `app-testing-specialist` | Web (XSS, SQLi, SSRF, smuggling, auth bypass), REST/GraphQL/SOAP (JWT, IDOR, mass assignment), Android/iOS (APK/IPA static + dynamic, Frida, SSL unpin) |
+| `infra-specialist` | Network services, exploit validation, Linux/Windows/container/K8s privesc, multi-host lateral movement, Active Directory (Kerberos/ADCS/BloodHound), binary RE + CTF pwn |
+| `code-forensics-specialist` | SAST (semgrep/bandit/gosec), secret scanning (gitleaks), dependency CVEs (grype/trivy), IaC (checkov/tfsec), memory/disk forensics, log timelining, IOC extraction |
+| `evidence-reporting-specialist` | Chain-of-custody evidence curation, finding retest and remediation validation, polished client-ready reports (Markdown, HTML, SARIF 2.1, STIX 2.1, MISP) |
 
-The reporting specialist owns final report delivery end-to-end. It reads the evidence ledger, correlates artifacts, merges duplicates, frames severity and business impact, and emits polished Markdown/HTML reports with executive dashboard, attack-path narrative, finding cards, remediation backlog, compliance mapping, MITRE coverage, and evidence appendix.
+The evidence-reporting specialist owns final report delivery end-to-end. It reads the evidence ledger, correlates artifacts, merges duplicates, frames severity and business impact, and emits Markdown/HTML reports with executive dashboard, attack-path narrative, finding cards, remediation backlog, compliance mapping, MITRE coverage, and evidence appendix.
 
 Operator chat is not proof. A finding becomes validated only through a typed validation entry, usually replay via `nr_validate_finding`, statistical verification, OOB callback confirmation, or artifact review. If validation is missing, the report must say so instead of implying certainty.
 

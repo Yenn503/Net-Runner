@@ -4,6 +4,7 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { basename, isAbsolute, join, relative, resolve } from 'path'
+import { createServer as createHttpServer } from 'http'
 import { buildSarif, buildStix, buildMisp, type ExportFormat } from '../security/exportReport.js'
 import { generateHtmlReport, generateMarkdownReport } from '../security/reporting.js'
 import {
@@ -57,7 +58,9 @@ const execAsync = promisify(exec)
 
 const VERSION = '0.1.6'
 const PORT = parseInt(process.env.NR_PORT ?? '8745', 10)
+const HEALTH_PORT = parseInt(process.env.NR_HEALTH_PORT ?? String(PORT + 1), 10)
 const CWD = process.env.NR_CWD || process.cwd()
+const SERVER_START_TIME = Date.now()
 
 type SessionBudget = {
   outputChars: number
@@ -1335,6 +1338,8 @@ function printBanner(): void {
   out.push(boxRow(r, W, l))
   ;[r, l] = lbl('Endpoint', `http://localhost:${PORT}/mcp`)
   out.push(boxRow(r, W, l))
+  ;[r, l] = lbl('Health', `http://localhost:${HEALTH_PORT}/health`)
+  out.push(boxRow(r, W, l))
   ;[r, l] = lbl('CWD', CWD.length > 38 ? CWD.slice(0, 35) + '...' : CWD)
   out.push(boxRow(r, W, l))
   ;[r, l] = lbl('Tools', `${TOOL_COUNT} (nr_* prefix, minimal surface)`)
@@ -1371,6 +1376,44 @@ function printBanner(): void {
 
 const USE_STDIO = process.argv.includes('--stdio')
 
+function startHealthServer(): void {
+  const health = createHttpServer((req, res) => {
+    if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) {
+      const body = JSON.stringify({
+        ok: true,
+        version: VERSION,
+        transport: 'httpStream',
+        port: PORT,
+        uptime: Math.floor((Date.now() - SERVER_START_TIME) / 1000),
+      })
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(body)
+    } else {
+      res.writeHead(404)
+      res.end()
+    }
+  })
+  health.listen(HEALTH_PORT, 'localhost', () => {
+    process.stderr.write(
+      `  ${DIM}${rgb(...DIMCOL)}health  http://localhost:${HEALTH_PORT}/health${RESET}\n`,
+    )
+  })
+  health.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code !== 'EADDRINUSE') {
+      process.stderr.write(`[net-runner] health server error: ${err.message}\n`)
+    }
+  })
+}
+
+function registerShutdownHandlers(): void {
+  const shutdown = (signal: string) => {
+    process.stderr.write(`\n[net-runner] received ${signal} — shutting down\n`)
+    process.exit(0)
+  }
+  process.once('SIGTERM', () => shutdown('SIGTERM'))
+  process.once('SIGINT', () => shutdown('SIGINT'))
+}
+
 export async function startNetRunnerMcpServer(options?: {
   transportType?: 'stdio' | 'httpStream'
   printStartupBanner?: boolean
@@ -1379,6 +1422,8 @@ export async function startNetRunnerMcpServer(options?: {
   const printStartupBanner =
     options?.printStartupBanner ?? transportType !== 'stdio'
 
+  registerShutdownHandlers()
+
   if (printStartupBanner) {
     printBanner()
   }
@@ -1386,6 +1431,7 @@ export async function startNetRunnerMcpServer(options?: {
   if (transportType === 'stdio') {
     await server.start({ transportType: 'stdio' })
   } else {
+    startHealthServer()
     await server.start({
       transportType: 'httpStream',
       httpStream: {
