@@ -34,7 +34,7 @@ function parseArg(name: string): string | null {
 
 function parseProviderArg(): ProviderProfile | 'auto' {
   const p = parseArg('--provider')?.toLowerCase()
-  if (p === 'openai' || p === 'ollama' || p === 'codex' || p === 'gemini' || p === 'github') return p
+  if (p === 'openai' || p === 'ollama' || p === 'codex' || p === 'gemini' || p === 'github' || p === 'copilot') return p
   return 'auto'
 }
 

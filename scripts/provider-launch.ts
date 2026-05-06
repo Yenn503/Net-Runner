@@ -49,7 +49,11 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
       continue
     }
 
-    if ((lower === 'auto' || lower === 'openai' || lower === 'ollama' || lower === 'codex' || lower === 'gemini' || lower === 'github' || lower === 'copilot') && requestedProfile === 'auto') {
+    if (
+      (lower === 'auto' || lower === 'openai' || lower === 'ollama' ||
+       lower === 'codex' || lower === 'gemini' || lower === 'github' || lower === 'copilot') &&
+      requestedProfile === 'auto'
+    ) {
       requestedProfile = lower as ProviderProfile | 'auto'
       continue
     }
@@ -67,12 +71,7 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
     passthroughArgs.push(arg)
   }
 
-  return {
-    requestedProfile,
-    passthroughArgs,
-    fast,
-    goal,
-  }
+  return { requestedProfile, passthroughArgs, fast, goal }
 }
 
 async function resolveOllamaDefaultModel(
@@ -83,10 +82,6 @@ async function resolveOllamaDefaultModel(
   return recommended?.name ?? null
 }
 
-function runCommand(command: string, env: NodeJS.ProcessEnv): Promise<number> {
-  return runProcess(command, [], env)
-}
-
 function runProcess(command: string, args: string[], env: NodeJS.ProcessEnv): Promise<number> {
   return new Promise(resolve => {
     const child = spawn(command, args, {
@@ -94,7 +89,6 @@ function runProcess(command: string, args: string[], env: NodeJS.ProcessEnv): Pr
       env,
       stdio: 'inherit',
     })
-
     child.on('close', code => resolve(code ?? 1))
     child.on('error', () => resolve(1))
   })
@@ -127,6 +121,10 @@ function printSummary(profile: ProviderProfile, env: NodeJS.ProcessEnv): void {
     console.log(`OPENAI_BASE_URL=${env.OPENAI_BASE_URL}`)
     console.log(`OPENAI_MODEL=${env.OPENAI_MODEL}`)
     console.log(`CODEX_API_KEY_SET=${Boolean(resolveCodexApiCredentials(env).apiKey)}`)
+  } else if (profile === 'copilot') {
+    console.log(`OPENAI_BASE_URL=${env.OPENAI_BASE_URL}`)
+    console.log(`OPENAI_MODEL=${env.OPENAI_MODEL}`)
+    console.log(`COPILOT_TOKEN_SET=${Boolean(env.OPENAI_API_KEY)}`)
   } else {
     console.log(`OPENAI_BASE_URL=${env.OPENAI_BASE_URL}`)
     console.log(`OPENAI_MODEL=${env.OPENAI_MODEL}`)
@@ -138,7 +136,7 @@ async function main(): Promise<void> {
   const options = parseLaunchOptions(process.argv.slice(2))
   const requestedProfile = options.requestedProfile
   if (!requestedProfile) {
-    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|github|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
+    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|github|copilot|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
     process.exit(1)
   }
 
@@ -172,10 +170,6 @@ async function main(): Promise<void> {
 
   let env: NodeJS.ProcessEnv
   if (profile === null) {
-    // No saved profile and no usable env credentials. Run the readline-based
-    // setup script (bypasses the Ink walkthrough's long-paste wrap bug) so
-    // the user lands in a configured state in one shot. After setup writes
-    // .net-runner-profile.json, reload it and continue with the launch.
     console.log('No saved provider profile detected. Running Net-Runner setup...')
     const setupCode = await runProcess('bun', ['run', 'scripts/setup.ts'], process.env)
     if (setupCode !== 0) {
@@ -209,16 +203,8 @@ async function main(): Promise<void> {
     applyFastFlags(env)
   }
 
-  if (
-    profile === 'ollama' &&
-    (persisted?.profile !== 'ollama' || !persisted?.env?.OPENAI_MODEL)
-  ) {
-    // already resolved above
-  }
-
-  // In auto mode (no profile explicitly requested), missing credentials should
-  // fall through to the in-CLI first-run walkthrough rather than fail-fast.
-  // Explicit profile selection (e.g. `dev:github`) keeps the strict gate.
+  // In auto mode, missing credentials fall through to the in-CLI first-run
+  // walkthrough. Explicit profile selection (e.g. `dev:github`) fails fast.
   const isAutoMode = options.requestedProfile === 'auto'
   const fallThroughToWalkthrough = (reason: string): void => {
     console.log(`${reason} Launching the built-in first-run walkthrough instead.`)
@@ -231,7 +217,7 @@ async function main(): Promise<void> {
     if (isAutoMode) {
       fallThroughToWalkthrough('No GEMINI_API_KEY detected.')
     } else {
-      console.error('GEMINI_API_KEY is required for gemini profile. Run: bun run profile:init -- --provider gemini --api-key <key>')
+      console.error('GEMINI_API_KEY is required for gemini profile. Run: bun run setup --force')
       process.exit(1)
     }
   }
@@ -240,7 +226,7 @@ async function main(): Promise<void> {
     if (isAutoMode) {
       fallThroughToWalkthrough('No GITHUB_TOKEN or GH_TOKEN detected.')
     } else {
-      console.error('GITHUB_TOKEN or GH_TOKEN is required for github profile. Run: bun run profile:init -- --provider github --api-key <token>')
+      console.error('GITHUB_TOKEN or GH_TOKEN is required for github profile. Run: bun run setup --force')
       process.exit(1)
     }
   }
@@ -249,33 +235,34 @@ async function main(): Promise<void> {
     if (isAutoMode) {
       fallThroughToWalkthrough('No usable OPENAI_API_KEY detected.')
     } else {
-      console.error('OPENAI_API_KEY is required for openai profile and cannot be SUA_CHAVE. Run: bun run profile:init -- --provider openai --api-key <key>')
+      console.error('OPENAI_API_KEY is required for openai profile. Run: bun run setup --force')
       process.exit(1)
     }
   }
 
   if (profile === 'codex') {
     const credentials = resolveCodexApiCredentials(env)
-    if (!credentials.apiKey || !credentials.accountId) {
+    if (!credentials.apiKey) {
+      const authHint = credentials.authPath ? ` (checked ${credentials.authPath})` : ''
       if (isAutoMode) {
-        fallThroughToWalkthrough('Codex credentials incomplete.')
-      } else if (!credentials.apiKey) {
-        const authHint = credentials.authPath
-          ? ` or make sure ${credentials.authPath} exists`
-          : ''
-        console.error(`CODEX_API_KEY is required for codex profile${authHint}. Run: bun run profile:init -- --provider codex --model codexplan`)
-        process.exit(1)
+        fallThroughToWalkthrough(`No Codex credentials found${authHint}.`)
       } else {
-        console.error('CHATGPT_ACCOUNT_ID is required for codex profile. Set CHATGPT_ACCOUNT_ID/CODEX_ACCOUNT_ID or use an auth.json that includes it.')
+        console.error(`No Codex credentials found${authHint}. Run: bun run setup --force  or  npm i -g @openai/codex && codex login`)
         process.exit(1)
       }
     }
   }
 
-  // Refresh the Copilot service token if it's near expiry. The Copilot token
-  // saved by setup is short-lived (~30 min). The long-lived GitHub OAuth
-  // token is what we use to mint a new one. Token expiry is tracked via the
-  // COPILOT_TOKEN_EXPIRES_AT field saved alongside the profile.
+  if (profile === 'copilot' && !env.GITHUB_COPILOT_TOKEN) {
+    if (isAutoMode) {
+      fallThroughToWalkthrough('No Copilot token in profile.')
+    } else {
+      console.error('Copilot profile requires a GitHub token. Run: bun run setup --force')
+      process.exit(1)
+    }
+  }
+
+  // Refresh the short-lived Copilot service token before launch if near expiry.
   if (profile === 'copilot') {
     await refreshCopilotTokenIfExpired(env)
   }
@@ -284,24 +271,13 @@ async function main(): Promise<void> {
     printSummary(profile, env)
   }
 
-  // Doctor is informational. A failed pre-flight should not block first-run launch —
-  // upstream OpenClaude does not gate on this and the in-CLI walkthrough handles
-  // configuration interactively. Skip entirely when no profile is set so the
-  // walkthrough is the very first thing the user sees.
   if (profile !== null && process.env.NETRUNNER_SKIP_DOCTOR !== '1') {
     const doctorCode = await runProcess('bun', ['run', 'scripts/system-check.ts'], env)
     if (doctorCode !== 0) {
-      console.warn('Runtime doctor reported issues. Continuing launch — set NETRUNNER_SKIP_DOCTOR=1 to silence, or fix configuration if startup fails.')
+      console.warn('Runtime doctor reported issues. Continuing — set NETRUNNER_SKIP_DOCTOR=1 to silence.')
     }
   }
 
-  // Rebuild when needed. We rebuild if any of:
-  //   - NETRUNNER_FORCE_BUILD=1 (explicit)
-  //   - dist/cli.mjs missing (fresh checkout)
-  //   - any source/package file newer than dist/cli.mjs (stale build, e.g.
-  //     after `git pull` introduced fixes that need to be re-bundled). This
-  //     is what bites users who pull a banner / shim fix and don't see it
-  //     because the launcher reuses a stale dist.
   const distEntry = resolvePath(process.cwd(), 'dist/cli.mjs')
   const needsBuild =
     process.env.NETRUNNER_FORCE_BUILD === '1' ||
@@ -309,9 +285,7 @@ async function main(): Promise<void> {
     isDistStale(distEntry)
   if (needsBuild) {
     const buildCode = await runProcess('bun', ['run', 'build'], env)
-    if (buildCode !== 0) {
-      process.exit(buildCode)
-    }
+    if (buildCode !== 0) process.exit(buildCode)
   }
 
   const devCode = await runProcess('node', ['dist/cli.mjs', ...options.passthroughArgs], env)
@@ -321,13 +295,7 @@ async function main(): Promise<void> {
 function isDistStale(distEntry: string): boolean {
   try {
     const distMtime = statSync(distEntry).mtimeMs
-    const candidates = [
-      'src',
-      'scripts',
-      'package.json',
-      'bun.lock',
-      'package-lock.json',
-    ]
+    const candidates = ['src', 'scripts', 'package.json', 'bun.lock', 'package-lock.json']
     for (const c of candidates) {
       const full = resolvePath(process.cwd(), c)
       if (!existsSync(full)) continue
@@ -340,8 +308,6 @@ function isDistStale(distEntry: string): boolean {
     }
     return false
   } catch {
-    // If anything goes wrong with the comparison, force a rebuild rather
-    // than risk launching from a stale dist.
     return true
   }
 }
@@ -384,10 +350,7 @@ async function refreshCopilotTokenIfExpired(env: NodeJS.ProcessEnv): Promise<voi
   }
   const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : 0
   const nowSec = Math.floor(Date.now() / 1000)
-  // Refresh if the token expires within the next 60 seconds.
-  if (expiresAt > nowSec + 60) {
-    return
-  }
+  if (expiresAt > nowSec + 60) return
 
   console.log('Refreshing Copilot service token...')
   try {
@@ -395,7 +358,6 @@ async function refreshCopilotTokenIfExpired(env: NodeJS.ProcessEnv): Promise<voi
     env.OPENAI_API_KEY = refreshed.token
     env.COPILOT_TOKEN_EXPIRES_AT = String(refreshed.expires_at)
 
-    // Persist the new token back to the profile so subsequent launches reuse it.
     const profilePath = resolvePath(process.cwd(), '.net-runner-profile.json')
     if (existsSync(profilePath)) {
       try {

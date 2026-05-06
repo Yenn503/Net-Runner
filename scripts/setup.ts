@@ -7,17 +7,16 @@
  * launch with `bun run dev:profile` and no profile exists, the launcher
  * invokes this script automatically.
  *
- * Default flow:
- *   1. Pick provider (default: GitHub Models — free with any GitHub account)
- *   2. Paste token (or pick env-var fallback)
- *   3. Pick model (default: openai/gpt-4.1)
- *   4. Profile written to .net-runner-profile.json (gitignored)
- *   5. Done.
+ * Provider categories:
+ *   Subscription  — copilot (GitHub Copilot), codex (OpenAI Codex / ChatGPT)
+ *   API key       — github (GitHub Models, free), openai, gemini
+ *   Local         — ollama (no key, no account)
  */
 
 import { createInterface } from 'node:readline'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { homedir } from 'node:os'
+import { join, resolve } from 'node:path'
 import {
   COPILOT_API_BASE,
   exchangeForCopilotToken,
@@ -29,13 +28,15 @@ import {
   type CopilotModelEntry,
 } from './copilot-auth.ts'
 
-type Provider = 'github' | 'copilot' | 'openai' | 'gemini' | 'ollama'
+type Provider = 'github' | 'copilot' | 'codex' | 'openai' | 'gemini' | 'ollama'
 
 const PROFILE_PATH = resolve(process.cwd(), '.net-runner-profile.json')
 
+const CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex'
+
 const PROVIDER_PRESETS: Record<Provider, {
   label: string
-  envFlag: string
+  category: 'subscription' | 'api-key' | 'local'
   baseUrl: string
   defaultModel: string
   tokenVar: 'GITHUB_TOKEN' | 'OPENAI_API_KEY' | 'GEMINI_API_KEY' | null
@@ -43,9 +44,27 @@ const PROVIDER_PRESETS: Record<Provider, {
   tokenPattern?: RegExp
   detectFromEnv: () => string | undefined
 }> = {
+  copilot: {
+    label: 'GitHub Copilot        subscription — Sonnet, GPT-5, o3 ...',
+    category: 'subscription',
+    baseUrl: COPILOT_API_BASE,
+    defaultModel: 'gpt-4o',
+    tokenVar: null,
+    tokenHint: '',
+    detectFromEnv: () => undefined,
+  },
+  codex: {
+    label: 'OpenAI Codex / ChatGPT subscription — reads ~/.codex/auth.json',
+    category: 'subscription',
+    baseUrl: CODEX_BASE_URL,
+    defaultModel: 'codexplan',
+    tokenVar: null,
+    tokenHint: '',
+    detectFromEnv: () => undefined,
+  },
   github: {
-    label: 'GitHub Models — public catalog, free with any GitHub account',
-    envFlag: 'NETRUNNER_USE_GITHUB',
+    label: 'GitHub Models         free with any GitHub account',
+    category: 'api-key',
     baseUrl: 'https://models.github.ai/inference',
     defaultModel: 'openai/gpt-4.1',
     tokenVar: 'GITHUB_TOKEN',
@@ -58,18 +77,9 @@ const PROVIDER_PRESETS: Record<Provider, {
         ? process.env.OPENAI_API_KEY
         : undefined),
   },
-  copilot: {
-    label: 'GitHub Copilot — your subscription models (Sonnet 4.5, GPT-5, ...)',
-    envFlag: 'NETRUNNER_USE_OPENAI',
-    baseUrl: COPILOT_API_BASE,
-    defaultModel: 'gpt-4o',
-    tokenVar: null, // device-code flow — no manual paste
-    tokenHint: '',
-    detectFromEnv: () => undefined,
-  },
   openai: {
-    label: 'OpenAI (api.openai.com)',
-    envFlag: 'NETRUNNER_USE_OPENAI',
+    label: 'OpenAI API            api key (sk-...)',
+    category: 'api-key',
     baseUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o',
     tokenVar: 'OPENAI_API_KEY',
@@ -81,8 +91,8 @@ const PROVIDER_PRESETS: Record<Provider, {
         : undefined,
   },
   gemini: {
-    label: 'Google Gemini',
-    envFlag: 'NETRUNNER_USE_GEMINI',
+    label: 'Google Gemini         api key (AIza...)',
+    category: 'api-key',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     defaultModel: 'gemini-2.0-flash',
     tokenVar: 'GEMINI_API_KEY',
@@ -91,8 +101,8 @@ const PROVIDER_PRESETS: Record<Provider, {
     detectFromEnv: () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
   },
   ollama: {
-    label: 'Ollama (local, no key required)',
-    envFlag: 'NETRUNNER_USE_OPENAI',
+    label: 'Ollama                local — no key required',
+    category: 'local',
     baseUrl: 'http://localhost:11434/v1',
     defaultModel: 'llama3.1:8b',
     tokenVar: null,
@@ -118,18 +128,26 @@ function prompt(rl: ReturnType<typeof createInterface>, question: string): Promi
 async function pickProvider(rl: ReturnType<typeof createInterface>): Promise<Provider> {
   console.log()
   console.log(bold('Choose a provider:'))
-  console.log(`  ${cyan('1')}. ${PROVIDER_PRESETS.github.label}  ${green('(default)')}`)
-  console.log(`  ${cyan('2')}. ${PROVIDER_PRESETS.copilot.label}`)
-  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.openai.label}`)
-  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.gemini.label}`)
-  console.log(`  ${cyan('5')}. ${PROVIDER_PRESETS.ollama.label}`)
   console.log()
-  const ans = (await prompt(rl, dim('Enter 1-5 (or press Enter for GitHub Models): '))).trim()
-  if (ans === '' || ans === '1') return 'github'
-  if (ans === '2') return 'copilot'
-  if (ans === '3') return 'openai'
-  if (ans === '4') return 'gemini'
-  if (ans === '5') return 'ollama'
+  console.log(dim('  — Subscription (OAuth, no API key) —'))
+  console.log(`  ${cyan('1')}. ${PROVIDER_PRESETS.copilot.label}`)
+  console.log(`  ${cyan('2')}. ${PROVIDER_PRESETS.codex.label}`)
+  console.log()
+  console.log(dim('  — API key —'))
+  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.github.label}  ${green('(default — free)')}`)
+  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.openai.label}`)
+  console.log(`  ${cyan('5')}. ${PROVIDER_PRESETS.gemini.label}`)
+  console.log()
+  console.log(dim('  — Local —'))
+  console.log(`  ${cyan('6')}. ${PROVIDER_PRESETS.ollama.label}`)
+  console.log()
+  const ans = (await prompt(rl, dim('Enter 1-6 (or press Enter for GitHub Models): '))).trim()
+  if (ans === '1') return 'copilot'
+  if (ans === '2') return 'codex'
+  if (ans === '' || ans === '3') return 'github'
+  if (ans === '4') return 'openai'
+  if (ans === '5') return 'gemini'
+  if (ans === '6') return 'ollama'
   console.log(red(`'${ans}' is not a valid choice. Defaulting to GitHub Models.`))
   return 'github'
 }
@@ -146,12 +164,9 @@ async function runCopilotAuth(
   console.log()
 
   const choice = (await prompt(rl, dim('Enter 1 or 2 (Enter for 1): '))).trim()
-
   let githubAccessToken: string
 
   if (choice === '' || choice === '1') {
-    // PAT path — official, supported. PATs prefixed github_pat_ with the
-    // 'Copilot Requests' permission are accepted by /copilot_internal/v2/token.
     console.log()
     console.log(bold('Create a fine-grained PAT here:'))
     console.log(`   ${cyan('https://github.com/settings/personal-access-tokens/new')}`)
@@ -167,7 +182,6 @@ async function runCopilotAuth(
     }
     githubAccessToken = pasted
   } else if (choice === '2') {
-    // Device-code OAuth fallback path.
     const device = await startDeviceCodeFlow()
     console.log()
     console.log(bold('1. Open this URL in any browser:'))
@@ -184,8 +198,6 @@ async function runCopilotAuth(
     return undefined
   }
 
-  // Both paths converge here: exchange the GitHub credential for a short-lived
-  // Copilot service token usable against api.githubcopilot.com.
   console.log(dim('Exchanging for Copilot service token ...'))
   try {
     const copilot = await exchangeForCopilotToken(githubAccessToken)
@@ -203,6 +215,70 @@ async function runCopilotAuth(
     }
     return undefined
   }
+}
+
+type CodexAuthJson = {
+  api_key?: string
+  apiKey?: string
+  account_id?: string
+  accountId?: string
+  [key: string]: unknown
+}
+
+function resolveCodexAuthJsonPath(): string {
+  const envHome = process.env.CODEX_HOME
+  return envHome
+    ? join(envHome, 'auth.json')
+    : join(homedir(), '.codex', 'auth.json')
+}
+
+function readCodexAuthJson(): { apiKey: string; accountId?: string } | null {
+  const authPath = resolveCodexAuthJsonPath()
+  if (!existsSync(authPath)) return null
+  try {
+    const raw = JSON.parse(readFileSync(authPath, 'utf8')) as CodexAuthJson
+    const apiKey = raw.api_key || raw.apiKey
+    if (!apiKey || typeof apiKey !== 'string') return null
+    const accountId = (raw.account_id || raw.accountId) as string | undefined
+    return { apiKey, accountId }
+  } catch {
+    return null
+  }
+}
+
+async function runCodexSetup(
+  rl: ReturnType<typeof createInterface>,
+): Promise<{ apiKey: string; accountId?: string } | undefined> {
+  console.log()
+  console.log(bold(cyan('OpenAI Codex / ChatGPT subscription')))
+  console.log(dim('  Charges model calls to your ChatGPT Plus/Pro/Team/Enterprise subscription.'))
+  console.log(dim(`  Reads credentials from: ${resolveCodexAuthJsonPath()}`))
+  console.log()
+
+  const existing = readCodexAuthJson()
+  if (existing) {
+    console.log(green(`✔ Found existing Codex credentials (auth.json).`))
+    if (existing.accountId) {
+      console.log(dim(`  Account ID: ${existing.accountId}`))
+    }
+    return existing
+  }
+
+  console.log(yellow('No ~/.codex/auth.json found.'))
+  console.log()
+  console.log(bold('To generate it, install the OpenAI Codex CLI and log in:'))
+  console.log()
+  console.log(`  ${cyan('npm install -g @openai/codex')}`)
+  console.log(`  ${cyan('codex login')}`)
+  console.log()
+  console.log(dim('  After login, re-run: bun run setup --force'))
+  console.log()
+
+  const ans = (await prompt(rl, dim('Paste a CODEX_API_KEY manually to continue anyway, or press Enter to abort: '))).trim()
+  if (!ans) return undefined
+
+  const accountId = (await prompt(rl, dim('Paste account ID (CHATGPT_ACCOUNT_ID), or press Enter to skip: '))).trim() || undefined
+  return { apiKey: ans, accountId }
 }
 
 async function getToken(
@@ -347,6 +423,15 @@ async function getModel(
 ): Promise<string> {
   console.log()
 
+  if (provider === 'codex') {
+    const items = [
+      { id: 'codexplan', label: `${bold('codexplan')}  ${dim('gpt-5.4 with high reasoning — full-context planning')}` },
+      { id: 'codexspark', label: `${bold('codexspark')} ${dim('gpt-5.3-codex-spark — faster, lighter')}` },
+    ]
+    console.log(bold('Available Codex models:'))
+    return await pickFromList(rl, items, 0)
+  }
+
   if (provider === 'copilot' && copilotModels && copilotModels.length > 0) {
     const chatOnly = copilotModels.filter(isCopilotChatModel)
     const filteredOut = copilotModels.length - chatOnly.length
@@ -389,7 +474,6 @@ async function getModel(
       const defaultIdx = items.findIndex(m => m.id === preset.defaultModel)
       return await pickFromList(rl, items, defaultIdx >= 0 ? defaultIdx : 0)
     }
-    // fallthrough to hardcoded fallback
     console.log(bold('Common GitHub Models:'))
     console.log(`  ${cyan('•')} openai/gpt-4.1          ${green('(default — strong general)')}`)
     console.log(`  ${cyan('•')} openai/gpt-4o           ${dim('(fast, good tool calling)')}`)
@@ -416,7 +500,7 @@ async function main(): Promise<void> {
   console.log()
   console.log(bold(cyan('Net-Runner setup')))
   console.log(dim('  This writes .net-runner-profile.json (gitignored).'))
-  console.log(dim('  Safe to re-run any time to switch provider/model.'))
+  console.log(dim('  Safe to re-run any time to switch provider or model.'))
 
   const force = process.argv.includes('--force')
   if (existsSync(PROFILE_PATH) && !force) {
@@ -438,6 +522,7 @@ async function main(): Promise<void> {
 
     let copilotAuth: { githubAccessToken: string; copilotToken: string; copilotExpiresAt: number } | undefined
     let copilotModels: CopilotModelEntry[] | undefined
+    let codexCreds: { apiKey: string; accountId?: string } | undefined
     let token: string | undefined
 
     if (provider === 'copilot') {
@@ -453,46 +538,49 @@ async function main(): Promise<void> {
       } catch (err) {
         console.log(yellow(`Could not fetch Copilot models live (${(err as Error).message}). Falling back to defaults.`))
       }
+    } else if (provider === 'codex') {
+      codexCreds = await runCodexSetup(rl)
+      if (!codexCreds) {
+        console.log()
+        console.log(red('Codex setup aborted. Install the Codex CLI (`npm i -g @openai/codex && codex login`) then re-run setup.'))
+        process.exit(1)
+      }
     } else {
       token = await getToken(rl, preset)
     }
 
-    let model = await getModel(rl, preset, provider, token, copilotModels)
+    const model = await getModel(rl, preset, provider, token, copilotModels)
 
-    // For Copilot, validate that the picked model is actually entitled to
-    // the user's subscription. The catalog returns models the user can't
-    // necessarily use; only a real /chat/completions request can confirm
-    // entitlement. Loop until the user picks something that works.
+    // Validate entitlement for Copilot — the catalog lists models the user may not have access to.
     if (provider === 'copilot' && copilotAuth) {
+      let chosenModel = model
       while (true) {
-        console.log(dim(`Verifying ${bold(model)} is entitled to your subscription ...`))
-        const probe = await probeCopilotModel(copilotAuth.copilotToken, model)
+        console.log(dim(`Verifying ${bold(chosenModel)} is entitled to your subscription ...`))
+        const probe = await probeCopilotModel(copilotAuth.copilotToken, chosenModel)
         if (probe.ok) {
-          console.log(green(`✔ ${model} is available on your subscription.`))
+          console.log(green(`✔ ${chosenModel} is available on your subscription.`))
           break
         }
-        console.log(red(`✘ ${model} rejected by Copilot: ${probe.reason}`))
+        console.log(red(`✘ ${chosenModel} rejected by Copilot: ${probe.reason}`))
         if (probe.status === 400 || probe.status === 403 || probe.status === 404) {
           console.log(yellow('  Your subscription tier likely does not include this model. Pick a different one.'))
-          model = await getModel(rl, preset, provider, token, copilotModels)
+          chosenModel = await getModel(rl, preset, provider, token, copilotModels)
           continue
         }
-        // Non-entitlement error (network, 5xx, etc.). Save anyway and let the
-        // user iterate later if it's transient.
         console.log(yellow('  Treating this as transient and saving the profile anyway. Re-run setup if launch fails.'))
         break
       }
     }
 
-    if (provider !== 'copilot' && preset.tokenVar && !token) {
+    if (provider !== 'copilot' && provider !== 'codex' && preset.tokenVar && !token) {
       console.log()
       console.log(red(`Setup aborted — no ${preset.tokenVar} provided.`))
       console.log(dim('  Re-run `bun run setup` and paste a token, or use --force to overwrite an existing profile.'))
       process.exit(1)
     }
 
-    // Validate token for providers that support a simple completions probe.
-    if (token && provider !== 'copilot' && provider !== 'ollama') {
+    // Probe API-key providers to catch bad tokens early.
+    if (token && provider !== 'ollama') {
       console.log(dim(`Verifying ${bold(model)} is reachable with your token ...`))
       const probe = await testProviderConnection(preset.baseUrl, token, model)
       if (probe.ok) {
@@ -503,24 +591,37 @@ async function main(): Promise<void> {
       }
     }
 
-    const env: Record<string, string> = {
-      OPENAI_BASE_URL: preset.baseUrl,
-      OPENAI_MODEL: model,
-    }
+    // Build the env record saved into .net-runner-profile.json.
+    const env: Record<string, string> = {}
+
     if (provider === 'copilot' && copilotAuth) {
+      env.OPENAI_BASE_URL = preset.baseUrl
+      env.OPENAI_MODEL = model
       env.OPENAI_API_KEY = copilotAuth.copilotToken
       env.GITHUB_COPILOT_TOKEN = copilotAuth.githubAccessToken
       env.COPILOT_TOKEN_EXPIRES_AT = String(copilotAuth.copilotExpiresAt)
+    } else if (provider === 'codex' && codexCreds) {
+      env.OPENAI_BASE_URL = preset.baseUrl
+      env.OPENAI_MODEL = model
+      env.CODEX_API_KEY = codexCreds.apiKey
+      if (codexCreds.accountId) {
+        env.CHATGPT_ACCOUNT_ID = codexCreds.accountId
+      }
     } else if (preset.tokenVar === 'GITHUB_TOKEN' && token) {
+      env.OPENAI_BASE_URL = preset.baseUrl
+      env.OPENAI_MODEL = model
       env.GITHUB_TOKEN = token
     } else if (preset.tokenVar === 'OPENAI_API_KEY' && token) {
+      env.OPENAI_BASE_URL = preset.baseUrl
+      env.OPENAI_MODEL = model
       env.OPENAI_API_KEY = token
     } else if (preset.tokenVar === 'GEMINI_API_KEY' && token) {
       env.GEMINI_MODEL = model
       env.GEMINI_BASE_URL = preset.baseUrl
       env.GEMINI_API_KEY = token
-      delete env.OPENAI_BASE_URL
-      delete env.OPENAI_MODEL
+    } else if (provider === 'ollama') {
+      env.OPENAI_BASE_URL = preset.baseUrl
+      env.OPENAI_MODEL = model
     }
 
     const profileFile = {
@@ -538,9 +639,7 @@ async function main(): Promise<void> {
     console.log(green(`✔ Saved profile to ${PROFILE_PATH}`))
     console.log()
 
-    // Phase 5: Camofox stealth-browser probe.
-    // Non-blocking — never fails the setup. The validation skill falls back
-    // to Playwright/Chromium automatically if Camofox is unreachable.
+    // Camofox stealth-browser probe — non-blocking. Falls back to Playwright automatically.
     console.log(bold('Camofox stealth browser:'))
     try {
       const proc = Bun.spawn(['bun', 'run', 'scripts/setup-camofox.ts'], {
@@ -555,6 +654,11 @@ async function main(): Promise<void> {
     console.log()
     console.log(bold('Launch with:'))
     console.log(`  ${cyan('bun run dev:profile')}`)
+    if (provider === 'codex') {
+      console.log(`  ${cyan('bun run dev:codex')}`)
+    } else if (provider === 'copilot') {
+      console.log(`  ${cyan('bun run dev:copilot')}`)
+    }
     console.log()
   } finally {
     rl.close()
