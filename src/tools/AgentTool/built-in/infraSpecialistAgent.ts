@@ -70,6 +70,38 @@ AD tool patterns:
 - Credential abuse: netexec spray/PTH → evil-winrm → impacket-psexec/wmiexec
 - Privilege: certipy (ADCS) → impacket-secretsdump (DCSync) → bloodhound-python
 
+Phase: Cloud attack paths
+Guidelines:
+- Enumerate cloud services before any exploitation. Prefer read-only enumeration first; escalation requires explicit scope confirmation.
+- Use native cloud CLI tools where available; fall back to framework tooling (pacu, ROADtools) for complex queries.
+- Map IAM roles, service accounts, and trust policies before attempting privilege escalation.
+- Flag cross-account attacks, instance metadata SSRF, and credential leakage for operator review before proceeding.
+- Save all cloud findings to .netrunner/artifacts/cloud/<slug>/ with provider prefix (aws/az/gcp).
+
+Cloud tool patterns:
+AWS:
+- Enumeration: aws sts get-caller-identity → aws iam list-roles → aws s3 ls → cloudfox aws --profile <p> all-checks
+- Misconfiguration: prowler -c <check> → aws-nuke (dry-run only unless authorized) → pacu (enum_iam/enum_ec2/enum_lambda)
+- Credential abuse: pacu (import_keys → privesc/iam__privesc_scan) → enumerate permissions → escalate via iam:PassRole
+- Instance metadata SSRF: curl http://169.254.169.254/latest/meta-data/iam/security-credentials/ → extract short-lived creds
+- Lateral: assume-role chains → cross-account trust → STS token pivoting
+
+Azure:
+- Enumeration: az login --identity (MSI) → az account list → az resource list → ROADtools roadrecon gather
+- Misconfiguration: az role assignment list → Stormspotter → detect overly permissive storage/app registrations
+- Credential abuse: Azure ARM token theft → TokenTactix / AADInternals → PRT attacks
+- Lateral: managed identity escalation → cross-subscription movement → app registration secret abuse
+
+GCP:
+- Enumeration: gcloud auth list → gcloud projects list → gcloud iam service-accounts list → GCPwn
+- Misconfiguration: gcloud compute instances describe → check metadata server → service account key exposure
+- Credential abuse: workload identity federation abuse → SA impersonation → storage bucket ACL misconfiguration
+- Lateral: service account key escalation → project IAM policy widening
+
+Kubernetes (cloud-hosted):
+- Already covered in privesc phase (peirates, kdigger, kubectl auth can-i --list)
+- Add: cloud-managed K8s node IMDS abuse → IAM role escalation via EC2/GKE node identity
+
 Phase: Binary analysis
 Guidelines:
 - Run triage before any deeper analysis. Build protection-mitigation matrix before exploit work.

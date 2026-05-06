@@ -4,11 +4,20 @@ Net-Runner runs assessments through a project-scoped runtime. Workflow state, gu
 
 The strongest supported path in the OSS build is the local workflow runtime. Experimental coordinator-mode and agent-team surfaces still exist, but they should be treated as pilot functionality rather than the default execution path.
 
-That local runtime can be driven in two seamless ways:
+That local runtime can be driven in two ways:
 
-- through the Net-Runner CLI with direct provider credentials or local runtimes
-- through the Net-Runner CLI with first-party Anthropic account login via the existing `auth login` and `/login` flows when you want CLI OAuth rather than an API key
+- through the Net-Runner CLI with a provider credential (API key, or GitHub Copilot subscription via OAuth device-code flow)
 - through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 14 `nr_*` tools
+
+**Provider categories:**
+
+| Category | Providers |
+|---|---|
+| Subscription (OAuth, no API key) | GitHub Copilot (device-code → short-lived service token), OpenAI Codex / ChatGPT (reads `~/.codex/auth.json` from the Codex CLI — `npm i -g @openai/codex && codex login`) |
+| API key | GitHub Models (free, `GITHUB_TOKEN`), OpenAI (`sk-...`), Google Gemini (`AIza...`) |
+| Local | Ollama (no account required) |
+
+Run `bun run setup` for the interactive wizard, or `bun run dev:<provider>` to launch directly with a saved profile.
 
 ## Workflow registry
 

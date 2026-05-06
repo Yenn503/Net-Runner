@@ -6,7 +6,7 @@
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/License-Educational%20Use-red?style=for-the-badge)](#license)
 
-*Red-team runtime with workflow control, evidence, memory, and specialist agents.*
+*Agentic red-team runtime — workflow control, evidence chain, memory, and specialist agents.* 🔥
 
 <sub>6 specialist agents · 228 cataloged tools · 279 capabilities · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
 
@@ -20,7 +20,7 @@ The design follows Anthropic's [Code Execution with MCP](https://www.anthropic.c
 
 ---
 
-## How it works
+## How it works 🎯
 
 1. Describe target and goal in plain English
 2. `.netrunner/` created with scope envelope, impact boundary, and run state
@@ -33,14 +33,14 @@ Every finding starts `Unvalidated`. Validation is a typed step: command replay v
 
 ---
 
-## Specialist agents
+## Specialist agents 🤖
 
 | Agent | Domain | Key tools |
 |---|---|---|
 | **engagement-lead** | Coordinates phases, routes specialists, queries KG before discovery, enforces scope | Agent routing, `nr_kg_query`, `nr_scope_check`, MCTS planner |
-| **recon-specialist** | Target discovery, DNS/OSINT/surface mapping, 802.11 (AP discovery, PMKID/handshake, evil-twin) | `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `httpx`, `theHarvester`, `maigret`, `airodump-ng`, `hcxdumptool`, `hashcat -m 22000` |
+| **recon-specialist** | Target discovery, DNS/OSINT/surface mapping, cloud asset enum, username footprinting, 802.11 (AP discovery, PMKID/handshake, evil-twin) | `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `httpx`, `theHarvester`, `maigret`, `cloud_enum`, `GHunt`, `holehe`, `airodump-ng`, `hcxdumptool` |
 | **app-testing-specialist** | Web (XSS, SQLi, SSRF, smuggling, auth bypass), REST/GraphQL/SOAP (JWT, IDOR), Android/iOS (static + dynamic, Frida, SSL unpin) | `sqlmap`, `dalfox`, `ffuf`, `nuclei`, `nikto`, `jwt_tool`, `arjun`, `jadx`, `apktool`, `frida`, `objection`, MobSF |
-| **infra-specialist** | Network services, exploit validation, Linux/Windows/K8s privesc, multi-host lateral movement, AD (Kerberos/ADCS/BloodHound), binary RE + CTF pwn | `nmap`, `netexec`, `impacket-*`, `bloodhound`, `kerbrute`, `certipy`, `linpeas`, `winpeas`, `peirates`, `chisel`, `ghidra`, `gdb`, `pwntools` |
+| **infra-specialist** | Network services, exploit validation, Linux/Windows/K8s privesc, lateral movement, AD (Kerberos/ADCS/BloodHound), cloud attack paths (AWS/Azure/GCP), binary RE + CTF pwn | `nmap`, `netexec`, `impacket-*`, `bloodhound`, `certipy`, `linpeas`, `winpeas`, `peirates`, `pacu`, `cloudfox`, `prowler`, `chisel`, `ghidra`, `pwntools` |
 | **code-forensics-specialist** | SAST, secret scanning, dependency CVEs, IaC misconfig, memory/disk forensics, log timelining, IOC extraction | `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara` |
 | **evidence-reporting-specialist** | Chain-of-custody curation, finding retest + remediation validation, client-ready reports | SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`, `nr_verify_evidence`, replay harness |
 
@@ -54,7 +54,7 @@ Each specialist gets the full toolset. Compressed-output discipline applies to a
 
 ---
 
-## Intelligence engine
+## Intelligence engine 🧠
 
 - **Knowledge Graph** — entity/relation graph built from evidence; queried before any discovery action to avoid redundant probes
 - **MCTS planner** — ranks next actions by expected information gain against current graph state
@@ -87,22 +87,22 @@ Reports include executive dashboard, attack-path narrative, finding cards, remed
 
 ---
 
-## Quick start
+## Quick start ⚡
 
 ```bash
 bun install && bun run build
-export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
-node dist/cli.mjs
+bun run setup        # interactive wizard — picks provider, validates token, saves profile
+bun run dev:profile  # launch
 ```
 
 <details>
-<summary>More setup options — Ollama, MCP server, IDE config</summary>
+<summary>Manual env var launch, Ollama, MCP server, IDE config</summary>
 
-**Guided setup wizard** (saves `.net-runner-profile.json`, validates your token):
+**Direct env var launch:**
 
 ```bash
-bun run setup
-bun run dev:profile
+export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
+node dist/cli.mjs
 ```
 
 **Ollama (local, no API key):**

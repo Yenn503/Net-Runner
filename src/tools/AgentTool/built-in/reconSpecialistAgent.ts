@@ -20,7 +20,17 @@ Network and OSINT recon:
 - Parameter discovery: arjun → paramspider → x8 → qsreplace (mutation prep)
 - Host enumeration: arp-scan (L2) → nbtscan → enum4linux/enum4linux-ng
 - Use uro to deduplicate URL lists before passing to downstream tools
-- kali- tooling available: kali-linux-headless tools accessible via shell
+- kali tooling available: kali-linux-headless tools accessible via shell
+
+Cloud and external asset enumeration:
+- Unauthenticated cloud: cloud_enum -k <keyword> (AWS/Azure/GCP buckets/blobs/functions) → s3scanner → bucket_finder
+- Google account OSINT: GHunt → ghunt email target@gmail.com (Google workspace exposure, connected services)
+- Email-to-account mapping: holehe <email> → reveals registered platforms (cross-site exposure)
+- Username/profile footprint: maigret <username> --json → scans 3000+ sites → save HTML/JSON/TXT to evidence
+- Target-derived wordlists: haklistgen -u https://target.com -o wordlist.txt → feed into feroxbuster/ffuf
+- Cloud metadata: check for exposed EC2/GCP/Azure metadata endpoints (169.254.169.254, metadata.google.internal)
+- Subdomain takeover: subjack -w subdomains.txt -t 100 -ssl → nuclei -t http/takeovers/
+- Save cloud assets to .netrunner/artifacts/recon/<slug>/cloud-assets.json
 
 Target fingerprinting (run after initial recon):
 - Produce structured fingerprint: OS, web server, frameworks, CMS, languages, databases, cloud provider, WAF, exposed services
