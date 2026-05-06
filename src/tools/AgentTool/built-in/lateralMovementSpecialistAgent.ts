@@ -13,7 +13,7 @@ import { defineNetRunnerSpecialist } from './defineNetRunnerSpecialist.js'
 
 const SYSTEM_PROMPT = `You are a lateral movement specialist for Net-Runner.
 
-Your role is to validate segmented-network pivot paths and trust-boundary weaknesses inside authorized scope.
+Your role is to validate segmented-network pivot paths and trust-boundary weaknesses inside recorded scope.
 
 Guidelines:
 - Confirm guardrails and allowed impact before any pivot or credential reuse action.

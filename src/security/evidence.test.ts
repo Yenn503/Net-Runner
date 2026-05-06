@@ -34,6 +34,7 @@ test('evidence ledger stores append-only findings and notes', async () => {
   assert.equal(entries.length, 2)
   assert.equal(counts.note, 1)
   assert.equal(counts.finding, 1)
+  assert.equal(counts.validation, 0)
 })
 
 test('chain integrity over 3 entries', async () => {

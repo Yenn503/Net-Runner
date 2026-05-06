@@ -35,7 +35,7 @@ It does **not** document hosted assistant-session flows or the unsupported `net-
 │              Net-Runner FastMCP Server                   │
 │                                                         │
 │  14 tools (nr_* prefix):                               │
-│  • nr_exec          — shell execution (215+ tools)      │
+│  • nr_exec          — shell execution (228 tools)       │
 │  • nr_engagement_*  — init, status                     │
 │  • nr_scope_check   — guardrail enforcement            │
 │  • nr_save_*        — finding + note evidence capture  │
@@ -65,11 +65,13 @@ Two directions:
 
 ## Direction 1: External LLM → Net-Runner (Inbound)
 
-The external LLM treats Net-Runner as an MCP tool server with 14 `nr_*` tools. `nr_exec` is the workhorse — all 228 pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
+The external LLM treats Net-Runner as an MCP tool server with 14 `nr_*` tools. `nr_exec` is the workhorse — all 228 cataloged pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
 
 `nr_exec` now also supports **composite execution inside the existing tool boundary**. Instead of adding more MCP tools, the client can pass a batch of commands through `nr_exec` and receive a summary-first per-command result. Oversized output is offloaded to `.netrunner/artifacts/`, logged into the evidence ledger, and referenced back in the tool result.
 
 This means the MCP server is not a thin demo wrapper around the CLI. It is a real local harness surface with the same engagement state, evidence ledger, artifacts folder, workflow discovery, and intelligence hooks that the CLI runtime uses.
+
+The MCP harness records a target scope envelope and impact boundary; it does not burn tokens asking the operator to assert ownership or permission in chat. Legal authorization belongs in the external assessment contract. Net-Runner enforces practical runtime guardrails against the recorded envelope.
 
 ### Prerequisites
 
@@ -85,11 +87,11 @@ If you are only exposing Net-Runner as an inbound MCP server, you do not need a 
 
 | Tool | Purpose |
 |---|---|
-| `nr_exec` | **Shell execution — the workhorse.** All 215+ pentest tools and harness commands such as Maigret run here. |
+| `nr_exec` | **Shell execution — the workhorse.** All 228 cataloged pentest tools and harness commands such as Maigret run here. |
 | `nr_engagement_init` | Initialize `.netrunner/` engagement with workflow, targets, scope |
 | `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
 | `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
-| `nr_save_finding` | Record security finding with severity, evidence, CWE |
+| `nr_save_finding` | Record unvalidated finding with severity, source, replay data, CWE |
 | `nr_save_note` | Append note to evidence ledger |
 | `nr_list_evidence` | Query evidence entries with optional type filter |
 | `nr_discover` | Progressive disclosure — list agents, skills, workflows, or capabilities on demand |
@@ -97,8 +99,8 @@ If you are only exposing Net-Runner as an inbound MCP server, you do not need a 
 | `nr_kg_query` | Lookup prior evidence about a target in the engagement Knowledge Graph |
 | `nr_verify_evidence` | Verify SHA-256 hash chain integrity of the evidence ledger |
 | `nr_validate_finding` | Replay-based finding validation with diff and verdict |
-| `nr_coverage_status` | MITRE ATT&CK coverage status for the engagement |
-| `nr_export_report` | Export findings to SARIF 2.1.0, STIX 2.1, or MISP |
+| `nr_coverage_status` | MITRE ATT&CK coverage from replay-validated findings |
+| `nr_export_report` | Export reports to Markdown, HTML, SARIF 2.1.0, STIX 2.1, or MISP |
 
 ### `nr_exec` execution modes
 
@@ -141,6 +143,24 @@ Example Maigret digital-footprint run through the same harness surface:
 ```
 
 If `maigret` is missing, install it with `python3 -m pip install --user maigret`, rerun `/engagement capabilities`, then execute the assessment. The `/digital-footprint-assessment` skill uses this same command path and writes artifacts under `.netrunner/artifacts/digital-footprint/`.
+
+### Report exports
+
+Use `nr_export_report` after findings and artifacts exist in the evidence ledger:
+
+```json
+{ "format": "html", "output_path": "executive-report.html" }
+```
+
+Supported formats:
+
+- `markdown` — editable canonical report source
+- `html` — designed human-readable red-team report
+- `sarif` — scanner/security-platform ingestion
+- `stix` — threat-intel exchange
+- `misp` — MISP event JSON
+
+Human and machine exports carry evidence status. New findings are `Unvalidated` until `nr_validate_finding` or another typed validation entry records replay, statistical, OOB, or artifact-review proof. Chat wording does not turn a suspected finding into a validated report claim.
 
 ### Client configurations
 
@@ -255,7 +275,7 @@ bun run mcp:server              # http://localhost:8745/mcp
 NR_PORT=9000 bun run mcp:server # custom port
 ```
 
-The terminal shows a sunset gradient banner, all 8 registered tools, and live activity logs with session IDs, durations, and result sizes.
+The terminal shows a sunset gradient banner, all 14 registered tools, and live activity logs with session IDs, durations, and result sizes.
 
 You should now expect to see:
 
@@ -361,7 +381,7 @@ You can run Net-Runner in CLI mode (with its own LLM) **and** expose it as an MC
 
 Through 14 MCP tools + its own built-in file/edit tools:
 
-- **Shell execution** (`nr_exec`) — run any of 215+ pentest tools (nmap, sqlmap, nuclei, burp, etc.)
+- **Shell execution** (`nr_exec`) — run any of 228 cataloged pentest tools (nmap, sqlmap, nuclei, burp, etc.)
 - **Engagement lifecycle** (`nr_engagement_init`, `nr_engagement_status`) — initialize and track assessments
 - **Guardrails** (`nr_scope_check`) — verify actions are in scope before execution
 - **Evidence** (`nr_save_finding`, `nr_save_note`, `nr_list_evidence`) — capture findings and notes

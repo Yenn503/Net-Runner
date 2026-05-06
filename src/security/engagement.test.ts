@@ -69,7 +69,7 @@ test('re-initializing an active engagement throws an idempotence error', async (
   )
 })
 
-test('runtime prompt context includes authorization and impact defaults', async () => {
+test('runtime prompt context includes scope envelope and impact defaults', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'net-runner-context-'))
   const manifest = await initializeNetRunnerProject({
     cwd,
@@ -81,7 +81,8 @@ test('runtime prompt context includes authorization and impact defaults', async 
 
   const contextBlock = formatEngagementContextForPrompt(manifest)
   assert.match(contextBlock, /\[Net-Runner engagement context\]/)
-  assert.match(contextBlock, /authorization_status=confirmed/)
+  assert.doesNotMatch(contextBlock, /authorization_status=confirmed/)
+  assert.match(contextBlock, /scope_summary=/)
   assert.match(contextBlock, /max_impact=limited/)
   assert.match(contextBlock, /execution_model=skills-and-tools/)
   assert.match(

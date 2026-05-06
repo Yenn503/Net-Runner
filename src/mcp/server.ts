@@ -5,6 +5,7 @@ import { promisify } from 'util'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { basename, isAbsolute, join, relative, resolve } from 'path'
 import { buildSarif, buildStix, buildMisp, type ExportFormat } from '../security/exportReport.js'
+import { generateHtmlReport, generateMarkdownReport } from '../security/reporting.js'
 import {
   initializeNetRunnerProject,
   readEngagementManifest,
@@ -643,7 +644,7 @@ function traced<T extends Record<string, unknown>>(
 //   https://www.anthropic.com/engineering/code-execution-with-mcp
 //
 // Net-Runner presents a MINIMAL MCP surface and delegates all tool execution
-// to code. 153 red-team tools are accessed through nr_exec (shell), not as
+// to code. Cataloged red-team tools are accessed through nr_exec (shell), not as
 // individual MCP definitions. Skills, agents, and workflows are discovered
 // on demand through nr_discover (progressive disclosure), not loaded upfront.
 //
@@ -657,6 +658,7 @@ function traced<T extends Record<string, unknown>>(
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TOOL_COUNT = 14
+const CATALOG_TOOL_COUNT = IMPORTED_PENTEST_CAPABILITIES.length
 
 const server = new FastMCP({
   name: 'net-runner',
@@ -664,7 +666,7 @@ const server = new FastMCP({
   instructions: [
     'Net-Runner MCP — skills-first, code-execution-first security harness.',
     `CWD: ${CWD}`,
-    'nr_exec is the primary tool — all 153 red-team tools run through shell.',
+    `nr_exec is the primary tool — all ${CATALOG_TOOL_COUNT} cataloged red-team tools run through shell.`,
     'Use nr_engagement_init to start an assessment, nr_scope_check before risky actions.',
     'Save findings with nr_save_finding, notes with nr_save_note.',
     'Use nr_discover to list agents, skills, workflows, or capabilities on demand.',
@@ -679,7 +681,7 @@ const server = new FastMCP({
 
 server.addTool({
   name: 'nr_exec',
-  description: 'Run one or more shell commands. All 153 pentest tools (nmap, sqlmap, nuclei, etc.) are invoked here. Supports composite execution with summary-first results.',
+  description: `Run one or more shell commands. All ${CATALOG_TOOL_COUNT} cataloged pentest tools (nmap, sqlmap, nuclei, etc.) are invoked here. Supports composite execution with summary-first results.`,
   annotations: OPEN_WORLD_EXEC_TOOL_ANNOTATIONS,
   parameters: z.object({
     command: z.string().optional().describe('Single shell command'),
@@ -850,7 +852,7 @@ server.addTool({
 
 server.addTool({
   name: 'nr_save_finding',
-  description: 'Record a security finding with severity, evidence, and optional CWE/recommendation.',
+  description: 'Record a security finding with severity, proof text, source type, and replay metadata. New findings are unvalidated until nr_validate_finding or another validation entry confirms them.',
   annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
   parameters: z.object({
     title: z.string().describe('Finding title'),
@@ -858,6 +860,11 @@ server.addTool({
     evidence: z.string().describe('Proof/evidence details'),
     recommendation: z.string().optional().describe('Remediation'),
     cwe_ids: z.array(z.string()).optional().describe('CWE IDs'),
+    evidence_source: z.enum(['command-output', 'http-request-response', 'artifact', 'statistical', 'oob', 'manual']).optional().describe('Source of proof. Manual means analyst observation only and remains unvalidated until independently checked.'),
+    affected_assets: z.array(z.string()).optional().describe('Affected asset IDs, URLs, hosts, files, or components'),
+    confidence: z.enum(['low', 'medium', 'high']).optional().describe('Analyst confidence before validation. Does not mark the finding confirmed.'),
+    replay_command: z.string().optional().describe('Command that can reproduce or retest the finding'),
+    replay_request: z.string().optional().describe('HTTP request or request summary that can reproduce or retest the finding'),
   }),
   execute: traced('nr_save_finding', async (args) => {
     const entry = await appendEvidenceEntry(CWD, {
@@ -867,9 +874,17 @@ server.addTool({
       evidence: args.evidence,
       recommendation: args.recommendation,
       cweIds: args.cwe_ids,
+      evidenceSource: args.evidence_source,
+      affectedAssets: args.affected_assets,
+      confidence: args.confidence,
+      replayCommand: args.replay_command,
+      replayRequest: args.replay_request,
     })
     const findingEntry = entry as FindingEntry
-    const details = [`Finding saved: ${entry.id} (${args.severity}) — ${args.title}`]
+    const details = [
+      `Finding saved: ${entry.id} (${args.severity}) — ${args.title}`,
+      'status: unvalidated until replay/statistical/OOB validation is recorded',
+    ]
     logRuntimeEvent(
       'EVD',
       `finding ${entry.id} saved (${args.severity}) ${args.title}`,
@@ -946,7 +961,7 @@ server.addTool({
   annotations: READ_ONLY_TOOL_ANNOTATIONS,
   parameters: z.object({
     type: z.enum([
-      'finding', 'note', 'artifact', 'execution_step',
+      'finding', 'validation', 'note', 'artifact', 'execution_step',
       'guardrail', 'session_start', 'session_end', 'approval',
     ]).optional().describe('Filter by type'),
     limit: z.number().optional().describe('Max entries (default 50)'),
@@ -1134,7 +1149,7 @@ server.addTool({
 
 server.addTool({
   name: 'nr_coverage_status',
-  description: 'Compute MITRE ATT&CK technique coverage: techniques referenced in confirmed findings vs. techniques expected for the workflow\'s capability packs. Returns coverage percentage, top covered techniques, and gap techniques.',
+  description: 'Compute MITRE ATT&CK technique coverage: techniques referenced in replay-validated findings vs. techniques expected for the workflow\'s capability packs. Returns coverage percentage, top covered techniques, and gap techniques.',
   annotations: READ_ONLY_TOOL_ANNOTATIONS,
   parameters: z.object({
     workflow_id: z.string().optional().describe('Workflow id to scope expected techniques (defaults to active engagement workflow)'),
@@ -1161,7 +1176,7 @@ server.addTool({
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  14. nr_export_report — Export confirmed findings in SARIF / STIX / MISP
+//  14. nr_export_report — Export reports in Markdown / HTML / SARIF / STIX / MISP
 // ═══════════════════════════════════════════════════════════════════════════
 
 function getSafeReportArtifactPath(fileName: string): string {
@@ -1179,11 +1194,11 @@ function getSafeReportArtifactPath(fileName: string): string {
 
 server.addTool({
   name: 'nr_export_report',
-  description: 'Export confirmed findings to SARIF 2.1.0, STIX 2.1, or MISP event JSON. Writes file to artifacts dir and records an artifact evidence entry.',
+  description: 'Export an engagement report to human-readable Markdown/HTML or machine-readable SARIF 2.1.0, STIX 2.1, or MISP event JSON. Writes file to artifacts dir and records an artifact evidence entry.',
   annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
   parameters: z.object({
-    format: z.enum(['sarif', 'stix', 'misp']).describe('Export format'),
-    output_path: z.string().optional().describe('Filename within artifacts dir (default: report-<format>-<timestamp>.json/.sarif)'),
+    format: z.enum(['markdown', 'html', 'sarif', 'stix', 'misp']).describe('Export format'),
+    output_path: z.string().optional().describe('Filename within artifacts dir (default: report-<format>-<timestamp>.md/.html/.json/.sarif)'),
   }),
   execute: traced('nr_export_report', async (args) => {
     const manifest = await readEngagementManifest(CWD)
@@ -1191,10 +1206,22 @@ server.addTool({
 
     const allEntries = await readEvidenceEntries(CWD)
     const findings = allEntries.filter(e => e.type === 'finding') as import('../security/evidence.js').FindingEntry[]
+    const validationsByFindingId = new Map(
+      allEntries
+        .filter((e): e is import('../security/evidence.js').ValidationEntry => e.type === 'validation')
+        .map(e => [e.findingId, e]),
+    )
 
     const format: ExportFormat = args.format
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const ext = format === 'sarif' ? '.sarif' : '.json'
+    const ext =
+      format === 'sarif'
+        ? '.sarif'
+        : format === 'markdown'
+          ? '.md'
+          : format === 'html'
+            ? '.html'
+            : '.json'
     const defaultName = `report-${format}-${timestamp}${ext}`
     const fileName = args.output_path ?? defaultName
 
@@ -1209,16 +1236,18 @@ server.addTool({
       endTimeUtc: nowIso,
     }
 
-    let exportObj: Record<string, unknown>
+    let serialized: string
     if (format === 'sarif') {
-      exportObj = buildSarif(findings, meta)
+      serialized = JSON.stringify(buildSarif(findings, meta, validationsByFindingId), null, 2)
     } else if (format === 'stix') {
-      exportObj = buildStix(findings, meta)
+      serialized = JSON.stringify(buildStix(findings, meta, validationsByFindingId), null, 2)
+    } else if (format === 'misp') {
+      serialized = JSON.stringify(buildMisp(findings, meta, validationsByFindingId), null, 2)
+    } else if (format === 'html') {
+      serialized = generateHtmlReport(manifest, allEntries)
     } else {
-      exportObj = buildMisp(findings, meta)
+      serialized = generateMarkdownReport(manifest, allEntries)
     }
-
-    const serialized = JSON.stringify(exportObj, null, 2)
     await writeFile(artifactPath, serialized, 'utf8')
 
     const relPath = relative(CWD, artifactPath)
@@ -1257,7 +1286,7 @@ const LOGO_RUNNER = [
 ]
 
 const TOOLS_MANIFEST: [string, string][] = [
-  ['nr_exec', 'Shell execution \u2014 the workhorse for 153 tools'],
+  ['nr_exec', `Shell execution \u2014 the workhorse for ${CATALOG_TOOL_COUNT} tools`],
   ['nr_engagement_init', 'Initialize .netrunner/ engagement'],
   ['nr_engagement_status', 'Engagement state + evidence summary'],
   ['nr_scope_check', 'Guardrail check (allow/review/block)'],
@@ -1270,7 +1299,7 @@ const TOOLS_MANIFEST: [string, string][] = [
   ['nr_verify_evidence', 'Verify SHA-256 hash chain integrity of evidence ledger'],
   ['nr_validate_finding', 'Replay finding command + diff output vs original evidence'],
   ['nr_coverage_status', 'MITRE ATT&CK coverage: expected vs covered techniques'],
-  ['nr_export_report', 'Export findings: SARIF 2.1.0 / STIX 2.1 / MISP event JSON'],
+  ['nr_export_report', 'Export reports: Markdown / HTML / SARIF / STIX / MISP'],
 ]
 
 function boxRow(content: string, width: number, rawLen: number): string {

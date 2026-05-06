@@ -8,16 +8,22 @@ import {
   validateSecurityAgentToolCoverage,
 } from '../src/security/agentToolCoverage.ts'
 import { API_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/apiTestingSpecialistAgent.ts'
+import { AD_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/adSpecialistAgent.ts'
+import { BINARY_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/binarySpecialistAgent.ts'
+import { CODE_AUDIT_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/codeAuditSpecialistAgent.ts'
 import { ENGAGEMENT_LEAD_AGENT } from '../src/tools/AgentTool/built-in/engagementLeadAgent.ts'
 import { EVIDENCE_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/evidenceSpecialistAgent.ts'
 import { EXPLOIT_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/exploitSpecialistAgent.ts'
+import { FORENSICS_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/forensicsSpecialistAgent.ts'
 import { LATERAL_MOVEMENT_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/lateralMovementSpecialistAgent.ts'
+import { MOBILE_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/mobileTestingSpecialistAgent.ts'
 import { NETWORK_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/networkTestingSpecialistAgent.ts'
 import { PRIVILEGE_ESCALATION_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/privilegeEscalationSpecialistAgent.ts'
 import { RECON_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/reconSpecialistAgent.ts'
 import { REPORTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/reportingSpecialistAgent.ts'
 import { RETEST_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/retestSpecialistAgent.ts'
 import { WEB_TESTING_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/webTestingSpecialistAgent.ts'
+import { WIFI_SPECIALIST_AGENT } from '../src/tools/AgentTool/built-in/wifiSpecialistAgent.ts'
 import { getBuiltInAgents } from '../src/tools/AgentTool/builtInAgents.ts'
 import { AGENT_TOOL_NAME } from '../src/tools/AgentTool/constants.ts'
 import { SEND_MESSAGE_TOOL_NAME } from '../src/tools/SendMessageTool/constants.ts'
@@ -53,9 +59,15 @@ const builtInAgentTooling: Array<{
   EXPLOIT_SPECIALIST_AGENT,
   PRIVILEGE_ESCALATION_SPECIALIST_AGENT,
   LATERAL_MOVEMENT_SPECIALIST_AGENT,
+  AD_SPECIALIST_AGENT,
   RETEST_SPECIALIST_AGENT,
   EVIDENCE_SPECIALIST_AGENT,
   REPORTING_SPECIALIST_AGENT,
+  FORENSICS_SPECIALIST_AGENT,
+  CODE_AUDIT_SPECIALIST_AGENT,
+  WIFI_SPECIALIST_AGENT,
+  MOBILE_TESTING_SPECIALIST_AGENT,
+  BINARY_SPECIALIST_AGENT,
 ].map(agent => ({
   agentType: agent.agentType as NetRunnerAgentType,
   tools: [...(agent.tools ?? [])].sort(),
@@ -142,7 +154,7 @@ for (const builtInAgent of builtInAgentTooling) {
 
 console.log('Net-Runner Agent Tooling Validation')
 console.log(
-  `status: ${report.ok && registryDriftErrors.length === 0 && securityMemoryErrors.length === 0 && securityCommunicationErrors.length === 0 ? 'PASS' : 'FAIL'}`,
+  `status: ${report.ok && registryDriftErrors.length === 0 && securityMemoryErrors.length === 0 && securityCommunicationErrors.length === 0 && securityToolsetErrors.length === 0 ? 'PASS' : 'FAIL'}`,
 )
 console.log('agent capability mappings:')
 for (const agentType of NET_RUNNER_AGENT_TYPES) {

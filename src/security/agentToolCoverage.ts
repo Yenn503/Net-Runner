@@ -8,16 +8,21 @@ import {
 } from './agentTypes.js'
 import { AD_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/adSpecialistAgent.js'
 import { API_TESTING_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/apiTestingSpecialistAgent.js'
+import { BINARY_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/binarySpecialistAgent.js'
+import { CODE_AUDIT_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/codeAuditSpecialistAgent.js'
 import { ENGAGEMENT_LEAD_AGENT } from '../tools/AgentTool/built-in/engagementLeadAgent.js'
 import { EVIDENCE_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/evidenceSpecialistAgent.js'
 import { EXPLOIT_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/exploitSpecialistAgent.js'
+import { FORENSICS_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/forensicsSpecialistAgent.js'
 import { LATERAL_MOVEMENT_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/lateralMovementSpecialistAgent.js'
+import { MOBILE_TESTING_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/mobileTestingSpecialistAgent.js'
 import { NETWORK_TESTING_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/networkTestingSpecialistAgent.js'
 import { PRIVILEGE_ESCALATION_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/privilegeEscalationSpecialistAgent.js'
 import { RECON_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/reconSpecialistAgent.js'
 import { REPORTING_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/reportingSpecialistAgent.js'
 import { RETEST_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/retestSpecialistAgent.js'
 import { WEB_TESTING_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/webTestingSpecialistAgent.js'
+import { WIFI_SPECIALIST_AGENT } from '../tools/AgentTool/built-in/wifiSpecialistAgent.js'
 
 export type SecurityAgentToolCoverageIssue = {
   level: 'error' | 'warning'
@@ -58,6 +63,11 @@ const SECURITY_BUILT_IN_AGENTS: BuiltInAgentSnapshot[] = [
   RETEST_SPECIALIST_AGENT,
   EVIDENCE_SPECIALIST_AGENT,
   REPORTING_SPECIALIST_AGENT,
+  FORENSICS_SPECIALIST_AGENT,
+  CODE_AUDIT_SPECIALIST_AGENT,
+  WIFI_SPECIALIST_AGENT,
+  MOBILE_TESTING_SPECIALIST_AGENT,
+  BINARY_SPECIALIST_AGENT,
 ].map(agent => ({
   agentType: agent.agentType as NetRunnerAgentType,
   tools: [...(agent.tools ?? [])],

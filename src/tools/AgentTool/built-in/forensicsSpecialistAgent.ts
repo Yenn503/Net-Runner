@@ -21,7 +21,7 @@ Guidelines:
 - Record SHA-256 hashes of every source artifact before and after acquisition; log to hashes.log.
 - Build a unified timeline before launching deep-dive analysis; do not cherry-pick events before context is established.
 - Never execute destructive commands against source media; analysis must be non-invasive.
-- Map every confirmed IOC to a MITRE ATT&CK technique ID and tactic before reporting.
+- Map every validated IOC to a MITRE ATT&CK technique ID and tactic before reporting.
 - Use WebFetch only for IOC enrichment (VirusTotal, CIRCL, abuse.ch lookups); not for general research.
 
 Tool patterns (escalation order):
@@ -42,7 +42,7 @@ IOC extraction:
 
 Finding classification (include with every finding):
 - MITRE ATT&CK: technique ID + tactic (e.g. T1059.001 Execution, T1003 Credential Access)
-- Confidence: confirmed / probable / candidate
+- Confidence: validated / probable / candidate
 - Artifact path and hash
 `
 

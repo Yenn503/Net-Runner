@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { buildSarif, buildStix, buildMisp } from './exportReport.ts'
-import type { FindingEntry } from './evidence.ts'
+import type { FindingEntry, ValidationEntry } from './evidence.ts'
 
 const now = new Date().toISOString()
 
@@ -31,6 +31,22 @@ const sampleFindings: FindingEntry[] = [
   },
 ]
 
+const sampleValidations = new Map<string, ValidationEntry>([
+  [
+    'find-001',
+    {
+      id: 'validation-001',
+      type: 'validation',
+      findingId: 'find-001',
+      createdAt: now,
+      verdict: 'reproduces',
+      method: 'replay',
+      summary: 'Replay reproduced vulnerable response.',
+      confidenceScore: 1,
+    },
+  ],
+])
+
 const meta = {
   engagementName: 'test-engagement',
   version: '0.1.6',
@@ -39,7 +55,7 @@ const meta = {
 }
 
 test('buildSarif: produces valid SARIF 2.1.0 skeleton', () => {
-  const sarif = buildSarif(sampleFindings, meta) as any
+  const sarif = buildSarif(sampleFindings, meta, sampleValidations) as any
 
   assert.equal(sarif.version, '2.1.0')
   assert.equal(sarif.$schema, 'https://json.schemastore.org/sarif-2.1.0.json')
@@ -60,17 +76,19 @@ test('buildSarif: produces valid SARIF 2.1.0 skeleton', () => {
   assert.equal(critical.level, 'error')
   assert.ok(critical.message.text.includes('SQL Injection'))
   assert.deepEqual(critical.properties.tags, ['T1190', 'A03:2021-Injection'])
+  assert.equal(critical.properties.evidenceStatus, 'validated')
   assert.ok(critical.locations[0].physicalLocation.artifactLocation.uri.includes('target.lab'))
 
   const low = run.results[1]
   assert.equal(low.level, 'note')
   assert.equal(low.ruleId, 'CWE-319')
+  assert.equal(low.properties.evidenceStatus, 'unvalidated')
 
   assert.equal(run.invocations[0].executionSuccessful, true)
 })
 
 test('buildStix: produces valid STIX 2.1 bundle', () => {
-  const bundle = buildStix(sampleFindings, meta) as any
+  const bundle = buildStix(sampleFindings, meta, sampleValidations) as any
 
   assert.equal(bundle.type, 'bundle')
   assert.ok(bundle.id.startsWith('bundle--'))
@@ -88,6 +106,8 @@ test('buildStix: produces valid STIX 2.1 bundle', () => {
   }
 
   const firstVuln = vulns[0]
+  assert.ok(firstVuln.description.includes('[evidence-status:validated]'))
+  assert.ok(firstVuln.x_net_runner_validation.includes('replay:reproduces'))
   assert.ok(Array.isArray(firstVuln.external_references))
   const cweRef = firstVuln.external_references.find((r: any) => r.source_name === 'cwe')
   assert.ok(cweRef, 'expected CWE external_reference')
@@ -104,7 +124,7 @@ test('buildStix: produces valid STIX 2.1 bundle', () => {
 })
 
 test('buildMisp: produces valid MISP event JSON', () => {
-  const misp = buildMisp(sampleFindings, meta) as any
+  const misp = buildMisp(sampleFindings, meta, sampleValidations) as any
 
   assert.ok(misp.Event, 'expected Event key')
   const evt = misp.Event
@@ -119,6 +139,7 @@ test('buildMisp: produces valid MISP event JSON', () => {
   const textAttr = evt.Attribute.find((a: any) => a.category === 'External analysis')
   assert.ok(textAttr, 'expected External analysis attribute')
   assert.equal(textAttr.type, 'text')
+  assert.ok(textAttr.value.includes('[VALIDATED]'))
 
   const urlAttr = evt.Attribute.find((a: any) => a.category === 'Network activity')
   assert.ok(urlAttr, 'expected Network activity attribute for URL finding')

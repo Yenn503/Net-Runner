@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
-import type { FindingEntry } from './evidence.js'
+import type { FindingEntry, ValidationEntry } from './evidence.js'
 
-export type ExportFormat = 'sarif' | 'stix' | 'misp'
+export type ExportFormat = 'markdown' | 'html' | 'sarif' | 'stix' | 'misp'
 
 export type ExportMeta = {
   engagementName: string
@@ -11,6 +11,21 @@ export type ExportMeta = {
 }
 
 type SarifLevel = 'error' | 'warning' | 'note' | 'none'
+type ValidationMap = Map<string, ValidationEntry>
+
+function evidenceStatusFor(finding: FindingEntry, validations?: ValidationMap): string {
+  const validation = validations?.get(finding.id)
+  if (!validation) return 'unvalidated'
+  if (validation.verdict === 'reproduces') return 'validated'
+  if (validation.verdict === 'differs' || validation.verdict === 'not_reproducible') return 'disputed'
+  return 'inconclusive'
+}
+
+function validationSummaryFor(finding: FindingEntry, validations?: ValidationMap): string {
+  const validation = validations?.get(finding.id)
+  if (!validation) return 'No typed validation entry recorded.'
+  return `${validation.method}:${validation.verdict} ${validation.summary}`
+}
 
 function severityToSarifLevel(severity: string): SarifLevel {
   switch (severity) {
@@ -58,7 +73,11 @@ function collectUniqueRules(findings: FindingEntry[]): Array<{
   return Array.from(seen.values())
 }
 
-export function buildSarif(findings: FindingEntry[], meta: ExportMeta): Record<string, unknown> {
+export function buildSarif(
+  findings: FindingEntry[],
+  meta: ExportMeta,
+  validations?: ValidationMap,
+): Record<string, unknown> {
   const rules = collectUniqueRules(findings)
 
   const results = findings.map(f => {
@@ -81,8 +100,13 @@ export function buildSarif(findings: FindingEntry[], meta: ExportMeta): Record<s
       message: { text: messageText },
     }
 
-    if (tags.length > 0) {
-      result.properties = { tags }
+    result.properties = {
+      tags,
+      evidenceStatus: evidenceStatusFor(f, validations),
+      validation: validationSummaryFor(f, validations),
+      evidenceSource: f.evidenceSource ?? 'not-recorded',
+      affectedAssets: f.affectedAssets ?? [],
+      confidence: f.confidence ?? 'not-recorded',
     }
 
     if (f.replayRequest) {
@@ -165,7 +189,11 @@ function buildExternalRefs(f: FindingEntry): Array<Record<string, unknown>> {
   return refs
 }
 
-export function buildStix(findings: FindingEntry[], meta: ExportMeta): Record<string, unknown> {
+export function buildStix(
+  findings: FindingEntry[],
+  meta: ExportMeta,
+  validations?: ValidationMap,
+): Record<string, unknown> {
   const now = stixTimestamp(meta.endTimeUtc)
   const vulnerabilityObjects: Array<Record<string, unknown>> = []
   const vulnIds: string[] = []
@@ -182,7 +210,8 @@ export function buildStix(findings: FindingEntry[], meta: ExportMeta): Record<st
       created: stixTimestamp(f.createdAt),
       modified: stixTimestamp(f.createdAt),
       name: f.title,
-      description: f.evidence,
+      description: `[evidence-status:${evidenceStatusFor(f, validations)}] ${f.evidence}`,
+      x_net_runner_validation: validationSummaryFor(f, validations),
     }
 
     if (refs.length > 0) {
@@ -235,7 +264,11 @@ function parsableUrl(value: string): boolean {
   }
 }
 
-export function buildMisp(findings: FindingEntry[], meta: ExportMeta): Record<string, unknown> {
+export function buildMisp(
+  findings: FindingEntry[],
+  meta: ExportMeta,
+  validations?: ValidationMap,
+): Record<string, unknown> {
   const maxLevel = findings.reduce((acc, f) => {
     const lvl = severityToMispThreatLevel(f.severity)
     return lvl < acc ? lvl : acc
@@ -255,7 +288,7 @@ export function buildMisp(findings: FindingEntry[], meta: ExportMeta): Record<st
       ...attrBase,
       category: 'External analysis',
       type: 'text',
-      value: `[${f.severity.toUpperCase()}] ${f.title}\n${f.evidence}`,
+      value: `[${f.severity.toUpperCase()}][${evidenceStatusFor(f, validations).toUpperCase()}] ${f.title}\n${f.evidence}\nValidation: ${validationSummaryFor(f, validations)}`,
     })
 
     if (f.replayRequest && parsableUrl(f.replayRequest)) {

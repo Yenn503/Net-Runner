@@ -78,7 +78,7 @@ export const NET_RUNNER_AGENT_DEFINITIONS: NetRunnerAgentDefinition[] = [
     agentType: 'reporting-specialist',
     workflowId: 'web-app-testing',
     description:
-      'Reporting specialist for final finding narratives, severity framing, and export-ready assessment reports.',
+      'Senior red-team reporting specialist for polished human reports, executive risk narratives, technical findings, remediation plans, and machine-readable exports.',
   },
   {
     agentType: 'forensics-specialist',

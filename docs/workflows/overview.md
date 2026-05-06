@@ -52,16 +52,16 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 ## Runtime flow
 
 1. The operator gives a plain-language instruction with a target.
-2. Net-Runner initializes `.netrunner/engagement.json` if needed.
+2. Net-Runner initializes `.netrunner/engagement.json` with a scope envelope and impact boundary if needed.
 3. The runtime injects workflow, scope, impact, role contracts, and retrieved context into the session.
 4. The workflow loads shared base skills such as `/engagement-setup`, `/scope-guard`, `/recon-plan`, `/digital-footprint-assessment`, `/target-fingerprinting`, `/evidence-capture`, `/report-generation`, and `/caveman-harness`, then layers target-specific skills on top.
 5. The operator or external MCP client drives execution through the shared harness runtime.
 6. The main agent and specialists use built-in tools directly: shell commands, Maigret OSINT, file operations, web requests, MCP resources, and specialist handoffs.
 7. Guardrails review or block higher-impact actions.
-8. Evidence, artifacts, findings, and execution notes are written into the same project state.
+8. Evidence, artifacts, findings, typed validations, and execution notes are written into the same project state.
 9. Runtime intelligence can react to HTTP responses, failures, and blind-finding patterns while the session is still active.
 10. Background memory consolidation can update persistent memory between runs.
-11. Reports are generated from the evidence chain in `.netrunner/`.
+11. Reports are generated from the evidence chain in `.netrunner/`. Markdown is the editable source path; HTML is the client-ready human report path; SARIF/STIX/MISP are machine exports. Findings are labeled as validated, unvalidated, inconclusive, or disputed.
 
 ## Specialist agents
 
@@ -82,6 +82,10 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 - `retest-specialist`
 - `evidence-specialist`
 - `reporting-specialist`
+
+The reporting specialist owns final report delivery end-to-end. It reads the evidence ledger, correlates artifacts, merges duplicates, frames severity and business impact, and emits polished Markdown/HTML reports with executive dashboard, attack-path narrative, finding cards, remediation backlog, compliance mapping, MITRE coverage, and evidence appendix.
+
+Operator chat is not proof. A finding becomes validated only through a typed validation entry, usually replay via `nr_validate_finding`, statistical verification, OOB callback confirmation, or artifact review. If validation is missing, the report must say so instead of implying certainty.
 
 ## Capability packs
 
@@ -111,6 +115,7 @@ Before a deeper run:
 
 - use `/engagement capabilities [workflow]` to check missing commands or env requirements
 - use `/engagement alignment` to inspect workflow and agent coverage in the current build
+- use `/report --all latest` after evidence capture to generate both canonical Markdown and designed HTML reports
 - install Maigret with `python3 -m pip install --user maigret` when `/engagement capabilities` reports `maigret-digital-footprint` missing
 
 If you want to test agent teams in the OSS build, enable them explicitly through `agentTeamsEnabled`, `NETRUNNER_EXPERIMENTAL_AGENT_TEAMS=1`, or `--agent-teams`.

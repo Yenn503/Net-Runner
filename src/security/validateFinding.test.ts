@@ -75,7 +75,7 @@ describe('validateFinding', () => {
     await expect(validateFinding(cwd, entry.id)).rejects.toThrow('no replayCommand')
   })
 
-  it('appends a validation note to the evidence ledger', async () => {
+  it('appends a typed validation entry to the evidence ledger', async () => {
     const entry = await appendEvidenceEntry(cwd, {
       type: 'finding',
       title: 'Audited Finding',
@@ -88,10 +88,11 @@ describe('validateFinding', () => {
 
     const { readEvidenceEntries } = await import('./evidence.js')
     const entries = await readEvidenceEntries(cwd)
-    const notes = entries.filter(e => e.type === 'note')
-    expect(notes.length).toBeGreaterThan(0)
-    const noteEntry = notes[notes.length - 1]
-    expect((noteEntry as any).note).toContain('[validate-finding]')
-    expect((noteEntry as any).note).toContain(entry.id)
+    const validations = entries.filter(e => e.type === 'validation')
+    expect(validations.length).toBeGreaterThan(0)
+    const validationEntry = validations[validations.length - 1]
+    expect((validationEntry as any).summary).toContain('[validate-finding]')
+    expect((validationEntry as any).findingId).toBe(entry.id)
+    expect((validationEntry as any).verdict).toBe('reproduces')
   })
 })

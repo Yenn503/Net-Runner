@@ -16,15 +16,13 @@ red team automation, AI security assessment, LLM security testing
 
 *Red-team runtime with workflow control, evidence, memory, and specialist agents.*
 
-<sub>17 specialist agents · 228 cataloged tools · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
-
-**English** · [Español](i18n/README.es.md) · [Français](i18n/README.fr.md) · [中文](i18n/README.zh.md) · [العربية](i18n/README.ar.md) · [Português](i18n/README.pt.md) · [Русский](i18n/README.ru.md) · [日本語](i18n/README.ja.md) · [한국어](i18n/README.ko.md) · [हिन्दी](i18n/README.hi.md) · [Deutsch](i18n/README.de.md)
+<sub>17 specialist agents · 228 cataloged tools · 279 capabilities · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
 
 ---
 
 </div>
 
-Net-Runner is a final-year university project and research prototype of an AI security testing framework for autonomous penetration testing. An LLM runs the full security assessment, picking workflows, launching specialist agents, running 228 red-team tools, including Maigret-backed digital-footprint OSINT, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
+Net-Runner is a final-year university project and research prototype of an AI security testing framework for autonomous penetration testing. An LLM runs the full security assessment, picking workflows, launching specialist agents, running 228 cataloged red-team tools, including Maigret-backed digital-footprint OSINT, enforcing guardrails, logging evidence, and generating human-readable reports from the evidence ledger. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
 The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic instead of exposing 228 tools as individual MCP definitions (which would consume 50K+ tokens of context), Net-Runner presents a minimal MCP surface (14 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM GitHub Copilot, Claude, or Cursor can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
 
@@ -91,11 +89,12 @@ Or `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`:
 - **Evidence-first** — every finding, artefact, and report saved to `.netrunner/` automatically
 - **Guardrail enforcement** — every action checked against declared scope and impact level before execution
 - **17 specialist agents** — engagement lead, recon, web, API, network, AD, exploit, privilege escalation, lateral movement, wifi, mobile, binary, forensics, code-audit, retest, evidence, reporting
-- **228 red-team tools** across 16 categories (recon, web, API, AD, cloud, mobile, network, exploitation, WiFi, binary/RE, forensics, code-audit, threat-intel, lateral-movement, evidence, coordination)
+- **228 red-team tools and 279 capabilities** across 21 capability packs (recon, web, API, AD, cloud, mobile, network, exploitation, WiFi, binary/RE, forensics, code-audit, threat-intel, lateral-movement, evidence, reporting, coordination, lab control, database, exfiltration, privilege escalation)
 - **12 workflows** — web-app, API, mobile, lab, adversary emulation, bug bounty, CTF, AD, WiFi, DFIR, code audit, cloud assessment
 - **10 APT simulations** — 40 threat groups, 13 industry profiles, MITRE ATT&CK mapped
 - **Intelligence engine** — feedback loop, WAF detection/bypass, MCTS planner, statistical verifier, OOB verification, knowledge graph
 - **Minimal MCP surface** — 14 `nr_*` tools; `nr_exec` runs all 228 tools via shell
+- **Human-grade reporting** — Markdown and designed HTML reports with executive dashboard, attack-path narrative, finding cards, remediation backlog, compliance mapping, MITRE coverage, and evidence appendix; SARIF/STIX/MISP exports for downstream tools
 - **Auto-engagement setup** — describe target in plain English; Net-Runner detects intent and starts assessment
 
 ---
@@ -113,7 +112,7 @@ Or `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`:
 | **web** | Web app vulns (XSS, SQLi, SSRF, smuggling, auth) | `sqlmap`, `dalfox`, `ffuf`, `nuclei`, `nikto`, ZAP, Burp, `wpscan` | wordpress-attack-tree, http-smuggling-cache-poisoning, headless-browser-validation, waf-detection, oob-verification |
 | **api** | REST/GraphQL/SOAP, JWT, IDOR, mass assignment | `postman` CLI, GraphQL introspection, `jwt_tool`, `arjun` | bug-bounty-validation, oob-verification, statistical-verification |
 | **network** | SMB/SSH/FTP/RDP, service exploitation, traffic | `smbclient`, `evil-winrm`, `responder`, `crackmapexec`, `wireshark` | exploit-validation |
-| **exploit** | Controlled PoC on confirmed findings | `sqlmap`, `msfconsole`, `msfvenom`, `searchsploit`, `pwntools`, `commix` | exploit-validation, statistical-verification, oob-verification |
+| **exploit** | Controlled PoC on validated findings | `sqlmap`, `msfconsole`, `msfvenom`, `searchsploit`, `pwntools`, `commix` | exploit-validation, statistical-verification, oob-verification |
 | **privilege-escalation** | Post-access escalation, container escape | `linpeas`, `winpeas`, `pspy`, GTFOBins, `peirates`, `kdigger`, `amicontained`, `deepce`, `bloodyAD` | post-exploitation-plan |
 | **lateral-movement** | Multi-host pivoting, credential reuse, tunnels | `crackmapexec`, `evil-winrm`, `chisel`, `proxychains`, SOCKS pivots | post-exploitation-plan, attack-path-analysis |
 | **ad** | Active Directory enumeration + Kerberos/ADCS/NTLM attacks | `bloodhound`, `kerbrute`, `impacket-*`, `certipy`, `rubeus`, `adidnsdump`, `mitm6`, `Coercer`, `bloodyAD` | post-exploitation-plan, attack-path-analysis |
@@ -123,24 +122,40 @@ Or `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`:
 | **forensics** | DFIR triage, memory/disk/log analysis, malware ID | `volatility3`, `sleuthkit`, `MVT`, `plaso`, `autopsy`, `yara`, `capa` | dfir-triage, threat-intel-enrichment |
 | **code-audit** | Static SAST, secret scan, dependency CVE, IaC | `semgrep`, `gitleaks`, `npm audit`, `govulncheck`, `checkov`, `trivy` | code-audit-review |
 | **retest** | Reproduce findings, validate fixes | Replays from evidence ledger; `nr_validate_finding` | exploit-validation |
-| **evidence** | Chain-of-custody curator (Write-only) | SHA-256 hash chain, JSONL ledger, PII redactor | evidence-capture |
-| **reporting** | Final report, exec summary, exports | SARIF 2.1, STIX 2.1, MISP, MITRE coverage | report-generation |
+| **evidence** | Chain-of-custody curator | SHA-256 hash chain, JSONL ledger, PII redactor, artifact normalization | evidence-capture |
+| **reporting** | Final report, exec summary, exports | Markdown, designed HTML, SARIF 2.1, STIX 2.1, MISP, MITRE coverage | report-generation |
 
 *Each specialist has a scoped tool allowlist enforced by the harness. Compressed-output discipline applies to all internal reasoning except `engagement-lead` (operator-facing) and `reporting-specialist` (customer-facing).*
+
+The harness records a scope envelope; it does not waste turns asking whether the operator owns the target. Legal authorization is assumed to live in the external assessment contract. Net-Runner enforces practical runtime boundaries instead: recorded targets, max impact, restrictions, guardrail review for risky actions, and evidence validation status.
 
 ## MCP Tools (`nr_*`)
 
 `nr_exec` · `nr_engagement_init` · `nr_engagement_status` · `nr_scope_check` · `nr_save_finding` · `nr_save_note` · `nr_list_evidence` · `nr_discover` · `nr_tool_help` · `nr_kg_query` · `nr_verify_evidence` · `nr_validate_finding` · `nr_coverage_status` · `nr_export_report`
+
+## Reports
+
+Reports are generated from the append-only evidence ledger, not from chat transcripts. Findings are labeled `Validated`, `Unvalidated`, `Inconclusive`, or `Disputed` based on typed validation entries such as replay, statistical, OOB, or artifact-review validation. Analyst confidence and operator wording do not mark a finding confirmed.
+
+The reporting specialist produces client-ready Markdown and HTML reports with severity summaries, evidence-backed findings, remediation guidance, retest criteria, compliance mappings, and MITRE ATT&CK coverage.
+
+```bash
+/report latest          # .netrunner/reports/latest.md
+/report --html latest   # .netrunner/reports/latest.html
+/report --all latest    # markdown + html
+```
+
+Through MCP, use `nr_export_report` with `format=markdown`, `format=html`, `format=sarif`, `format=stix`, or `format=misp`.
 
 ---
 
 ## Engagement Lifecycle
 
 1. Describe target and goal in plain English
-2. `.netrunner/` project folder created with engagement config, scope rules, and run state
+2. `.netrunner/` project folder created with scope envelope, impact boundary, and run state
 3. Matching workflow loaded with specialist agents, role contracts, and prior session memory
 4. Tools run autonomously — scope-checked before each risky action
-5. Evidence, findings, artefacts, and reports saved throughout; intelligence state persisted to `.netrunner/intelligence-state.json`
+5. Evidence, findings, validation entries, artefacts, and reports saved throughout; intelligence state persisted to `.netrunner/intelligence-state.json`
 
 ---
 
@@ -161,6 +176,8 @@ The probe is non-blocking and never fails the build. If `CAMOFOX_URL` is unreach
 ## Provenance
 
 Built on [OpenClaude](https://github.com/Gitlawb/openclaude). All red-team features are Net-Runner additions. See `docs/project/` for research and provenance notes.
+
+For a blunt engineering assessment of harness strengths, limits, and current proof contract, see `docs/project/harness-assessment.md`.
 
 **Docs:** [Workflows](docs/workflows/overview.md) · [APT Simulation](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
 

@@ -79,6 +79,10 @@ test('default built-in registry includes core runtime and Net-Runner specialist 
       'reporting-specialist',
       'forensics-specialist',
       'code-audit-specialist',
+      'ad-specialist',
+      'wifi-specialist',
+      'mobile-testing-specialist',
+      'binary-specialist',
       'Explore',
       'Plan',
       'verification',
@@ -131,6 +135,7 @@ test('Net-Runner specialists load role contracts and scoped toolsets', () => {
   const web = agents.get('web-testing-specialist')
 
   assert.ok(engagementLead?.systemPrompt?.includes('Net-Runner role contract:'))
+  assert.ok(engagementLead?.systemPrompt?.includes('Net-Runner domain expert standard:'))
   assert.ok(engagementLead?.systemPrompt?.includes('Runnable capability catalog:'))
   assert.ok(engagementLead?.systemPrompt?.includes('Eval dimensions: task-adherence'))
   assert.ok(recon?.systemPrompt?.includes('maigret-digital-footprint'))
@@ -139,15 +144,17 @@ test('Net-Runner specialists load role contracts and scoped toolsets', () => {
   assert.ok(recon?.systemPrompt?.includes('Completion criteria:'))
   assert.ok(evidence?.systemPrompt?.includes('chain-of-custody evidence'))
   assert.ok(reporting?.systemPrompt?.includes('Cite ledger/artifact refs'))
+  assert.ok(reporting?.systemPrompt?.includes('Evidence Gaps'))
+  assert.ok(reporting?.systemPrompt?.includes('Validation status comes from typed validation entries'))
 
   assert.equal(engagementLead?.tools?.includes('Agent'), true)
   assert.equal(recon?.tools?.includes('Bash'), true)
   assert.equal(recon?.tools?.includes('WebSearch'), true)
   assert.equal(web?.tools?.includes('Bash'), true)
   assert.equal(evidence?.tools?.includes('Write'), true)
-  assert.equal(evidence?.tools?.includes('Bash'), false)
+  assert.equal(evidence?.tools?.includes('Bash'), true)
   assert.equal(reporting?.tools?.includes('Edit'), true)
-  assert.equal(reporting?.tools?.includes('Bash'), false)
+  assert.equal(reporting?.tools?.includes('Bash'), true)
 
   const forensics = agents.get('forensics-specialist')
   assert.ok(forensics)
@@ -155,7 +162,7 @@ test('Net-Runner specialists load role contracts and scoped toolsets', () => {
   assert.ok(forensics?.systemPrompt?.includes('chain-of-custody') || forensics?.systemPrompt?.includes('hash'))
   assert.equal(forensics?.tools?.includes('Bash'), true)
   assert.equal(forensics?.tools?.includes('Write'), true)
-  assert.equal(forensics?.tools?.includes('Edit'), false)
+  assert.equal(forensics?.tools?.includes('Edit'), true)
   assert.equal(forensics?.memory, 'project')
 
   const codeAudit = agents.get('code-audit-specialist')

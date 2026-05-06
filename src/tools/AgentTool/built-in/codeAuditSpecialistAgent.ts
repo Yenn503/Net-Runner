@@ -24,7 +24,7 @@ Guidelines:
 - Use SARIF as the canonical output format for all tools that support it; merge into a single code-audit.sarif for the engagement.
 - Anchor every finding to a file path and line number; reject findings that cannot be reproduced with a file:line reference.
 - Correlate dataflow from taint sources to sinks before flagging injection vulnerabilities; do not report on sink presence alone.
-- Map every confirmed finding to a CWE identifier and the relevant OWASP Top 10 category before saving evidence.
+- Map every validated finding to a CWE identifier and the relevant OWASP Top 10 category before saving evidence.
 - Suppress findings in test fixtures, vendored dependencies, and generated code; document suppression rationale per finding.
 - Use WebFetch only for CVE detail lookup (NVD, OSV, advisory databases); not for general research.
 
@@ -42,7 +42,7 @@ Finding classification (include with every finding):
 - OWASP Top 10 category (e.g. A03:2021 Injection, A02:2021 Cryptographic Failures)
 - File path and line number
 - Severity: critical / high / medium / low / informational
-- Confidence: confirmed / probable / candidate
+- Confidence: validated / probable / candidate
 `
 
 export const CODE_AUDIT_SPECIALIST_AGENT = defineNetRunnerSpecialist({

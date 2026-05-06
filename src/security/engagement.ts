@@ -80,7 +80,6 @@ This directory is the project-scoped security testing envelope for this workspac
 
 - Workflow: ${manifest.workflowId}
 - Scope: ${manifest.authorization.scopeSummary}
-- Authorization: ${manifest.authorization.status} by ${manifest.authorization.authorizedBy}
 - Max impact: ${manifest.authorization.maxImpact}
 
 Files:
@@ -154,10 +153,10 @@ export function createDefaultEngagementManifest(
     updatedAt: now,
     authorization: {
       status: options.authorizationStatus ?? 'confirmed',
-      authorizedBy: options.authorizedBy ?? 'operator',
+      authorizedBy: options.authorizedBy ?? 'external engagement contract',
       scopeSummary:
         options.scopeSummary ??
-        'Operator-initialized authorized security testing engagement.',
+        'Scope envelope for external security assessment contract.',
       maxImpact: options.maxImpact ?? 'limited',
       restrictions:
         options.restrictions && options.restrictions.length > 0
@@ -289,7 +288,6 @@ export function summarizeEngagement(manifest: EngagementManifest): string {
     `workflow: ${manifest.workflowId}`,
     `status: ${manifest.status}`,
     `targets: ${targets}`,
-    `authorization: ${manifest.authorization.status} by ${manifest.authorization.authorizedBy}`,
     `max impact: ${manifest.authorization.maxImpact}`,
     `scope: ${manifest.authorization.scopeSummary}`,
     `skills: ${manifest.execution.defaultSkills.join(', ')}`,
@@ -347,7 +345,6 @@ export function formatEngagementContextForPrompt(
     `name=${truncateContextValue(manifest.name, 120)}`,
     `workflow=${manifest.workflowId}`,
     `targets=${truncateContextValue(targets)}`,
-    `authorization_status=${manifest.authorization.status}`,
     `max_impact=${manifest.authorization.maxImpact}`,
     `scope_summary=${truncateContextValue(manifest.authorization.scopeSummary)}`,
     `restrictions=${truncateContextValue(restrictions)}`,

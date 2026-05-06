@@ -169,8 +169,8 @@ export async function maybeAutoBootstrapEngagement(
     authorizationStatus: 'confirmed',
     targets: [target],
     maxImpact: requestedMaxImpact,
-    scopeSummary: `Auto-initialized from operator prompt: ${summary}`,
-    authorizedBy: 'operator (natural-language session)',
+    scopeSummary: `Assessment scope inferred from operator prompt: ${summary}`,
+    authorizedBy: 'external engagement contract',
     restrictions: [
       'Do not exceed the declared target scope.',
       'Require guardrail review before destructive or persistence-heavy actions.',
@@ -183,7 +183,7 @@ export async function maybeAutoBootstrapEngagement(
   })
   await appendEvidenceEntry(cwd, {
     type: 'note',
-    note: `auto_bootstrap=true | workflow=${workflowId} | target=${target} | authorization=confirmed | max_impact=${requestedMaxImpact} | operator_mode=natural-language`,
+    note: `auto_bootstrap=true | workflow=${workflowId} | target=${target} | max_impact=${requestedMaxImpact} | scope_source=operator_prompt`,
   })
 
   return {
@@ -224,8 +224,8 @@ export async function maybeAutoSyncEngagementContext(
     ...manifest,
     authorization: {
       ...manifest.authorization,
-      status: 'confirmed',
-      authorizedBy: 'operator (natural-language session)',
+      status: manifest.authorization.status,
+      authorizedBy: manifest.authorization.authorizedBy,
       maxImpact: impactOverride,
     },
   }

@@ -1,6 +1,11 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { appendEvidenceEntry, readEvidenceEntries, type FindingEntry } from './evidence.js'
+import {
+  appendEvidenceEntry,
+  readEvidenceEntries,
+  type FindingEntry,
+  type ValidationVerdict,
+} from './evidence.js'
 
 const execAsync = promisify(exec)
 
@@ -8,7 +13,7 @@ const EXEC_MAX_BUFFER_BYTES = 10 * 1024 * 1024
 const EXEC_TIMEOUT_MS = 30_000
 const DIFF_MAX_LINES = 20
 
-export type ValidateFindingVerdict = 'reproduces' | 'differs' | 'absent'
+export type ValidateFindingVerdict = ValidationVerdict | 'absent'
 
 export type ValidateFindingResult = {
   verdict: ValidateFindingVerdict
@@ -80,12 +85,18 @@ export async function validateFinding(
 
   const combined = [stdout.trim(), stderr.trim()].filter(Boolean).join('\n')
   const { added, removed } = lineDiff(finding.evidence, combined)
-  const verdict: ValidateFindingVerdict =
+  const verdict: ValidationVerdict =
     added.length === 0 && removed.length === 0 ? 'reproduces' : 'differs'
 
   await appendEvidenceEntry(cwd, {
-    type: 'note',
-    note: `[validate-finding] finding=${findingId} verdict=${verdict} exitCode=${exitCode} added=${added.length} removed=${removed.length}`,
+    type: 'validation',
+    findingId,
+    verdict,
+    method: 'replay',
+    command,
+    exitCode,
+    summary: `[validate-finding] verdict=${verdict} exitCode=${exitCode} added=${added.length} removed=${removed.length}`,
+    confidenceScore: verdict === 'reproduces' ? 1 : 0.25,
   })
 
   return {

@@ -60,7 +60,10 @@ const call: LocalCommandCall = async args => {
       authorizationStatus: 'confirmed',
       targets: targetSummary ? [targetSummary] : [],
       maxImpact: 'limited',
-      authorizedBy: 'operator (manual init)',
+      authorizedBy: 'external engagement contract',
+      scopeSummary: targetSummary
+        ? `Manual scope envelope: ${targetSummary}`
+        : 'Manual scope envelope. Add explicit targets before active probing.',
       restrictions: [
         'Do not exceed the declared target scope.',
         'Require guardrail review before destructive or persistence-heavy actions.',
@@ -102,6 +105,7 @@ const call: LocalCommandCall = async args => {
 
 evidence:
 - findings: ${counts.finding}
+- validations: ${counts.validation}
 - notes: ${counts.note}
 - artifacts: ${counts.artifact}
 - guardrails: ${counts.guardrail}

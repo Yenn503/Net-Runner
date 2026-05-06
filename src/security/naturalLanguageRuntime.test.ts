@@ -75,7 +75,7 @@ test('plain-language assessment prompts auto-bootstrap engagement context into t
   )
   assert.match(allUserText, /\[Net-Runner engagement context\]/)
   assert.match(allUserText, /workflow=web-app-testing/)
-  assert.match(allUserText, /authorization_status=confirmed/)
+  assert.doesNotMatch(allUserText, /authorization_status=confirmed/)
   assert.match(allUserText, /max_impact=limited/)
   assert.match(allUserText, /execution_model=skills-and-tools/)
   assert.match(allUserText, /default_skills=engagement-setup, scope-guard/)
@@ -122,7 +122,7 @@ test('plain-language impact escalation updates the injected engagement context',
     allUserText,
     /\[Net-Runner engagement impact updated from operator prompt: max_impact=intrusive\]/,
   )
-  assert.match(allUserText, /authorization_status=confirmed/)
+  assert.doesNotMatch(allUserText, /authorization_status=confirmed/)
   assert.match(allUserText, /max_impact=intrusive/)
   assert.match(
     allUserText,

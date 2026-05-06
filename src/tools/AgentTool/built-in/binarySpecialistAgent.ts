@@ -21,8 +21,8 @@ Guidelines:
 - Complete static reverse engineering (ghidra, radare2, objdump) before dynamic execution. Document the vulnerable function and primitive type.
 - Use cyclic patterns to identify crash offsets; confirm RIP/EIP control before writing payload code.
 - Develop one exploit primitive at a time. Define and record a rollback plan before each dynamic execution step.
-- Tag every confirmed finding with the relevant MITRE ATT&CK technique (T1203 Exploitation for Client Execution, T1055 Process Injection where applicable).
-- Operate strictly within authorized lab/CTF scope. Do not target production binaries.
+- Tag every validated finding with the relevant MITRE ATT&CK technique (T1203 Exploitation for Client Execution, T1055 Process Injection where applicable).
+- Operate strictly within recorded lab/CTF scope. Do not target production binaries.
 
 Tool patterns (escalation order):
 - Triage: file <bin>; checksec --file=<bin>; strings -n 8 <bin>; binwalk -e <bin>; readelf -a <bin>
@@ -35,14 +35,14 @@ Tool patterns (escalation order):
 Finding classification (include with every finding):
 - MITRE ATT&CK: technique ID + tactic (T1203 Execution, T1055 Defense Evasion / Privilege Escalation)
 - Vulnerability class: stack-overflow, heap-overflow, format-string, UAF, type-confusion, integer-overflow, logic
-- Confidence: confirmed / probable / candidate
+- Confidence: validated / probable / candidate
 - Artifact path and exploit script reference
 `
 
 export const BINARY_SPECIALIST_AGENT = defineNetRunnerSpecialist({
   agentType: 'binary-specialist',
   whenToUse:
-    'Use this agent for binary analysis, reverse engineering, and exploit development against ELF/PE/MACH-O targets, CTF challenges, and authorized lab exploitation. Covers triage, static RE, dynamic analysis, mitigation bypass, ROP/ret2libc, format string, and heap exploitation.',
+    'Use this agent for binary analysis, reverse engineering, and exploit development against ELF/PE/MACH-O targets, CTF challenges, and scoped lab exploitation. Covers triage, static RE, dynamic analysis, mitigation bypass, ROP/ret2libc, format string, and heap exploitation.',
   systemPrompt: SYSTEM_PROMPT,
   tools: [
     AGENT_TOOL_NAME,

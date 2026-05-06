@@ -878,9 +878,9 @@ const CORE_CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
   },
   {
     id: 'report-export-generation',
-    label: 'Report Export Generation',
+    label: 'Human Red-Team Report Generation',
     description:
-      'Net-Runner report export capability aligned with Baseline evidence-first findings workflows.',
+      'Human-ready red-team report capability for polished Markdown/HTML reports, executive risk summaries, severity dashboards, attack-path narratives, finding cards, compliance mapping, MITRE coverage, remediation backlogs, and SARIF/STIX/MISP machine exports from the evidence ledger.',
     implementationPath: 'src/security/reporting.ts',
     capabilityPacks: ['reporting', 'evidence', 'coordination'],
     recommendedAgents: [
@@ -890,7 +890,12 @@ const CORE_CAPABILITY_DEFINITIONS: NetRunnerCapabilityDefinition[] = [
       'retest-specialist',
     ],
     executionModel: 'skills-and-tools',
-    netRunnerTools: ['Read', 'Write', 'Edit', 'TodoWrite'],
+    netRunnerTools: ['Read', 'Write', 'Edit', 'TodoWrite', 'Bash'],
+    commandExamples: [
+      'nr_export_report format=html output_path=executive-report.html',
+      'nr_export_report format=markdown output_path=technical-report.md',
+      'nr_export_report format=sarif output_path=findings.sarif',
+    ],
   },
   {
     id: 'crypto-enumeration',

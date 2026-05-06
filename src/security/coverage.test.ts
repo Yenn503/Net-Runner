@@ -7,6 +7,16 @@ import { computeCoverage } from './coverage.js'
 
 let cwd: string
 
+async function validate(findingId: string): Promise<void> {
+  await appendEvidenceEntry(cwd, {
+    type: 'validation',
+    findingId,
+    verdict: 'reproduces',
+    method: 'replay',
+    summary: 'test validation',
+  })
+}
+
 beforeEach(async () => {
   cwd = await mkdtemp(join(tmpdir(), 'nr-coverage-test-'))
 })
@@ -23,13 +33,14 @@ describe('computeCoverage', () => {
   })
 
   it('counts techniques from mitreAttackTechniques on findings', async () => {
-    await appendEvidenceEntry(cwd, {
+    const finding = await appendEvidenceEntry(cwd, {
       type: 'finding',
       title: 'SQLi',
       severity: 'high',
       evidence: 'union based sqli confirmed',
       mitreAttackTechniques: ['T1190'],
     })
+    await validate(finding.id)
 
     const result = await computeCoverage(cwd)
     const allCovered = result.coveredTechniques
@@ -37,7 +48,7 @@ describe('computeCoverage', () => {
   })
 
   it('counts techniques from mitreAttack references on findings', async () => {
-    await appendEvidenceEntry(cwd, {
+    const finding = await appendEvidenceEntry(cwd, {
       type: 'finding',
       title: 'Cred Dump',
       severity: 'critical',
@@ -46,26 +57,29 @@ describe('computeCoverage', () => {
         { techniqueId: 'T1003', techniqueName: 'OS Credential Dumping' },
       ],
     })
+    await validate(finding.id)
 
     const result = await computeCoverage(cwd)
     expect(result.coveredTechniques).toContain('T1003')
   })
 
   it('filters by target substring — only findings matching target contribute coverage', async () => {
-    await appendEvidenceEntry(cwd, {
+    const findingOne = await appendEvidenceEntry(cwd, {
       type: 'finding',
       title: 'SQLi on example.com',
       severity: 'high',
       evidence: 'sqli on example.com',
       mitreAttackTechniques: ['T1190'],
     })
-    await appendEvidenceEntry(cwd, {
+    await validate(findingOne.id)
+    const findingTwo = await appendEvidenceEntry(cwd, {
       type: 'finding',
       title: 'Cred dump on other.com',
       severity: 'critical',
       evidence: 'credential dump on other.com',
       mitreAttack: [{ techniqueId: 'T1003', techniqueName: 'OS Credential Dumping' }],
     })
+    await validate(findingTwo.id)
 
     const resultAll = await computeCoverage(cwd)
     const resultFiltered = await computeCoverage(cwd, undefined, 'example.com')
@@ -85,13 +99,14 @@ describe('computeCoverage', () => {
 
   it('coveredTechniques and gapTechniques are capped at 15', async () => {
     const techniques = Array.from({ length: 20 }, (_, i) => `T${9000 + i}`)
-    await appendEvidenceEntry(cwd, {
+    const finding = await appendEvidenceEntry(cwd, {
       type: 'finding',
       title: 'Massive finding',
       severity: 'critical',
       evidence: 'many techniques',
       mitreAttackTechniques: techniques,
     })
+    await validate(finding.id)
 
     const result = await computeCoverage(cwd)
     expect(result.coveredTechniques.length).toBeLessThanOrEqual(15)

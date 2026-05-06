@@ -27,6 +27,12 @@ In the normal path:
 5. specialist agents are used when a task has a clear boundary
 6. evidence, notes, findings, and retrieved context are written back into the project runtime and persistent memory surfaces that support the next run
 
+Specialist handoffs are intentionally self-contained. The engagement lead passes scope, known facts, evidence refs, expected artifacts, stop conditions, and next owner. Specialists return concise status plus artifact paths rather than dumping raw content into chat. This keeps parallel orchestration useful without making the transcript the system of record.
+
+The harness avoids ownership/permission confirmation loops. It records scope and impact once, then lets code guardrails enforce that envelope. This is deliberate: real assessment authorization belongs in contracts and statements of work, not in repeated chat prompts.
+
+Finding confidence is also explicit. `nr_save_finding` records an unvalidated finding. Replay, statistical, OOB, or artifact-review validation creates a separate typed validation entry. Reports and coverage use that status instead of trusting natural-language claims.
+
 ## Where MCP fits
 
 MCP is still supported, but it is not the first answer to every problem.
@@ -57,3 +63,4 @@ Net-Runner now treats MCP as one integration layer among others, not as the defa
 
 Use `/engagement capabilities` to check workflow readiness before a run.
 Use `/engagement alignment` to inspect agent-to-capability coverage in the current build.
+Use `/report --all latest` or `nr_export_report format=html` when the engagement needs a human-ready red-team report.

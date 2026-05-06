@@ -1,4 +1,4 @@
-import { readEvidenceEntries, type FindingEntry } from './evidence.js'
+import { readEvidenceEntries, type FindingEntry, type ValidationEntry } from './evidence.js'
 import { IMPORTED_PENTEST_CAPABILITIES } from './catalog/index.js'
 import { readEngagementManifest } from './engagement.js'
 import { findWorkflow } from './workflows.js'
@@ -45,8 +45,15 @@ export async function computeCoverage(
     }
   }
 
+  const validatedFindingIds = new Set(
+    entries
+      .filter((e): e is ValidationEntry => e.type === 'validation' && e.verdict === 'reproduces')
+      .map(e => e.findingId),
+  )
+
   const findings = entries.filter((e): e is FindingEntry => {
     if (e.type !== 'finding') return false
+    if (!validatedFindingIds.has(e.id)) return false
     if (target) {
       const f = e as FindingEntry
       const haystack = [f.title, f.evidence, f.recommendation ?? ''].join(' ').toLowerCase()

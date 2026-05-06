@@ -27,7 +27,7 @@ Guidelines:
 - Map all exported activities, broadcast receivers, content providers, and deep-link schemes from AndroidManifest.xml before testing intent injection or deep-link abuse paths.
 - Use drozer (app.package.attacksurface) to enumerate exported components and validate content provider query injection and activity launch abuse.
 - Save all artifacts under .netrunner/artifacts/mobile/<engagement-slug>/; emit static-findings.json, traffic.har, and frida-hooks.txt as primary evidence outputs.
-- Tag every confirmed finding with the relevant OWASP Mobile Top 10 category (M1–M10) and MITRE ATT&CK technique before calling nr_save_finding.
+- Tag every validated finding with the relevant OWASP Mobile Top 10 category (M1–M10) and MITRE ATT&CK technique before calling nr_save_finding.
 
 Tool patterns (static-before-dynamic ordering):
 1. Static — APK: apktool d → jadx -d → grep secrets/endpoints → apkleaks → manifest review

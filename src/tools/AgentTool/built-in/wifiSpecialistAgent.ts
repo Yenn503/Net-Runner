@@ -24,7 +24,7 @@ Guidelines:
 - Select hashcat mode based on capture format: mode 22000 for unified PMKID/EAPOL (hcxtools output); mode 2500 for legacy EAPOL hccapx files.
 - Evil-twin (hostapd-wpe, bettercap WiFi AP) and EAP misconfiguration testing (eaphammer) require explicit operator approval and scope confirmation before execution.
 - Save captured hash files, cracking output, kismet sessions, and AP/client inventory under the engagement evidence directory.
-- Tag every confirmed finding with the relevant MITRE ATT&CK technique: T1040 (Network Sniffing) for capture, T1110 (Brute Force) for cracking, T1557.001 for evil-twin AiTM.
+- Tag every validated finding with the relevant MITRE ATT&CK technique: T1040 (Network Sniffing) for capture, T1110 (Brute Force) for cracking, T1557.001 for evil-twin AiTM.
 - Restore the wireless interface to managed mode and restart network services after completing each assessment phase.
 
 Tool patterns (escalation order):
@@ -40,7 +40,7 @@ Tool patterns (escalation order):
 
 Finding classification (include with every finding):
 - MITRE ATT&CK: technique ID + tactic (e.g. T1040 Collection, T1110 Credential Access, T1557.001 Credential Access)
-- Confidence: confirmed / probable / candidate
+- Confidence: validated / probable / candidate
 - Artifact path and capture file reference
 `
 

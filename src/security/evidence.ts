@@ -42,6 +42,18 @@ export type ComplianceReference = {
   controls: string[]
 }
 
+export type ValidationVerdict =
+  | 'reproduces'
+  | 'differs'
+  | 'inconclusive'
+  | 'not_reproducible'
+
+export type ValidationMethod =
+  | 'replay'
+  | 'statistical'
+  | 'oob'
+  | 'artifact-review'
+
 type EvidenceEntryBase = {
   id: string
   createdAt: string
@@ -74,6 +86,21 @@ export type FindingEntry = EvidenceEntryBase & {
   replayCommand?: string
   replayRequest?: string
   mitreAttackTechniques?: string[]
+  evidenceSource?: 'command-output' | 'http-request-response' | 'artifact' | 'statistical' | 'oob' | 'manual'
+  affectedAssets?: string[]
+  confidence?: 'low' | 'medium' | 'high'
+}
+
+export type ValidationEntry = EvidenceEntryBase & {
+  type: 'validation'
+  findingId: string
+  verdict: ValidationVerdict
+  method: ValidationMethod
+  summary: string
+  command?: string
+  exitCode?: number | string
+  artifactPath?: string
+  confidenceScore?: number
 }
 
 export type ArtifactEntry = EvidenceEntryBase & {
@@ -115,6 +142,7 @@ export type EvidenceEntry =
   | SessionBoundaryEntry
   | NoteEntry
   | FindingEntry
+  | ValidationEntry
   | ArtifactEntry
   | GuardrailEntry
   | ExecutionStepEntry
@@ -124,6 +152,7 @@ export type EvidenceEntryInput =
   | Omit<SessionBoundaryEntry, 'id' | 'createdAt'>
   | Omit<NoteEntry, 'id' | 'createdAt'>
   | Omit<FindingEntry, 'id' | 'createdAt'>
+  | Omit<ValidationEntry, 'id' | 'createdAt'>
   | Omit<ArtifactEntry, 'id' | 'createdAt'>
   | Omit<GuardrailEntry, 'id' | 'createdAt'>
   | Omit<ExecutionStepEntry, 'id' | 'createdAt'>
@@ -209,6 +238,7 @@ export function countEvidenceEntriesByType(
       session_end: 0,
       note: 0,
       finding: 0,
+      validation: 0,
       artifact: 0,
       guardrail: 0,
       execution_step: 0,

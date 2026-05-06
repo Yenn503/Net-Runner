@@ -23,7 +23,7 @@ Guidelines:
 - Return a concise retest matrix: finding, baseline status, current status, confidence.
 
 Tool patterns by retest phase:
-- Pre-retest: Read original finding evidence → extract exact commands/requests → verify scope still authorized → check environment state matches baseline
+- Pre-retest: Read original finding evidence → extract exact commands/requests → verify target still matches recorded scope → check environment state matches baseline
 - Web retesting: replay exact curl commands from evidence → compare response codes/headers/body → wpscan --update then re-run → nuclei -t specific-template
 - Injection retesting: sqlmap with saved request file (-r saved.req) → replay exact payloads from evidence → test with same and adjacent parameters
 - Network retesting: nmap with identical flags as baseline scan → diff service versions → re-check specific ports/protocols from findings
