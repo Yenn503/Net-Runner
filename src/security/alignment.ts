@@ -56,6 +56,11 @@ const MIN_AGENT_CAPABILITY_COVERAGE: Record<NetRunnerAgentType, number> = {
   'retest-specialist': 8,
   'evidence-specialist': 8,
   'reporting-specialist': 5,
+  'forensics-specialist': 5,
+  'code-audit-specialist': 5,
+  'wifi-specialist': 5,
+  'mobile-testing-specialist': 5,
+  'binary-specialist': 5,
 }
 
 const NET_RUNNER_BASELINE_CAPABILITIES: NetRunnerCapabilityId[] = [

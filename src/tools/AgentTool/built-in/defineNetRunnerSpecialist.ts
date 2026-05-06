@@ -49,6 +49,26 @@ export interface NetRunnerSpecialistOptions {
 }
 
 /**
+ * Compressed-output discipline appended to every specialist prompt by default.
+ * Reduces token spend on inter-agent handoffs, plans, and reasoning while
+ * keeping technical fidelity. Findings, evidence narratives, and operator-
+ * visible messages must stay full English.
+ *
+ * Excluded by SKIP_OUTPUT_STYLE_AGENTS: engagement-lead (operator-facing) and
+ * reporting-specialist (customer-facing reports).
+ */
+const COMPRESSED_OUTPUT_STYLE = `Output style:
+- Internal reasoning, tool plans, payload notes, inter-agent handoffs: compressed technical English. Drop articles (a/an/the), filler (just/really/basically/simply), pleasantries, and hedging. Fragments OK. Use arrows for causality (X -> Y). Code, payloads, command flags, file paths, errors, and tool output stay verbatim.
+- Findings descriptions, evidence narratives, and operator-visible status: full English. Outputs that reach humans must be readable.
+- Pattern: [thing] [action] [reason]. [next step].
+`
+
+const SKIP_OUTPUT_STYLE_AGENTS: ReadonlySet<NetRunnerAgentType> = new Set([
+  'engagement-lead',
+  'reporting-specialist',
+])
+
+/**
  * Build a Net-Runner specialist BuiltInAgentDefinition from the minimum unique
  * data: agent type, when-to-use blurb, and system prompt.
  *
@@ -67,9 +87,12 @@ export function defineNetRunnerSpecialist(
   }
   const tools = [...(options.tools ?? NET_RUNNER_SPECIALIST_TOOLSET)]
   const rolePolicy = getNetRunnerAgentRolePolicy(options.agentType)
+  const stylePreamble = SKIP_OUTPUT_STYLE_AGENTS.has(options.agentType)
+    ? ''
+    : `\n\n${COMPRESSED_OUTPUT_STYLE}`
   const prompt = `${options.systemPrompt}
 
-${formatNetRunnerAgentRolePolicy(rolePolicy)}`
+${formatNetRunnerAgentRolePolicy(rolePolicy)}${stylePreamble}`
   return {
     agentType: definition.agentType,
     whenToUse: options.whenToUse,

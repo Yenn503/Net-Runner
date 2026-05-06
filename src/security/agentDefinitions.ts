@@ -80,6 +80,33 @@ export const NET_RUNNER_AGENT_DEFINITIONS: NetRunnerAgentDefinition[] = [
     description:
       'Reporting specialist for final finding narratives, severity framing, and export-ready assessment reports.',
   },
+  {
+    agentType: 'forensics-specialist',
+    workflowId: 'dfir-incident-response',
+    description:
+      'Digital forensics & IR triage specialist for memory, disk, log, and artifact analysis.',
+  },
+  {
+    agentType: 'code-audit-specialist',
+    workflowId: 'code-audit-review',
+    description:
+      'Static analysis specialist for source code, secrets, dependencies, and IaC misconfigurations.',
+  },
+  {
+    agentType: 'wifi-specialist',
+    workflowId: 'wifi-testing',
+    description: '802.11 wireless assessment specialist for AP discovery, WPA/WPA2 attacks, rogue AP, PMKID, deauth, and evil-twin workflows.',
+  },
+  {
+    agentType: 'mobile-testing-specialist',
+    workflowId: 'mobile-app-testing',
+    description: 'Android/iOS mobile application security specialist for static analysis, dynamic instrumentation, traffic interception, and device-level testing.',
+  },
+  {
+    agentType: 'binary-specialist',
+    workflowId: 'ctf-mode',
+    description: 'Binary analysis, reverse engineering, and exploit development specialist for ELF/PE/MACH-O targets, CTF challenges, and lab exploitation.',
+  },
 ] as const
 
 export function getNetRunnerAgentDefinition(

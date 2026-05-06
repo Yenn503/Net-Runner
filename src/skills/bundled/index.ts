@@ -27,6 +27,12 @@ import { registerWafDetectionSkill } from './wafDetection.js'
 import { registerMctsPlanningSkill } from './mctsPlanning.js'
 import { registerOobVerificationSkill } from './oobVerification.js'
 import { registerBundledSkill } from '../bundledSkills.js'
+import { registerDfirTriageSkill } from './dfirTriage.js'
+import { registerCodeAuditReviewSkill } from './codeAuditReview.js'
+import { registerThreatIntelEnrichmentSkill } from './threatIntelEnrichment.js'
+import { registerWifiAssessmentSkill } from './wifiAssessment.js'
+import { registerMobileAppTestingSkill } from './mobileAppTesting.js'
+import { registerBinaryExploitationSkill } from './binaryExploitation.js'
 
 function registerDigitalFootprintAssessmentSkill(): void {
   const definition = getNetRunnerSkillDefinition('digital-footprint-assessment')
@@ -51,7 +57,7 @@ Target identity input:
 ${args || 'No explicit identity input supplied. Ask for the authorized username, profile URL, or handle set before running.'}
 
 Execution:
-1. Confirm the username/profile is in authorized scope.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block.
 2. Check tool readiness with \`command -v maigret && maigret --version\`.
 3. If missing, stop and report exact install path: \`python3 -m pip install --user maigret\`. Do not invent findings.
 4. Create an evidence directory under \`.netrunner/artifacts/digital-footprint/<target-slug>\`.
@@ -99,7 +105,7 @@ Target input:
 ${args || 'No explicit company URL, target domain, or staff identity set supplied. Ask for the authorized target first.'}
 
 Execution:
-1. Confirm social-profile and employee-correlation work is explicitly authorized in scope.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block.
 2. Create an evidence directory under \`.netrunner/artifacts/identity-correlation/<target-slug>\`.
 3. Check tool readiness:
    - \`command -v python3\`
@@ -156,7 +162,7 @@ Input:
 ${args || 'No explicit operation, domain, or C2 stack supplied. Ask for the authorized adversary-emulation target, approved domains, and selected stack first.'}
 
 Execution:
-1. Confirm the engagement explicitly authorizes adversary emulation, redirectors, payload generation, and callback infrastructure.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block.
 2. Create an evidence directory under \`.netrunner/artifacts/c2-infrastructure/<operation-slug>\`.
 3. Check readiness for supported stacks:
    - \`command -v sliver-client\`
@@ -266,10 +272,10 @@ Input:
 ${args || 'No explicit URL or finding supplied. Ask for the authorized target URL and the candidate finding to validate.'}
 
 Execution:
-1. Confirm the target URL is in scope and active browser interaction is authorized.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block.
 2. Create an evidence directory under \`.netrunner/artifacts/headless-browser/<target-slug>\`.
 3. Detect a usable browser engine, in this order:
-   - Camofox stealth-browser REST API at \`\${CAMOFOX_URL:-http://localhost:9377}\` (Firefox patched at C++ level for anti-bot bypass).
+   - Camofox stealth-browser REST API at \`\${CAMOFOX_URL:-http://localhost:9377}\` (Firefox patched at C++ level for anti-bot bypass). Upstream: https://github.com/jo-inc/camofox-browser
      - Health: \`curl -s "$CAMOFOX_URL/health"\`
      - Open tab: \`curl -s -X POST "$CAMOFOX_URL/tabs" -H 'content-type: application/json' -d '{"userId":"netrunner","sessionKey":"<engagement>","url":"<target-url>"}'\`
      - Snapshot: \`curl -s "$CAMOFOX_URL/tabs/<tabId>/snapshot?userId=netrunner"\`
@@ -323,7 +329,7 @@ Input:
 ${args || 'No explicit program scope supplied. Ask for the authorized program scope, root domain(s), and any out-of-scope rules first.'}
 
 Execution:
-1. Confirm program scope, allowed targets, and disallowed actions before any active testing.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block.
 2. Create an evidence directory under \`.netrunner/artifacts/bug-bounty/<program-slug>\`.
 3. Recon expansion (fast, low-noise):
    - \`subfinder -d <root> -all -silent | tee <dir>/subdomains.txt\`
@@ -383,7 +389,7 @@ Input:
 ${args || 'No explicit target URL or host list supplied. Ask for the authorized target(s) before probing.'}
 
 Execution:
-1. Confirm the target is in scope and active probing is authorized. Smuggling probes can affect downstream caches and load balancers; refuse if scope is read-only or unclear.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block. Smuggling probes can affect downstream caches and load balancers; halt if impact level is read-only.
 2. Create an evidence directory under \`.netrunner/artifacts/smuggling/<target-slug>\`.
 3. Verify tool readiness:
    - \`command -v smuggler\`
@@ -442,7 +448,7 @@ Input:
 ${args || 'No explicit target supplied. Ask for the authorized root domain or known serverless deployment URL first.'}
 
 Execution:
-1. Confirm scope and that probing edge / serverless surface is authorized.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block.
 2. Create an evidence directory under \`.netrunner/artifacts/serverless-edge/<target-slug>\`.
 3. Identify edge / serverless providers via passive signals first:
    - DNS CNAME / A record patterns: \`*.vercel.app\`, \`*.netlify.app\`, \`*.workers.dev\`, \`*.amazonaws.com\`, \`*.azurewebsites.net\`
@@ -507,7 +513,7 @@ Target input:
 ${args || 'No explicit target supplied. Ask for the authorized WordPress URL before running.'}
 
 Execution:
-1. Confirm the target URL is in scope and WordPress-specific testing is authorized.
+1. Engagement manifest pre-validates scope; halt only if \`nr_scope_check\` returns review/block.
 2. Create an evidence directory under \`.netrunner/artifacts/wordpress/<target-slug>\`.
 3. Verify tool readiness with \`command -v wpscan && wpscan --version\`, \`command -v curl\`, and \`command -v nuclei\`.
 4. Fingerprint first with low-impact HTTP checks:
@@ -618,6 +624,12 @@ export function initBundledSkills(): void {
   registerMctsPlanningSkill()
   registerOobVerificationSkill()
   registerCavemanHarnessSkill()
+  registerDfirTriageSkill()
+  registerCodeAuditReviewSkill()
+  registerThreatIntelEnrichmentSkill()
+  registerWifiAssessmentSkill()
+  registerMobileAppTestingSkill()
+  registerBinaryExploitationSkill()
   registerUpdateConfigSkill()
   registerKeybindingsSkill()
   registerVerifySkill()

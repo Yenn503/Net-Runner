@@ -1,6 +1,6 @@
 # MCP Integration
 
-Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat. It also acts as an MCP **client**, connecting to external MCP servers for additional capabilities.
+Net-Runner exposes a **FastMCP server** with 14 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat. It also acts as an MCP **client**, connecting to external MCP servers for additional capabilities.
 
 For the open-source repository, the default supported path is local-first:
 
@@ -26,7 +26,7 @@ It does **not** document hosted assistant-session flows or the unsupported `net-
 │                    External LLM                         │
 │  (Copilot · Claude Code · Cursor · Windsurf · …)       │
 │                                                         │
-│  Speaks MCP ──► calls 8 nr_* tools                     │
+│  Speaks MCP ──► calls 14 nr_* tools                     │
 │  Uses own file tools for reading code / state / docs   │
 └────────────────────────┬────────────────────────────────┘
                          │ stdio or httpStream
@@ -34,8 +34,8 @@ It does **not** document hosted assistant-session flows or the unsupported `net-
 ┌─────────────────────────────────────────────────────────┐
 │              Net-Runner FastMCP Server                   │
 │                                                         │
-│  8 tools (nr_* prefix):                                │
-│  • nr_exec          — shell execution (153 tools)      │
+│  14 tools (nr_* prefix):                               │
+│  • nr_exec          — shell execution (215+ tools)      │
 │  • nr_engagement_*  — init, status                     │
 │  • nr_scope_check   — guardrail enforcement            │
 │  • nr_save_*        — finding + note evidence capture  │
@@ -58,14 +58,14 @@ It does **not** document hosted assistant-session flows or the unsupported `net-
 
 Two directions:
 
-- **Inbound** — an external LLM connects TO Net-Runner and uses its 8 tools
+- **Inbound** — an external LLM connects TO Net-Runner and uses its 14 tools
 - **Outbound** — Net-Runner connects TO external MCP servers for additional capabilities
 
 ---
 
 ## Direction 1: External LLM → Net-Runner (Inbound)
 
-The external LLM treats Net-Runner as an MCP tool server with 8 `nr_*` tools. `nr_exec` is the workhorse — all 153 pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
+The external LLM treats Net-Runner as an MCP tool server with 14 `nr_*` tools. `nr_exec` is the workhorse — all 228 pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
 
 `nr_exec` now also supports **composite execution inside the existing tool boundary**. Instead of adding more MCP tools, the client can pass a batch of commands through `nr_exec` and receive a summary-first per-command result. Oversized output is offloaded to `.netrunner/artifacts/`, logged into the evidence ledger, and referenced back in the tool result.
 
@@ -79,13 +79,13 @@ bun install
 
 No build step needed — the FastMCP server runs directly from TypeScript source via `bun`.
 
-If you are only exposing Net-Runner as an inbound MCP server, you do not need a separate Net-Runner-hosted login flow just to make the 8-tool harness available. Provider credentials matter when Net-Runner itself is acting as the LLM runtime; the inbound MCP server can be launched directly from source for local red-team usage.
+If you are only exposing Net-Runner as an inbound MCP server, you do not need a separate Net-Runner-hosted login flow just to make the 14-tool harness available. Provider credentials matter when Net-Runner itself is acting as the LLM runtime; the inbound MCP server can be launched directly from source for local red-team usage.
 
-### Tool surface (8 tools)
+### Tool surface (14 tools)
 
 | Tool | Purpose |
 |---|---|
-| `nr_exec` | **Shell execution — the workhorse.** All 153+ pentest tools and harness commands such as Maigret run here. |
+| `nr_exec` | **Shell execution — the workhorse.** All 215+ pentest tools and harness commands such as Maigret run here. |
 | `nr_engagement_init` | Initialize `.netrunner/` engagement with workflow, targets, scope |
 | `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
 | `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
@@ -93,6 +93,12 @@ If you are only exposing Net-Runner as an inbound MCP server, you do not need a 
 | `nr_save_note` | Append note to evidence ledger |
 | `nr_list_evidence` | Query evidence entries with optional type filter |
 | `nr_discover` | Progressive disclosure — list agents, skills, workflows, or capabilities on demand |
+| `nr_tool_help` | Cached `--help` text per catalog tool to reduce flag hallucination |
+| `nr_kg_query` | Lookup prior evidence about a target in the engagement Knowledge Graph |
+| `nr_verify_evidence` | Verify SHA-256 hash chain integrity of the evidence ledger |
+| `nr_validate_finding` | Replay-based finding validation with diff and verdict |
+| `nr_coverage_status` | MITRE ATT&CK coverage status for the engagement |
+| `nr_export_report` | Export findings to SARIF 2.1.0, STIX 2.1, or MISP |
 
 ### `nr_exec` execution modes
 
@@ -353,9 +359,9 @@ You can run Net-Runner in CLI mode (with its own LLM) **and** expose it as an MC
 
 ## What the External LLM Gets
 
-Through 8 MCP tools + its own built-in file/edit tools:
+Through 14 MCP tools + its own built-in file/edit tools:
 
-- **Shell execution** (`nr_exec`) — run any of 153 pentest tools (nmap, sqlmap, nuclei, burp, etc.)
+- **Shell execution** (`nr_exec`) — run any of 215+ pentest tools (nmap, sqlmap, nuclei, burp, etc.)
 - **Engagement lifecycle** (`nr_engagement_init`, `nr_engagement_status`) — initialize and track assessments
 - **Guardrails** (`nr_scope_check`) — verify actions are in scope before execution
 - **Evidence** (`nr_save_finding`, `nr_save_note`, `nr_list_evidence`) — capture findings and notes

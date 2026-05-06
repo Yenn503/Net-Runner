@@ -184,6 +184,12 @@ async function writeIfMissing(path: string, content: string): Promise<void> {
 export async function initializeNetRunnerProject(
   options: InitializeEngagementOptions,
 ): Promise<EngagementManifest> {
+  const existing = await readEngagementManifest(options.cwd)
+  if (existing?.status === 'active') {
+    throw new Error(
+      'Engagement already active at .netrunner/engagement.json. Pause or close it before re-init.',
+    )
+  }
   const manifest = createDefaultEngagementManifest(options)
   const projectDir = getNetRunnerProjectDir(options.cwd)
 

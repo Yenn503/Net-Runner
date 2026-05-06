@@ -14,9 +14,9 @@ red team automation, AI security assessment, LLM security testing
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/License-Educational%20Use-red?style=for-the-badge)](#license)
 
-**12 Specialist Agents · 153+ Red-Team Tools · 18 Capability Packs · 26 Skills · 9 Workflows · 10 APT Simulations**
-
 *Red-team runtime with workflow control, evidence, memory, and specialist agents.*
+
+<sub>17 specialist agents · 228 cataloged tools · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
 
 **English** · [Español](i18n/README.es.md) · [Français](i18n/README.fr.md) · [中文](i18n/README.zh.md) · [العربية](i18n/README.ar.md) · [Português](i18n/README.pt.md) · [Русский](i18n/README.ru.md) · [日本語](i18n/README.ja.md) · [한국어](i18n/README.ko.md) · [हिन्दी](i18n/README.hi.md) · [Deutsch](i18n/README.de.md)
 
@@ -24,106 +24,15 @@ red team automation, AI security assessment, LLM security testing
 
 </div>
 
-Net-Runner is a final-year university project and research prototype of an AI security testing framework for autonomous penetration testing. An LLM runs the full security assessment, picking workflows, launching specialist agents, running 153+ red-team tools, including Maigret-backed digital-footprint OSINT, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
+Net-Runner is a final-year university project and research prototype of an AI security testing framework for autonomous penetration testing. An LLM runs the full security assessment, picking workflows, launching specialist agents, running 228 red-team tools, including Maigret-backed digital-footprint OSINT, enforcing guardrails, and logging evidence. Built on the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime.
 
-The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic instead of exposing 153 tools as individual MCP definitions (which would consume 50K+ tokens of context), Net-Runner presents a minimal MCP surface (8 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM GitHub Copilot, Claude, or Cursor can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
+The architecture follows the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern from Anthropic instead of exposing 228 tools as individual MCP definitions (which would consume 50K+ tokens of context), Net-Runner presents a minimal MCP surface (14 core tools) and delegates all tool execution to code. Skills, agents, and workflows are discovered through the filesystem on demand. Any MCP-compatible LLM GitHub Copilot, Claude, or Cursor can connect and drive the local harness without configuring API keys in Net-Runner itself. The result is a **skills-first, code-execution-first** harness where MCP calls are essential-only and the real work happens through shell execution, specialist agents, reusable skill bundles, and project-scoped evidence.
 
 The current opensource baseline is local-first and type-safe: the repository now typechecks cleanly, the CLI supports direct provider credentials, and the FastMCP server can be run directly from source for red-team-style tool driving, evidence capture, and workflow control.
 
 ---
 
-## What It Does
-
-Give Net-Runner a target in plain language. It sets up a `.netrunner/` project folder, picks the right workflow, and runs the full assessment, capturing evidence as it goes.
-
-- **Persistent memory** — the LLM and each specialist agent remember what they found in previous sessions, so multi-day assessments stay coherent
-- **Evidence-first workflow** — every finding, artefact, and report is saved to the `.netrunner/` project folder automatically
-- **Guardrail enforcement** — every action is checked against your declared scope and impact level before it runs
-- **Specialist delegation** — 12 domain agents for recon, web, API, network, AD, exploit, evidence, and reporting, each loaded with role contracts, completion criteria, evidence requirements, and scoped tool access
-- **Auto-engagement setup** — type a target and goal in plain English; Net-Runner detects the intent and starts the assessment
-
----
-
-## Specialist Agents
-
-Net-Runner deploys 12 domain-focused agents when specific expertise is needed. Each agent has its own memory and tool patterns.
-
-| Agent | Role | Coverage |
-|-------|------|----------|
-| **Engagement Lead** | Coordinates scoped testing engagements and workflow execution | Workflow orchestration, scope validation, task routing |
-| **Recon Specialist** | Discovery and attack surface mapping | External recon, asset discovery, Maigret digital footprinting, cloud and identity enumeration |
-| **Web Testing Specialist** | HTTP and web application security validation | Route discovery, content fuzzing, web vuln validation |
-| **API Testing Specialist** | API endpoint discovery and security testing | API schemas, auth/state testing, GraphQL and JWT checks |
-| **Network Testing Specialist** | Network and service assessment | Service enumeration, protocol testing, packet capture |
-| **Exploit Specialist** | Controlled proof-of-impact validation | Exploit research, payload generation, runtime validation |
-| **Privilege Escalation Specialist** | Post-access privilege boundary testing | Local privilege checks, escalation-path validation, post-access review |
-| **Lateral Movement Specialist** | Network pivot and credential path validation | Trust-path analysis, credential reuse, multi-host movement |
-| **AD Specialist** | Active Directory and Kerberos security testing | Kerberos, LDAP, BloodHound, AD CS, Windows domain attack paths |
-| **Retest Specialist** | Finding validation and false positive reduction | Reproduction testing, fix validation, regression checks |
-| **Evidence Specialist** | Artifact collection and finding documentation | Evidence capture, artifact handling, proof quality |
-| **Reporting Specialist** | Security assessment report generation | Finding narratives, severity scoring, report structure |
-
----
-
-## APT Simulation
-
-Net-Runner includes a built-in APT threat simulation engine with **40 profiled threat groups**, **10 attack chains**, and **13 industry threat profiles** — all mapped to MITRE ATT&CK techniques.
-
-Pick an industry or a threat actor and Net-Runner loads the matching attack chain, assigns specialist agents to each phase, and walks through the intrusion step by step.
-
-| Simulation | Threat Actor | Industry |
-|---|---|---|
-| Government Cloud Espionage | APT29 (Cozy Bear) | Government |
-| Credential Harvesting & AD Exploitation | APT28 (Fancy Bear) | Government |
-| Critical Infrastructure Pre-Positioning | Volt Typhoon | Critical Infrastructure |
-| ICS/OT Destructive Operations | Sandworm (APT44) | Energy / OT |
-| SWIFT Financial Heist | APT38 (Bluenoroff) | Financial Services |
-| Identity-Centric Cloud Compromise | Scattered Spider | Financial / Tech |
-| Telecom Infrastructure Espionage | Salt Typhoon | Telecommunications |
-| IT Supply Chain Exploitation | Silk Typhoon (HAFNIUM) | Technology |
-| Healthcare Ransomware & Espionage | Lazarus Group | Healthcare |
-| Manufacturing IP Theft | APT41 (Wicked Panda) | Manufacturing |
-
-```text
-/apt-simulation APT29 against government
-/apt-simulation financial services
-/apt-simulation Volt Typhoon critical infrastructure
-```
-
-Full reference: [APT Simulation Docs](docs/apt-simulation/README.md) · [Industry Threat Map](docs/apt-simulation/industry-threat-map.md) · [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
-
----
-
-## Intelligence Engine
-
-Six modules that give the LLM runtime adaptive decision-making, formal verification, and automated bypass capabilities during live engagements.
-
-| Module | Skill | Purpose |
-|--------|-------|---------|
-| **Feedback Loop Engine** | `/feedback-loop` | Classifies failures (WAF, rate-limit, auth, timeout), mutates payloads, and produces adaptive retry plans with strategy tracking |
-| **Statistical Verifier** | `/statistical-verification` | Confirms blind injection with Welch's t-test — baseline vs payload response comparison with p-value and confidence intervals |
-| **WAF Detection & Bypass** | `/waf-detection` | Fingerprints 10+ WAFs from HTTP responses and maps each to ranked bypass techniques |
-| **MCTS Attack Planner** | `/mcts-planning` | Monte Carlo Tree Search over the attack state — ranks next actions and assigns specialist agents |
-| **Knowledge Graph** | — | In-memory entity/relation graph tracking hosts, services, vulns, and credentials with BFS path-finding |
-| **OOB Verification** | `/oob-verification` | Generates callback payloads for blind vulns (XXE, SSRF, RCE, SQLi, Log4Shell) and tracks confirmation status |
-| **Digital Footprint Assessment** | `/digital-footprint-assessment` | Runs scoped Maigret username/profile OSINT with JSON/HTML/TXT artifacts and identity correlation |
-| **Caveman Harness** | `/caveman-harness` | Compresses agent handoffs and reports while preserving exact commands, evidence refs, paths, URLs, code, and warnings |
-
-These modules operate at two levels:
-
-- **Skill layer** — the engagement lead invokes skills like `/feedback-loop` or `/waf-detection`, but the skill outputs are now **code-backed**. They execute the same TypeScript modules used by the runtime middleware and format live results from engagement state, evidence, and explicit operator input
-- **Runtime middleware** — tool failures, WAF detection, and evidence ingestion happen **automatically** during execution. The middleware classifies failures, fingerprints WAFs on first HTTP contact, syncs findings into the knowledge graph, plans next actions, and persists intelligence state to `.netrunner/intelligence-state.json` for session continuity
-
-Full reference: [Intelligence Engine Docs](docs/intelligence-engine/README.md)
-
----
-
-## Getting Started
-
-<details>
-<summary><strong>Open setup and first run</strong></summary>
-
-### 1. Install and build
+## Quick Start
 
 ```bash
 bun install
@@ -131,330 +40,136 @@ bun run typecheck
 bun run build
 ```
 
-### 2. Configure model provider
-
-For the open-source build, the primary supported paths are direct provider credentials and local runtimes.
-`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, Ollama, and the local FastMCP server should work without any hosted Net-Runner web dependency.
-CLI OAuth login is also present for first-party Anthropic account flows through the existing `auth login` and `/login` surfaces. Hosted connector discovery, remote-session sync, and other Claude-Code-derived first-party service flows remain optional and may require infrastructure that is not bundled with this repository.
-
-`ANTHROPIC_API_KEY`
+Set one provider credential and launch:
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
+export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
 node dist/cli.mjs
 ```
 
-If you are using Net-Runner only as an inbound MCP server, you can run `src/mcp/server.ts` without configuring a separate Net-Runner login flow. Provider credentials matter when the CLI itself is acting as the LLM runtime.
-
-`OPENAI_API_KEY`
+Ollama:
 
 ```bash
-export OPENAI_API_KEY="sk-..."
-export OPENAI_MODEL="gpt-4o"
-node dist/cli.mjs
-```
-
-`GEMINI_API_KEY`
-
-```bash
-export GEMINI_API_KEY="AIza..."
-export GEMINI_MODEL="gemini-2.5-pro"
-node dist/cli.mjs
-```
-
-Ollama
-
-```bash
-ollama serve
-ollama pull llama3.1:8b
+ollama serve && ollama pull llama3.1:8b
 export OPENAI_BASE_URL="http://localhost:11434/v1"
 export OPENAI_MODEL="llama3.1:8b"
 node dist/cli.mjs
 ```
 
-Any OpenAI-compatible API
-
-```bash
-export OPENAI_API_KEY="your-key"
-export OPENAI_BASE_URL="https://your-provider.com/v1"
-export OPENAI_MODEL="your-model-name"
-node dist/cli.mjs
-```
-
-### 3. Run an assessment
-
-```text
-Assess https://target.example. Start with recon, map the attack surface, validate findings, and capture evidence.
-```
-
-</details>
-
----
-
-## OSS Runtime Status
-
-The strongest supported path in this repository is **local-first**:
-
-- **CLI runtime** — local sessions with direct provider credentials or local runtimes such as Ollama
-- **Inbound MCP** — the FastMCP server in `src/mcp/server.ts`
-- **Outbound MCP** — external MCP servers configured through `.mcp.json` or `net-runner mcp ...`
-- **Security harness core** — workflows, specialist agents, evidence capture, intelligence modules, and APT simulation
-- **Agent teams / swarm** — available as a pilot for external builds through `agentTeamsEnabled`, `NETRUNNER_EXPERIMENTAL_AGENT_TEAMS=1`, or `--agent-teams`
-
-Not bundled as stable OSS runtime paths in this snapshot:
-
-- **Assistant remote sessions** — hosted assistant session flows are not supported in the OSS build
-- **Direct-connect session server** — `net-runner server` is present as a CLI surface but exits unsupported in this repository
-- **SSH remote sessions** — the CLI surface exists, but the shipped OSS snapshot does not include the remote transport implementation
-- **Coordinator worker mode** — coordinator-mode code paths still exist, but the worker-agent path should be treated as experimental/incomplete in OSS
-
-If you already have a compatible `cc://` endpoint from another environment, the client-side attach plumbing exists. This repository does **not** ship that session server itself.
-
----
-
-## Execution Flow
-
-1. Net-Runner detects assessment intent and target type from your prompt
-2. Creates a `.netrunner/` project folder with engagement config and run state
-3. Loads the matching workflow, scope rules, always-on digital footprint and caveman harness skills, role contracts, and any memory from previous sessions
-4. Runs tools autonomously — shell commands, Maigret OSINT, file operations, web requests, and specialist agents
-5. Checks every action against your scope and impact rules before executing
-6. Saves evidence, findings, artefacts, and reports throughout the assessment
-
----
-
-## Workflows
-
-- `web-app-testing` — route mapping, auth testing, and vulnerability validation
-- `api-testing` — endpoint discovery, schema checks, auth/state testing
-- `mobile-app-testing` — Android app analysis with `adb`, `apktool`, `jadx`, `frida`, `objection`, `MobSF`, `drozer`, `apkleaks`
-- `lab-target-testing` — host/service enumeration, privilege escalation, lateral movement
-- `adversary-emulation` — guarded C2 infrastructure, post-compromise paths, and explicitly authorised operator workflows
-- `bug-bounty-recon-validation` — recon, parameter mining, headless validation, OOB confirmation, and evidence-tagged bug-bounty triage
-- `ctf-mode` — challenge-focused runs with rapid iteration
-- `ad-testing` — Active Directory, Kerberos, trust paths, AD CS
-- `wifi-testing` — wireless assessments, handshake capture, rogue AP testing, 802.11 analysis
-
-The recon stack includes cloud and identity enumeration tools: `Maigret`, `cloud_enum`, `GHunt`, `holehe`, `haklistgen`.
-
----
-
-## Tool Catalog
-
-**153+ red-team tools** across 12 categories plus core harness capabilities — inspect live readiness with `/engagement capabilities` or `nr_discover`.
-
-| Category | Count | Examples |
-|----------|-------|----------|
-| Recon | 22 | nmap, masscan, amass, ffuf |
-| Web | 28 | sqlmap, nuclei, wpscan, burp |
-| AD | 12 | bloodhound, netexec, mimikatz |
-| Cloud | 13 | cloud_enum, pacu, GHunt |
-| Mobile | 8 | frida, objection, mobsf, drozer |
-| Network | 13 | wireshark, tcpdump,Responder |
-| Exploitation | 11 | metasploit, covenant |
-| WiFi | 13 | aircrack-ng, wifite, bettercap |
-| Binary/RE | 22 | ghidra, radare2, binwalk |
-| Evidence | 5 | volatility, autopsy |
-| API | 3 | postman, openapi-generator |
-| Coordination | 2 | — |
-
----
-
-## Runtime Layout
-
-```text
-.netrunner/
-├── engagement.json
-├── intelligence-state.json
-├── run-state.json
-├── evidence/
-│   └── ledger.jsonl
-├── findings/
-├── reports/
-├── artifacts/
-├── memory/
-│   ├── private.md
-│   └── agents/
-└── instructions/
-```
-
-Everything the LLM finds, logs, and produces stays here. Agents store their memory under `memory/agents/` for session continuity.
-
----
-
-## MCP Integration
-
-Net-Runner exposes a **FastMCP server** with 8 tools following the [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — minimal surface, no bloat.
-
-For this repository, the default expectation is **local-first MCP**:
-
-- connect an external MCP client to `src/mcp/server.ts`
-- or run the Net-Runner CLI and let it connect to external MCP servers you configure
-
-Hosted OAuth-backed connector discovery and Claude. ai-managed MCP surfaces still exist in parts of the codebase, but they are optional hosted integrations rather than required local runtime dependencies for the OSS workflow. The OSS snapshot does still include first-party CLI OAuth login for local Anthropic account sessions.
-
-For OSS use, keep the setup model simple:
-
-- the **CLI runtime** can use direct provider credentials such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, Bedrock, Vertex, Foundry, or local runtimes
-- the **FastMCP server** does not need a separate Net-Runner-hosted account flow to expose the 8-tool local harness
-- hosted connector discovery and Claude.ai-managed MCP integrations remain optional extras, not prerequisites for local red-team usage
-
-`nr_exec` remains the workhorse, but now supports:
-
-- **Composite execution** — pass a batch of commands through the same tool instead of expanding the MCP surface
-- **Summary-first returns** — batch mode can return concise per-command summaries to reduce context burn
-- **Artifact offload** — oversized output is saved to `.netrunner/artifacts/` and linked back into the evidence ledger
-- **Runtime intelligence hooks** — HTTP responses, tool failures, and blind-finding workflows feed the intelligence engine automatically
-- **Context budget warnings** — the server tracks cumulative tool-result volume per MCP session and warns when the transcript is getting expensive
-- **Operator-grade runtime logs** — MCP server terminals now surface command execution, artifact saves, evidence writes, intelligence triggers, and context-budget snapshots in real time
-
-### Tool surface (8 tools, `nr_*` prefix)
-
-| Tool | Purpose |
-|---|---|
-| `nr_exec` | **Shell execution — the workhorse.** All 153 pentest tools run here. |
-| `nr_engagement_init` | Initialise `.netrunner/` engagement with workflow, targets, scope |
-| `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
-| `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
-| `nr_save_finding` | Record security finding with severity, evidence, CWE |
-| `nr_save_note` | Append note to evidence ledger |
-| `nr_list_evidence` | Query evidence entries with optional type filter |
-| `nr_discover` | Progressive disclosure — list agents, skills, workflows, or capabilities on demand |
-
-### Connect from any MCP client
-
-Replace `/path/to/net-runner-release` with your actual clone path.
-
-<details>
-<summary><strong>Cursor</strong> — <code>.cursor/mcp.json</code> (project) or <code>~/.cursor/mcp.json</code> (global)</summary>
-
-```json
-{
-  "mcpServers": {
-    "net-runner": {
-      "command": "bun",
-      "args": ["run", "src/mcp/server.ts", "--stdio"],
-      "env": { "NR_CWD": "/path/to/net-runner-release" }
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><strong>Claude Code</strong> — CLI or <code>.mcp.json</code> (project) or <code>~/.claude.json</code> (user)</summary>
-
-```bash
-claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
-```
-
-Or add to `.mcp.json` in your project root:
-
-```json
-{
-  "mcpServers": {
-    "net-runner": {
-      "command": "bun",
-      "args": ["run", "src/mcp/server.ts", "--stdio"],
-      "env": { "NR_CWD": "/path/to/net-runner-release" }
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><strong>Claude Desktop</strong> — <code>claude_desktop_config.json</code></summary>
-
-```json
-{
-  "mcpServers": {
-    "net-runner": {
-      "command": "bun",
-      "args": ["run", "/path/to/net-runner-release/src/mcp/server.ts", "--stdio"],
-      "env": { "NR_CWD": "/path/to/net-runner-release" }
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><strong>VS Code / GitHub Copilot</strong> — <code>.vscode/mcp.json</code></summary>
-
-```json
-{
-  "servers": {
-    "net-runner": {
-      "type": "stdio",
-      "command": "bun",
-      "args": ["run", "src/mcp/server.ts", "--stdio"],
-      "env": { "NR_CWD": "${workspaceFolder}" }
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><strong>Windsurf</strong> — <code>.windsurf/mcp.json</code> (project) or <code>~/.codeium/windsurf/mcp_config.json</code> (global)</summary>
-
-```json
-{
-  "mcpServers": {
-    "net-runner": {
-      "command": "bun",
-      "args": ["run", "src/mcp/server.ts", "--stdio"],
-      "cwd": "/path/to/net-runner-release"
-    }
-  }
-}
-```
-</details>
-
-### Terminal view (httpStream mode)
-
-Run the server standalone to see the live banner, tool list, and session/call logs:
+MCP server only:
 
 ```bash
 bun run mcp:server              # http://localhost:8745/mcp
 NR_PORT=9000 bun run mcp:server # custom port
 ```
 
-### Net-Runner → External MCP Servers (outbound)
-
-Net-Runner can also connect to external MCP servers for additional tools:
+Connect from Claude Code:
 
 ```bash
-net-runner mcp add my-scanner -- node path/to/scanner-server.js
-net-runner mcp list
+claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
 ```
 
-Full reference: [MCP Integration Docs](docs/mcp-integration/README.md)
+Or `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "net-runner": {
+      "command": "bun",
+      "args": ["run", "src/mcp/server.ts", "--stdio"],
+      "env": { "NR_CWD": "/path/to/net-runner-release" }
+    }
+  }
+}
+```
 
 ---
 
-## Documentation
+## Features
 
-- [Workflow Overview](docs/workflows/overview.md)
-- [Research Alignment](docs/project/research-alignment.md)
-- [Upstream Provenance](docs/project/upstream-provenance.md)
-- [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
-- [Service Surfaces](docs/capabilities/service-surfaces.md)
-- [APT Simulation Reference](docs/apt-simulation/README.md)
-- [Industry → Threat Actor Map](docs/apt-simulation/industry-threat-map.md)
-- [Attack Chain Reference](docs/apt-simulation/attack-chain-reference.md)
-- [Intelligence Engine Reference](docs/intelligence-engine/README.md)
-- [MCP Integration Guide](docs/mcp-integration/README.md)
+- **Persistent memory** — LLM and each specialist agent remember previous sessions; multi-day assessments stay coherent
+- **Evidence-first** — every finding, artefact, and report saved to `.netrunner/` automatically
+- **Guardrail enforcement** — every action checked against declared scope and impact level before execution
+- **17 specialist agents** — engagement lead, recon, web, API, network, AD, exploit, privilege escalation, lateral movement, wifi, mobile, binary, forensics, code-audit, retest, evidence, reporting
+- **228 red-team tools** across 16 categories (recon, web, API, AD, cloud, mobile, network, exploitation, WiFi, binary/RE, forensics, code-audit, threat-intel, lateral-movement, evidence, coordination)
+- **12 workflows** — web-app, API, mobile, lab, adversary emulation, bug bounty, CTF, AD, WiFi, DFIR, code audit, cloud assessment
+- **10 APT simulations** — 40 threat groups, 13 industry profiles, MITRE ATT&CK mapped
+- **Intelligence engine** — feedback loop, WAF detection/bypass, MCTS planner, statistical verifier, OOB verification, knowledge graph
+- **Minimal MCP surface** — 14 `nr_*` tools; `nr_exec` runs all 228 tools via shell
+- **Auto-engagement setup** — describe target in plain English; Net-Runner detects intent and starts assessment
+
+---
+
+## Workflows
+
+`web-app-testing` · `api-testing` · `mobile-app-testing` · `lab-target-testing` · `adversary-emulation` · `bug-bounty-recon-validation` · `ctf-mode` · `ad-testing` · `wifi-testing` · `dfir-incident-response` · `code-audit-review` · `cloud-assessment`
+
+## Specialist Agents
+
+| Agent | When | Tool chain | Skills |
+|---|---|---|---|
+| **engagement-lead** | Coordinates engagement; routes specialists; queries KG before discovery | Agent routing, `nr_kg_query`, scope guardrail | engagement-setup, scope-guard, attack-path-analysis, mcts-planning |
+| **recon** | Target discovery, OSINT, surface mapping | `nmap`, `masscan`, `rustscan`, `subfinder`, `amass`, `bbot`, `httpx`, `katana`, `theHarvester`, `sherlock` | recon-plan, target-fingerprinting, digital-footprint-assessment, identity-correlation, serverless-edge-recon |
+| **web** | Web app vulns (XSS, SQLi, SSRF, smuggling, auth) | `sqlmap`, `dalfox`, `ffuf`, `nuclei`, `nikto`, ZAP, Burp, `wpscan` | wordpress-attack-tree, http-smuggling-cache-poisoning, headless-browser-validation, waf-detection, oob-verification |
+| **api** | REST/GraphQL/SOAP, JWT, IDOR, mass assignment | `postman` CLI, GraphQL introspection, `jwt_tool`, `arjun` | bug-bounty-validation, oob-verification, statistical-verification |
+| **network** | SMB/SSH/FTP/RDP, service exploitation, traffic | `smbclient`, `evil-winrm`, `responder`, `crackmapexec`, `wireshark` | exploit-validation |
+| **exploit** | Controlled PoC on confirmed findings | `sqlmap`, `msfconsole`, `msfvenom`, `searchsploit`, `pwntools`, `commix` | exploit-validation, statistical-verification, oob-verification |
+| **privilege-escalation** | Post-access escalation, container escape | `linpeas`, `winpeas`, `pspy`, GTFOBins, `peirates`, `kdigger`, `amicontained`, `deepce`, `bloodyAD` | post-exploitation-plan |
+| **lateral-movement** | Multi-host pivoting, credential reuse, tunnels | `crackmapexec`, `evil-winrm`, `chisel`, `proxychains`, SOCKS pivots | post-exploitation-plan, attack-path-analysis |
+| **ad** | Active Directory enumeration + Kerberos/ADCS/NTLM attacks | `bloodhound`, `kerbrute`, `impacket-*`, `certipy`, `rubeus`, `adidnsdump`, `mitm6`, `Coercer`, `bloodyAD` | post-exploitation-plan, attack-path-analysis |
+| **wifi** | 802.11, WPA/WPA2/WPA3, evil-twin | `airodump`, `hcxdumptool`, `hashcat -m 22000`, `hostapd-wpe`, `eaphammer` | wifi-assessment |
+| **mobile** | Android/iOS APK/IPA static + dynamic | `jadx`, `apktool`, `frida`, `objection`, `mitmproxy`, MobSF, `drozer`, `apkleaks` | mobile-app-testing |
+| **binary** | RE, CTF pwn, ROP/heap/format-string | `checksec`, `ghidra`, `radare2`, `gdb`, `pwntools`, `ROPgadget`, `one_gadget`, `angr` | binary-exploitation |
+| **forensics** | DFIR triage, memory/disk/log analysis, malware ID | `volatility3`, `sleuthkit`, `MVT`, `plaso`, `autopsy`, `yara`, `capa` | dfir-triage, threat-intel-enrichment |
+| **code-audit** | Static SAST, secret scan, dependency CVE, IaC | `semgrep`, `gitleaks`, `npm audit`, `govulncheck`, `checkov`, `trivy` | code-audit-review |
+| **retest** | Reproduce findings, validate fixes | Replays from evidence ledger; `nr_validate_finding` | exploit-validation |
+| **evidence** | Chain-of-custody curator (Write-only) | SHA-256 hash chain, JSONL ledger, PII redactor | evidence-capture |
+| **reporting** | Final report, exec summary, exports | SARIF 2.1, STIX 2.1, MISP, MITRE coverage | report-generation |
+
+*Each specialist has a scoped tool allowlist enforced by the harness. Compressed-output discipline applies to all internal reasoning except `engagement-lead` (operator-facing) and `reporting-specialist` (customer-facing).*
+
+## MCP Tools (`nr_*`)
+
+`nr_exec` · `nr_engagement_init` · `nr_engagement_status` · `nr_scope_check` · `nr_save_finding` · `nr_save_note` · `nr_list_evidence` · `nr_discover` · `nr_tool_help` · `nr_kg_query` · `nr_verify_evidence` · `nr_validate_finding` · `nr_coverage_status` · `nr_export_report`
+
+---
+
+## Engagement Lifecycle
+
+1. Describe target and goal in plain English
+2. `.netrunner/` project folder created with engagement config, scope rules, and run state
+3. Matching workflow loaded with specialist agents, role contracts, and prior session memory
+4. Tools run autonomously — scope-checked before each risky action
+5. Evidence, findings, artefacts, and reports saved throughout; intelligence state persisted to `.netrunner/intelligence-state.json`
+
+---
+
+## Camofox Browser
+
+Optional stealth-browser backend — Firefox patched at C++ level for anti-bot bypass, used by the headless-browser-validation skill.
+
+**Upstream:** [https://github.com/jo-inc/camofox-browser](https://github.com/jo-inc/camofox-browser)
+
+```bash
+bun run setup:camofox          # probes the endpoint, prints setup steps if down
+```
+
+The probe is non-blocking and never fails the build. If `CAMOFOX_URL` is unreachable, the validation skill falls back to local Playwright or headless Chromium automatically. Override with `CAMOFOX_URL=http://host:port` if you run it elsewhere.
 
 ---
 
 ## Provenance
 
-Net-Runner is built on top of the public [OpenClaude](https://github.com/Gitlawb/openclaude) runtime. All red-team features, agents, workflows, skills, guardrails, evidence capture, and the tool catalogue are Net-Runner additions. Research and provenance notes are under `docs/project/`.
+Built on [OpenClaude](https://github.com/Gitlawb/openclaude). All red-team features are Net-Runner additions. See `docs/project/` for research and provenance notes.
+
+**Docs:** [Workflows](docs/workflows/overview.md) · [APT Simulation](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
 
 ---
 
+## Contributing
+
+Issues and PRs welcome. Keep changes scoped; run `bun run typecheck` before submitting.
+
 ## License
 
-This repository is for educational use and authorised security testing only.
+Educational use and authorised security testing only.

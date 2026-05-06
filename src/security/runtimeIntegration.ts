@@ -179,6 +179,40 @@ export async function syncEvidenceToKnowledgeGraph(
   }
 }
 
+export async function queryKnowledgeGraphForTarget(
+  cwd: string,
+  target: string,
+): Promise<string | null> {
+  try {
+    const manifest = await readEngagementManifest(cwd)
+    if (!manifest) return null
+    await syncEvidenceToKnowledgeGraph(cwd)
+    const { getKnowledgeGraph } = await import('./intelligenceMiddleware.js')
+    const kg = getKnowledgeGraph()
+    const result = kg.queryForTarget(target)
+    if (result.entities.length === 0 && result.relations.length === 0) {
+      return `[KG] No prior evidence for target "${target}". Proceed with discovery.`
+    }
+    const lines: string[] = [`[KG] target=${target} entities=${result.entities.length} relations=${result.relations.length}`]
+    for (const e of result.entities.slice(0, 40)) {
+      const props = Object.entries(e.properties)
+        .filter(([, v]) => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
+        .slice(0, 5)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(' ')
+      lines.push(`  ${e.type}: ${e.id}${props ? ' { ' + props + ' }' : ''}`)
+    }
+    if (result.entities.length > 40) lines.push(`  ... ${result.entities.length - 40} more entities`)
+    for (const r of result.relations.slice(0, 30)) {
+      lines.push(`  rel: ${r.sourceId} --${r.type}--> ${r.targetId}`)
+    }
+    if (result.relations.length > 30) lines.push(`  ... ${result.relations.length - 30} more relations`)
+    return lines.join('\n')
+  } catch (err) {
+    return `[KG] query failed: ${err instanceof Error ? err.message : String(err)}`
+  }
+}
+
 export async function recordSubagentExecution(
   options: RecordSubagentExecutionOptions,
 ): Promise<void> {

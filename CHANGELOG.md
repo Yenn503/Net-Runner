@@ -51,7 +51,7 @@ All notable changes to Net-Runner are documented in this file.
   - attack-path-analysis — kill chain mapping
   - apt-simulation — threat actor emulation
 
-- **Tool Catalog** — 153 integrated red-team tools
+- **Tool Catalog** — 228 integrated red-team tools
   - Recon: 22 tools (nmap, masscan, ffuf, gobuster, amass, etc.)
   - Web: 28 tools (sqlmap, burp, zap, wpscan, nuclei, etc.)
   - API: 3 tools (postman, openapi-generator, etc.)

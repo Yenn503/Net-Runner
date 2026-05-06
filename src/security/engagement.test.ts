@@ -60,6 +60,15 @@ test('default engagement naming avoids legacy workspace labels', async () => {
   assert.equal(manifest.name, 'net-runner-workspace')
 })
 
+test('re-initializing an active engagement throws an idempotence error', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'net-runner-idempotent-'))
+  await initializeNetRunnerProject({ cwd, workflowId: 'web-app-testing' })
+  await assert.rejects(
+    () => initializeNetRunnerProject({ cwd, workflowId: 'web-app-testing' }),
+    /Engagement already active at \.netrunner\/engagement\.json\. Pause or close it before re-init\./,
+  )
+})
+
 test('runtime prompt context includes authorization and impact defaults', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'net-runner-context-'))
   const manifest = await initializeNetRunnerProject({

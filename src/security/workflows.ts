@@ -23,6 +23,9 @@ export type CapabilityPackName =
   | 'active-directory'
   | 'wifi'
   | 'database'
+  | 'forensics'
+  | 'code-audit'
+  | 'threat-intel'
 
 export type CapabilityPack = {
   name: CapabilityPackName
@@ -42,6 +45,9 @@ export type SecurityWorkflow = {
     | 'ctf-mode'
     | 'ad-testing'
     | 'wifi-testing'
+    | 'dfir-incident-response'
+    | 'code-audit-review'
+    | 'cloud-assessment'
   label: string
   description: string
   capabilityPacks: CapabilityPackName[]
@@ -159,6 +165,21 @@ export const CAPABILITY_PACKS: CapabilityPack[] = [
     description: 'Database enumeration, post-exploitation querying, and data access validation.',
     primaryExecutionModel: 'skills-and-tools',
   },
+  {
+    name: 'forensics',
+    description: 'Digital forensics, IR triage, memory/disk/log analysis, malware artifact extraction.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'code-audit',
+    description: 'Static code analysis, secret scanning, dependency CVE checks, IaC misconfiguration audits.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'threat-intel',
+    description: 'IOC enrichment, threat actor attribution, public reputation lookups, and TI platform integration.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
 ]
 
 export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
@@ -248,6 +269,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
     specialistAgents: [
       'engagement-lead',
       'recon-specialist',
+      'mobile-testing-specialist',
       'web-testing-specialist',
       'api-testing-specialist',
       'exploit-specialist',
@@ -288,6 +310,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'recon-specialist',
       'network-testing-specialist',
       'exploit-specialist',
+      'binary-specialist',
       'privilege-escalation-specialist',
       'lateral-movement-specialist',
       'ad-specialist',
@@ -343,10 +366,12 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'api',
       'evidence',
       'reporting',
+      'threat-intel',
     ],
     defaultSkills: [
       ...BASE_WORKFLOW_SKILLS,
       'identity-correlation',
+      'threat-intel-enrichment',
       'bug-bounty-validation',
       'headless-browser-validation',
       'serverless-edge-recon',
@@ -362,6 +387,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'recon-specialist',
       'web-testing-specialist',
       'api-testing-specialist',
+      'mobile-testing-specialist',
       'exploit-specialist',
       'evidence-specialist',
       'reporting-specialist',
@@ -400,6 +426,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'web-testing-specialist',
       'network-testing-specialist',
       'exploit-specialist',
+      'binary-specialist',
       'privilege-escalation-specialist',
       'lateral-movement-specialist',
       'retest-specialist',
@@ -465,8 +492,51 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
       'engagement-lead',
       'recon-specialist',
       'network-testing-specialist',
+      'wifi-specialist',
       'exploit-specialist',
       'retest-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+  },
+  {
+    id: 'dfir-incident-response',
+    label: 'DFIR Incident Response',
+    description: 'Triage and analysis workflow for incident response and forensic investigation engagements.',
+    capabilityPacks: ['recon', 'forensics', 'evidence', 'reporting', 'coordination', 'threat-intel'],
+    defaultSkills: [...BASE_WORKFLOW_SKILLS, 'dfir-triage', 'threat-intel-enrichment', 'vuln-assessment', 'evidence-capture'],
+    specialistAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'forensics-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+  },
+  {
+    id: 'code-audit-review',
+    label: 'Code Audit Review',
+    description: 'Static analysis, secret-scan, dependency, and IaC audit workflow for source code repositories.',
+    capabilityPacks: ['code-audit', 'evidence', 'reporting', 'coordination'],
+    defaultSkills: [...BASE_WORKFLOW_SKILLS, 'code-audit-review', 'vuln-assessment', 'evidence-capture'],
+    specialistAgents: [
+      'engagement-lead',
+      'code-audit-specialist',
+      'evidence-specialist',
+      'reporting-specialist',
+    ],
+  },
+  {
+    id: 'cloud-assessment',
+    label: 'Cloud Assessment',
+    description: 'Cloud posture and platform-security workflow for AWS, Azure, GCP, and Kubernetes targets. Routes to existing specialists; cloud tooling is shell-driven via the catalog.',
+    capabilityPacks: ['recon', 'cloud', 'network', 'exploitation', 'evidence', 'reporting', 'coordination'],
+    defaultSkills: [...BASE_WORKFLOW_SKILLS, 'vuln-assessment', 'evidence-capture'],
+    specialistAgents: [
+      'engagement-lead',
+      'recon-specialist',
+      'network-testing-specialist',
+      'exploit-specialist',
       'evidence-specialist',
       'reporting-specialist',
     ],

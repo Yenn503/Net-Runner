@@ -25,6 +25,12 @@ export type NetRunnerSkillName =
   | 'mcts-planning'
   | 'oob-verification'
   | 'caveman-harness'
+  | 'dfir-triage'
+  | 'code-audit-review'
+  | 'threat-intel-enrichment'
+  | 'wifi-assessment'
+  | 'mobile-app-testing'
+  | 'binary-exploitation'
 
 export type NetRunnerSkillDefinition = {
   name: NetRunnerSkillName
@@ -214,6 +220,44 @@ export const NET_RUNNER_SKILL_DEFINITIONS: NetRunnerSkillDefinition[] = [
     title: 'Caveman Harness',
     description:
       'Compress agent communication and handoffs using caveman-style brevity while preserving exact technical terms, evidence refs, commands, paths, URLs, and code.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'dfir-triage',
+    title: 'DFIR Triage',
+    description:
+      'Structured triage workflow for incident-response: timeline build, IOC extraction, memory/disk/log analysis, and artifact preservation.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'code-audit-review',
+    title: 'Code Audit Review',
+    description:
+      'Multi-tool static review: SAST (Semgrep, Bandit, gosec), secret scanning (gitleaks, noseyparker), dependency CVE (trivy, govulncheck, npm-audit, pip-audit), IaC (checkov, tfsec, kics).',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'threat-intel-enrichment',
+    title: 'Threat Intel Enrichment',
+    description: 'Enrich IPs, domains, hashes, and URLs against TI sources (MISP, OpenCTI, urlscan, GreyNoise, VirusTotal, Mihari) for reputation, attribution, and IOC pivoting.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'wifi-assessment',
+    title: 'WiFi Assessment',
+    description: 'Monitor-mode setup, AP/client enumeration, WPA handshake/PMKID capture, offline cracking, evil-twin, and EAP misconfiguration testing workflow.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'mobile-app-testing',
+    title: 'Mobile App Testing',
+    description: 'Android/iOS static decompilation, Frida/Objection dynamic instrumentation, proxy interception, insecure storage, exported component and deep-link abuse testing.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'binary-exploitation',
+    title: 'Binary Exploitation',
+    description: 'Triage (checksec/file/strings), static RE (ghidra/radare2/objdump), dynamic debugging (gdb/pwndbg/peda), ROP chain building, pwntools scripting, and controlled PoC development workflow.',
     primaryExecutionModel: 'skills-and-tools',
   },
 ] as const

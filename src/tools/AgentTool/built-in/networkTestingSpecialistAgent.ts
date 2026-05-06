@@ -1,3 +1,15 @@
+import { AGENT_TOOL_NAME } from '../constants.js'
+import { BASH_TOOL_NAME } from 'src/tools/BashTool/toolName.js'
+import { FILE_READ_TOOL_NAME } from 'src/tools/FileReadTool/prompt.js'
+import { FILE_WRITE_TOOL_NAME } from 'src/tools/FileWriteTool/prompt.js'
+import { GLOB_TOOL_NAME } from 'src/tools/GlobTool/prompt.js'
+import { GREP_TOOL_NAME } from 'src/tools/GrepTool/prompt.js'
+import { LIST_MCP_RESOURCES_TOOL_NAME } from 'src/tools/ListMcpResourcesTool/prompt.js'
+import { READ_MCP_RESOURCE_TOOL_NAME } from 'src/tools/ReadMcpResourceTool/prompt.js'
+import { SEND_MESSAGE_TOOL_NAME } from 'src/tools/SendMessageTool/constants.js'
+import { SKILL_TOOL_NAME } from 'src/tools/SkillTool/constants.js'
+import { TODO_WRITE_TOOL_NAME } from 'src/tools/TodoWriteTool/constants.js'
+import { WEB_FETCH_TOOL_NAME } from 'src/tools/WebFetchTool/prompt.js'
 import { defineNetRunnerSpecialist } from './defineNetRunnerSpecialist.js'
 
 const SYSTEM_PROMPT = `You are a network testing specialist for Net-Runner.
@@ -36,4 +48,18 @@ export const NETWORK_TESTING_SPECIALIST_AGENT = defineNetRunnerSpecialist({
   whenToUse:
     'Use this agent for host/service enumeration, network-path validation, and infrastructure-focused testing in scoped labs.',
   systemPrompt: SYSTEM_PROMPT,
+  tools: [
+    AGENT_TOOL_NAME,
+    BASH_TOOL_NAME,
+    FILE_READ_TOOL_NAME,
+    FILE_WRITE_TOOL_NAME,
+    GLOB_TOOL_NAME,
+    GREP_TOOL_NAME,
+    LIST_MCP_RESOURCES_TOOL_NAME,
+    READ_MCP_RESOURCE_TOOL_NAME,
+    SEND_MESSAGE_TOOL_NAME,
+    SKILL_TOOL_NAME,
+    TODO_WRITE_TOOL_NAME,
+    WEB_FETCH_TOOL_NAME,
+  ],
 })

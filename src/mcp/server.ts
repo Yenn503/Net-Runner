@@ -4,6 +4,7 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { basename, isAbsolute, join, relative, resolve } from 'path'
+import { buildSarif, buildStix, buildMisp, type ExportFormat } from '../security/exportReport.js'
 import {
   initializeNetRunnerProject,
   readEngagementManifest,
@@ -18,12 +19,16 @@ import {
   type EvidenceSeverity,
   type FindingEntry,
 } from '../security/evidence.js'
+import { verifyEvidenceChain } from '../security/evidenceHash.js'
+import { validateFinding } from '../security/validateFinding.js'
+import { computeCoverage } from '../security/coverage.js'
 import {
   getCapabilityReadinessSnapshot,
   getNetRunnerCapabilities,
   type CapabilityReadiness,
 } from '../security/capabilities.js'
-import { IMPORTED_PENTEST_CAPABILITIES } from '../security/catalog/index.js'
+import { IMPORTED_PENTEST_CAPABILITIES, getToolById } from '../security/catalog/index.js'
+import { getOrPopulateHelp } from '../security/catalog/helpCache.js'
 import { SECURITY_WORKFLOWS } from '../security/workflows.js'
 import { NET_RUNNER_SKILL_DEFINITIONS } from '../security/skillDefinitions.js'
 import {
@@ -40,6 +45,7 @@ import {
   planNextActionsWithPersistence,
   shouldGateBlindFinding,
   syncEvidenceToKnowledgeGraph,
+  queryKnowledgeGraphForTarget,
 } from '../security/runtimeIntegration.js'
 import {
   clearAgentDefinitionsCache,
@@ -650,7 +656,7 @@ function traced<T extends Record<string, unknown>>(
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TOOL_COUNT = 8
+const TOOL_COUNT = 14
 
 const server = new FastMCP({
   name: 'net-runner',
@@ -1021,6 +1027,214 @@ server.addTool({
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  9. nr_tool_help — Help-cache lookup (reduces hallucinated flags)
+// ═══════════════════════════════════════════════════════════════════════════
+
+server.addTool({
+  name: 'nr_tool_help',
+  description: 'Return authoritative --help text for a cataloged pentest tool. Fetches from local cache; populates cache on first call by running the binary. Use before nr_exec to get correct flags and avoid hallucinated options.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
+  parameters: z.object({
+    tool_id: z.string().describe('Catalog tool id (e.g. kali-nmap, kali-sqlmap)'),
+  }),
+  execute: traced('nr_tool_help', async (args) => {
+    const entry = getToolById(args.tool_id as `kali-${string}`)
+    if (!entry) {
+      return `Unknown tool id: ${args.tool_id}. Use nr_discover with topic=capabilities to list available tools.`
+    }
+
+    const binary = entry.requiredCommands[0]
+    if (!binary) {
+      return `Tool ${args.tool_id} has no requiredCommands defined in catalog.`
+    }
+
+    const helpText = await getOrPopulateHelp(CWD, args.tool_id, binary)
+    if (!helpText) {
+      return `Could not retrieve help for ${args.tool_id} (binary: ${binary}). The tool may not be installed.`
+    }
+
+    const truncated = helpText.length > 4000 ? helpText.slice(0, 4000) + '\n[truncated]' : helpText
+    return `[help: ${args.tool_id} / ${binary}]\n\n${truncated}`
+  }),
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  10. nr_kg_query — Knowledge Graph lookup for target (KG-first execution loop)
+// ═══════════════════════════════════════════════════════════════════════════
+
+server.addTool({
+  name: 'nr_kg_query',
+  description: 'Query the engagement Knowledge Graph for prior evidence about a target (host, domain, IP, URL). Use BEFORE running new discovery probes — only run scans for genuinely missing facts. Returns matched entities and relations.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
+  parameters: z.object({
+    target: z.string().describe('Target string to look up (host, IP, domain, URL, or any substring matched against entity ids/properties)'),
+  }),
+  execute: traced('nr_kg_query', async (args) => {
+    const result = await queryKnowledgeGraphForTarget(CWD, args.target)
+    if (result === null) {
+      return 'No active engagement. Run nr_engagement_init first.'
+    }
+    return result
+  }),
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  11. nr_verify_evidence — Evidence chain integrity check
+// ═══════════════════════════════════════════════════════════════════════════
+
+server.addTool({
+  name: 'nr_verify_evidence',
+  description: 'Verify the SHA-256 hash chain integrity of the evidence ledger. Returns ok + length, or break index + reason on tamper detection.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
+  parameters: z.object({}),
+  execute: traced('nr_verify_evidence', async () => {
+    const result = await verifyEvidenceChain(CWD)
+    if (result.ok) {
+      return `Evidence chain intact: ${result.length} entries verified.`
+    }
+    return `Evidence chain BROKEN at index ${result.breakAtIndex}: ${result.reason}`
+  }),
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  12. nr_validate_finding — Replay finding command and diff output
+// ═══════════════════════════════════════════════════════════════════════════
+
+server.addTool({
+  name: 'nr_validate_finding',
+  description: 'Replay a finding\'s proof command and diff the output against original evidence. Returns verdict (reproduces|differs|absent), exit code, and added/removed line summary. Appends a validation note to the evidence ledger.',
+  annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
+  parameters: z.object({
+    finding_id: z.string().describe('Evidence ledger finding id to validate'),
+    command_override: z.string().optional().describe('Replay command to use if finding has no replayCommand field'),
+  }),
+  execute: traced('nr_validate_finding', async (args) => {
+    const result = await validateFinding(CWD, args.finding_id, args.command_override)
+    const lines = [
+      `[validate finding=${args.finding_id}] verdict=${result.verdict} exitCode=${result.exitCode}`,
+    ]
+    if (result.removedLines.length > 0) {
+      lines.push(`removed (${result.removedLines.length}):`)
+      lines.push(...result.removedLines.map(l => `- ${l}`))
+    }
+    if (result.addedLines.length > 0) {
+      lines.push(`added (${result.addedLines.length}):`)
+      lines.push(...result.addedLines.map(l => `+ ${l}`))
+    }
+    if (result.removedLines.length === 0 && result.addedLines.length === 0 && result.verdict !== 'absent') {
+      lines.push('(output matches original evidence — no diff)')
+    }
+    return lines.join('\n')
+  }),
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  13. nr_coverage_status — MITRE ATT&CK coverage across findings
+// ═══════════════════════════════════════════════════════════════════════════
+
+server.addTool({
+  name: 'nr_coverage_status',
+  description: 'Compute MITRE ATT&CK technique coverage: techniques referenced in confirmed findings vs. techniques expected for the workflow\'s capability packs. Returns coverage percentage, top covered techniques, and gap techniques.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
+  parameters: z.object({
+    workflow_id: z.string().optional().describe('Workflow id to scope expected techniques (defaults to active engagement workflow)'),
+    target: z.string().optional().describe('Optional target substring to filter findings'),
+  }),
+  execute: traced('nr_coverage_status', async (args) => {
+    const result = await computeCoverage(CWD, args.workflow_id, args.target)
+    const lines = [
+      `[coverage] expected=${result.expected} covered=${result.covered} coverage=${result.pct}%`,
+    ]
+    if (result.coveredTechniques.length > 0) {
+      lines.push('covered techniques (top 15):')
+      lines.push(...result.coveredTechniques.map(t => `  + ${t}`))
+    }
+    if (result.gapTechniques.length > 0) {
+      lines.push('gap techniques (top 15):')
+      lines.push(...result.gapTechniques.map(t => `  - ${t}`))
+    }
+    if (result.expected === 0) {
+      lines.push('(no MITRE techniques defined in catalog tools for this workflow)')
+    }
+    return lines.join('\n')
+  }),
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  14. nr_export_report — Export confirmed findings in SARIF / STIX / MISP
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getSafeReportArtifactPath(fileName: string): string {
+  const artifactsDir = resolve(getArtifactsDir(CWD))
+  if (isAbsolute(fileName) || fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+    throw new Error('Report filename must be a single safe file name with no path separators')
+  }
+  const artifactPath = resolve(artifactsDir, fileName)
+  const rel = relative(artifactsDir, artifactPath)
+  if (rel.startsWith('..') || rel === '') {
+    throw new Error('Resolved report path escaped the artifacts directory')
+  }
+  return artifactPath
+}
+
+server.addTool({
+  name: 'nr_export_report',
+  description: 'Export confirmed findings to SARIF 2.1.0, STIX 2.1, or MISP event JSON. Writes file to artifacts dir and records an artifact evidence entry.',
+  annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
+  parameters: z.object({
+    format: z.enum(['sarif', 'stix', 'misp']).describe('Export format'),
+    output_path: z.string().optional().describe('Filename within artifacts dir (default: report-<format>-<timestamp>.json/.sarif)'),
+  }),
+  execute: traced('nr_export_report', async (args) => {
+    const manifest = await readEngagementManifest(CWD)
+    if (!manifest) return 'No engagement found. Use nr_engagement_init first.'
+
+    const allEntries = await readEvidenceEntries(CWD)
+    const findings = allEntries.filter(e => e.type === 'finding') as import('../security/evidence.js').FindingEntry[]
+
+    const format: ExportFormat = args.format
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const ext = format === 'sarif' ? '.sarif' : '.json'
+    const defaultName = `report-${format}-${timestamp}${ext}`
+    const fileName = args.output_path ?? defaultName
+
+    const artifactPath = getSafeReportArtifactPath(fileName)
+    await mkdir(getArtifactsDir(CWD), { recursive: true })
+
+    const nowIso = new Date().toISOString()
+    const meta = {
+      engagementName: manifest.name,
+      version: VERSION,
+      startTimeUtc: manifest.createdAt,
+      endTimeUtc: nowIso,
+    }
+
+    let exportObj: Record<string, unknown>
+    if (format === 'sarif') {
+      exportObj = buildSarif(findings, meta)
+    } else if (format === 'stix') {
+      exportObj = buildStix(findings, meta)
+    } else {
+      exportObj = buildMisp(findings, meta)
+    }
+
+    const serialized = JSON.stringify(exportObj, null, 2)
+    await writeFile(artifactPath, serialized, 'utf8')
+
+    const relPath = relative(CWD, artifactPath)
+    await appendEvidenceEntry(CWD, {
+      type: 'artifact',
+      label: `nr_export_report:${format}`,
+      path: relPath,
+      description: `${format.toUpperCase()} export: ${findings.length} finding(s)`,
+    })
+
+    logRuntimeEvent('EVD', `report export ${format} → ${relPath} (${findings.length} findings, ${serialized.length} bytes)`, undefined, GREEN)
+    return `[export format=${format}] wrote ${relPath} findings=${findings.length} bytes=${serialized.length}`
+  }),
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  BANNER & START (matching harness StartupScreen.ts gradient + box style)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1051,6 +1265,12 @@ const TOOLS_MANIFEST: [string, string][] = [
   ['nr_save_note', 'Append evidence note'],
   ['nr_list_evidence', 'Query evidence ledger'],
   ['nr_discover', 'Progressive disclosure (agents/skills/workflows/caps)'],
+  ['nr_tool_help', 'Authoritative --help text per catalog tool (anti-hallucination)'],
+  ['nr_kg_query', 'Knowledge Graph lookup for target (avoid redundant scans)'],
+  ['nr_verify_evidence', 'Verify SHA-256 hash chain integrity of evidence ledger'],
+  ['nr_validate_finding', 'Replay finding command + diff output vs original evidence'],
+  ['nr_coverage_status', 'MITRE ATT&CK coverage: expected vs covered techniques'],
+  ['nr_export_report', 'Export findings: SARIF 2.1.0 / STIX 2.1 / MISP event JSON'],
 ]
 
 function boxRow(content: string, width: number, rawLen: number): string {

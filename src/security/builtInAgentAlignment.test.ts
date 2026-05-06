@@ -29,6 +29,11 @@ function getBuiltInAgentsViaBun(): SerializedBuiltInAgent[] {
       'retest-specialist',
       'evidence-specialist',
       'reporting-specialist',
+      'forensics-specialist',
+      'code-audit-specialist',
+      'wifi-specialist',
+      'mobile-testing-specialist',
+      'binary-specialist',
     ])
     const agents = getBuiltInAgents().map(agent => ({
       agentType: agent.agentType,
@@ -72,6 +77,8 @@ test('default built-in registry includes core runtime and Net-Runner specialist 
       'retest-specialist',
       'evidence-specialist',
       'reporting-specialist',
+      'forensics-specialist',
+      'code-audit-specialist',
       'Explore',
       'Plan',
       'verification',
@@ -138,7 +145,26 @@ test('Net-Runner specialists load role contracts and scoped toolsets', () => {
   assert.equal(recon?.tools?.includes('WebSearch'), true)
   assert.equal(web?.tools?.includes('Bash'), true)
   assert.equal(evidence?.tools?.includes('Write'), true)
-  assert.equal(evidence?.tools?.includes('Bash'), true)
+  assert.equal(evidence?.tools?.includes('Bash'), false)
   assert.equal(reporting?.tools?.includes('Edit'), true)
-  assert.equal(reporting?.tools?.includes('Bash'), true)
+  assert.equal(reporting?.tools?.includes('Bash'), false)
+
+  const forensics = agents.get('forensics-specialist')
+  assert.ok(forensics)
+  assert.ok(forensics?.systemPrompt?.includes('Net-Runner role contract:'))
+  assert.ok(forensics?.systemPrompt?.includes('chain-of-custody') || forensics?.systemPrompt?.includes('hash'))
+  assert.equal(forensics?.tools?.includes('Bash'), true)
+  assert.equal(forensics?.tools?.includes('Write'), true)
+  assert.equal(forensics?.tools?.includes('Edit'), false)
+  assert.equal(forensics?.memory, 'project')
+
+  const codeAudit = agents.get('code-audit-specialist')
+  assert.ok(codeAudit)
+  assert.ok(codeAudit?.systemPrompt?.includes('Net-Runner role contract:'))
+  assert.ok(codeAudit?.systemPrompt?.includes('semgrep') || codeAudit?.systemPrompt?.includes('SAST'))
+  assert.equal(codeAudit?.tools?.includes('Bash'), true)
+  assert.equal(codeAudit?.tools?.includes('Write'), true)
+  // Edit is present: code-audit-specialist may apply autofixes and annotate source files
+  assert.equal(codeAudit?.tools?.includes('Edit'), true)
+  assert.equal(codeAudit?.memory, 'project')
 })

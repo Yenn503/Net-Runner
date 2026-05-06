@@ -8,7 +8,7 @@ That local runtime can be driven in two seamless ways:
 
 - through the Net-Runner CLI with direct provider credentials or local runtimes
 - through the Net-Runner CLI with first-party Anthropic account login via the existing `auth login` and `/login` flows when you want CLI OAuth rather than an API key
-- through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 8 `nr_*` tools
+- through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 14 `nr_*` tools
 
 ## Workflow registry
 
@@ -30,6 +30,12 @@ That local runtime can be driven in two seamless ways:
   Active Directory, Kerberos, trust-path, and AD CS testing.
 - `wifi-testing`
   Wireless assessments, handshake capture, rogue AP testing, and 802.11 analysis.
+- `dfir-incident-response`
+  IR triage and forensic investigation: memory/disk/log analysis, IOC enrichment, malware artifact extraction.
+- `code-audit-review`
+  Static analysis, secret scanning, dependency CVE checks, and IaC misconfiguration audits for source repositories.
+- `cloud-assessment`
+  Cloud posture for AWS/Azure/GCP/Kubernetes targets. Routes to existing recon, network, and exploit specialists; cloud tooling is shell-driven via the catalog.
 
 ## Recon coverage
 
@@ -68,6 +74,11 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 - `privilege-escalation-specialist`
 - `lateral-movement-specialist`
 - `ad-specialist`
+- `wifi-specialist`
+- `mobile-testing-specialist`
+- `binary-specialist`
+- `forensics-specialist`
+- `code-audit-specialist`
 - `retest-specialist`
 - `evidence-specialist`
 - `reporting-specialist`
@@ -92,6 +103,9 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 - `active-directory`
 - `wifi`
 - `database`
+- `forensics`
+- `code-audit`
+- `threat-intel`
 
 Before a deeper run:
 

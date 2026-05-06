@@ -3,6 +3,8 @@ import { appendFile, mkdir, readFile } from 'fs/promises'
 import { dirname } from 'path'
 import type { GuardrailDecision } from './guardrails.js'
 import { getEvidenceLedgerPath } from './paths.js'
+import { hashEntry } from './evidenceHash.js'
+import { redactPiiDeep } from './piiRedactor.js'
 
 export type EvidenceSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical'
 
@@ -43,6 +45,9 @@ export type ComplianceReference = {
 type EvidenceEntryBase = {
   id: string
   createdAt: string
+  hash?: string
+  prevHash?: string | null
+  redactionCount?: number
 }
 
 export type SessionBoundaryEntry = EvidenceEntryBase & {
@@ -66,6 +71,9 @@ export type FindingEntry = EvidenceEntryBase & {
   mitreAttack?: MitreAttackReference[]
   owaspCategory?: OwaspCategory[]
   compliance?: ComplianceReference[]
+  replayCommand?: string
+  replayRequest?: string
+  mitreAttackTechniques?: string[]
 }
 
 export type ArtifactEntry = EvidenceEntryBase & {
@@ -121,20 +129,58 @@ export type EvidenceEntryInput =
   | Omit<ExecutionStepEntry, 'id' | 'createdAt'>
   | Omit<ApprovalEntry, 'id' | 'createdAt'>
 
+export type AppendEvidenceOptions = {
+  redactPii?: boolean
+}
+
 export async function appendEvidenceEntry(
   cwd: string,
   entry: EvidenceEntryInput,
+  options: AppendEvidenceOptions = {},
 ): Promise<EvidenceEntry> {
-  const fullEntry: EvidenceEntry = {
-    ...entry,
-    id: randomUUID(),
-    createdAt: new Date().toISOString(),
-  } as EvidenceEntry
+  const shouldRedact = options.redactPii !== false
 
   const path = getEvidenceLedgerPath(cwd)
   await mkdir(dirname(path), { recursive: true })
+
+  let prevHash: string | null = null
+  try {
+    const raw = await readFile(path, 'utf8')
+    const lines = raw.split('\n').filter(l => l.trim())
+    const lastLine = lines[lines.length - 1]
+    if (lastLine) {
+      const lastEntry = JSON.parse(lastLine) as Record<string, unknown>
+      if (typeof lastEntry.hash === 'string') {
+        prevHash = lastEntry.hash
+      }
+    }
+  } catch {
+    // file doesn't exist yet — prevHash stays null
+  }
+
+  let baseEntry: Record<string, unknown> = {
+    ...entry,
+    id: randomUUID(),
+    createdAt: new Date().toISOString(),
+  }
+
+  let redactionCount = 0
+  if (shouldRedact) {
+    const result = redactPiiDeep(baseEntry)
+    baseEntry = result.value as Record<string, unknown>
+    redactionCount = result.redactionCount
+  }
+
+  const entryForHash: Record<string, unknown> = { ...baseEntry }
+  if (redactionCount > 0) {
+    entryForHash.redactionCount = redactionCount
+  }
+  const hash = hashEntry(entryForHash)
+
+  const fullEntry: Record<string, unknown> = { ...entryForHash, prevHash, hash }
+
   await appendFile(path, `${JSON.stringify(fullEntry)}\n`, 'utf8')
-  return fullEntry
+  return fullEntry as unknown as EvidenceEntry
 }
 
 export async function readEvidenceEntries(cwd: string): Promise<EvidenceEntry[]> {

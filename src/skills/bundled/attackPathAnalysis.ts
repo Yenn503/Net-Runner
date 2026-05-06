@@ -35,7 +35,8 @@ Output format:
 - Partial or blocked paths
 - Critical dependencies and choke points
 - Recommended next action per path
-- Evidence references for each hop`,
+- Evidence references for each hop
+- **Parallel execution batches**: group next actions where tasks operate on disjoint targets/services or different attack classes with no shared prerequisite. Label each batch (Batch 1, Batch 2, ...) and list which specialist agent handles each action. The engagement lead spawns all agents within a batch simultaneously, awaits all results, then proceeds to the next batch. Clearly mark actions that MUST be sequential (B depends on A's confirmed output).`,
         },
       ]
     },

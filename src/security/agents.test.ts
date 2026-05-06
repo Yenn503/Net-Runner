@@ -24,6 +24,11 @@ test('Net-Runner publishes security specialist agent definitions', () => {
       'retest-specialist',
       'evidence-specialist',
       'reporting-specialist',
+      'forensics-specialist',
+      'code-audit-specialist',
+      'wifi-specialist',
+      'mobile-testing-specialist',
+      'binary-specialist',
     ],
   )
   assert.equal(

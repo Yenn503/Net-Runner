@@ -498,6 +498,22 @@ async function main(): Promise<void> {
     console.log()
     console.log(green(`✔ Saved profile to ${PROFILE_PATH}`))
     console.log()
+
+    // Phase 5: Camofox stealth-browser probe.
+    // Non-blocking — never fails the setup. The validation skill falls back
+    // to Playwright/Chromium automatically if Camofox is unreachable.
+    console.log(bold('Camofox stealth browser:'))
+    try {
+      const proc = Bun.spawn(['bun', 'run', 'scripts/setup-camofox.ts'], {
+        stdout: 'inherit',
+        stderr: 'inherit',
+      })
+      await proc.exited
+    } catch (err) {
+      console.log(dim(`  (probe skipped — ${err instanceof Error ? err.message : String(err)})`))
+    }
+
+    console.log()
     console.log(bold('Launch with:'))
     console.log(`  ${cyan('bun run dev:profile')}`)
     console.log()

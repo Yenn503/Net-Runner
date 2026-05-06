@@ -680,12 +680,34 @@ export function formatMCTSResultForAgent(result: MCTSResult): string {
     'Ranked next actions:',
   ]
 
-  for (let i = 0; i < Math.min(result.actionRankings.length, 5); i++) {
-    const r = result.actionRankings[i]!
+  const top = result.actionRankings.slice(0, 5)
+  for (let i = 0; i < top.length; i++) {
+    const r = top[i]!
     lines.push(
       `  ${i + 1}. ${r.action.name} (tool: ${r.action.tool}, agent: ${r.action.agent})` +
       ` — reward: ${(r.averageReward * 100).toFixed(0)}%, confidence: ${(r.confidence * 100).toFixed(0)}%, risk: ${(r.action.riskScore * 100).toFixed(0)}%`,
     )
+  }
+
+  // Group top actions by agent type — different agents = parallel candidates
+  const agentGroups = new Map<string, typeof top>()
+  for (const r of top) {
+    const key = r.action.agent
+    const group = agentGroups.get(key) ?? []
+    group.push(r)
+    agentGroups.set(key, group)
+  }
+  const parallelCandidates = [...agentGroups.entries()].filter(([, g]) => g.length > 0)
+  if (parallelCandidates.length > 1) {
+    lines.push('', 'Parallel execution batches (spawn simultaneously):')
+    lines.push('  Batch 1 — spawn all of the following at the same time:')
+    for (const [agent, group] of parallelCandidates) {
+      const names = group.map(r => r.action.name).join(', ')
+      lines.push(`    • ${agent}: ${names}`)
+    }
+    lines.push('  Await all Batch 1 results before proceeding to dependent follow-up actions.')
+  } else {
+    lines.push('', 'No independent parallel candidates in top actions — execute sequentially.')
   }
 
   if (result.bestPath.length > 0) {

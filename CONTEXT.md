@@ -18,7 +18,7 @@ Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms ove
 
 ## Capability model
 
-- **Capability Pack** — a named grouping of offensive capabilities (`recon`, `web`, `api`, `exploitation`, `privilege-escalation`, `lateral-movement`, `exfiltration`, `cloud`, `binary`, `network`, `reporting`, `lab-control`, `evidence`, `coordination`, `active-directory`, `wifi`, `database`). Source: `src/security/workflows.ts` (`CapabilityPackName`).
+- **Capability Pack** — a named grouping of offensive capabilities (`recon`, `web`, `api`, `mobile`, `exploitation`, `privilege-escalation`, `lateral-movement`, `exfiltration`, `cloud`, `binary`, `network`, `reporting`, `lab-control`, `evidence`, `coordination`, `active-directory`, `wifi`, `database`, `forensics`, `code-audit`, `threat-intel`). Source: `src/security/workflows.ts` (`CapabilityPackName`).
 
 - **Capability** — a concrete offensive action or integration with an execution model (`shell`, `mcp`, `hybrid`). Belongs to one or more Capability Packs. Source: `src/security/capabilities.ts`.
 
@@ -26,13 +26,13 @@ Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms ove
 
 ## Execution surface
 
-- **MCP Surface** — the 8 `nr_*` tools exposed to external MCP clients (Windsurf, Claude Desktop). Deliberately minimal. `nr_exec` is the shell workhorse; everything else is engagement state, evidence, guardrails, or progressive discovery.
+- **MCP Surface** — the 14 `nr_*` tools exposed to external MCP clients (Windsurf, Claude Desktop). Deliberately minimal. `nr_exec` is the shell workhorse; the rest cover engagement state (`nr_engagement_init`, `nr_engagement_status`), scope (`nr_scope_check`), evidence ingest/query (`nr_save_finding`, `nr_save_note`, `nr_list_evidence`, `nr_verify_evidence`), progressive discovery (`nr_discover`, `nr_tool_help`), Knowledge Graph lookup (`nr_kg_query`), validation (`nr_validate_finding`), MITRE coverage (`nr_coverage_status`), and report export (`nr_export_report`).
 
-- **Skill** — a named composable playbook that sequences tools and captures intent (`engagement-setup`, `scope-guard`, `recon-plan`, `evidence-capture`, `vuln-assessment`, `exploit-validation`, `post-exploitation-plan`, `report-generation`, `attack-path-analysis`, `apt-simulation`, `target-fingerprinting`). Source: `src/security/skillDefinitions.ts`. Exposed to users via `SkillTool` and composed into Workflows.
+- **Skill** — a named composable playbook that sequences tools and captures intent. Red-team skills include `engagement-setup`, `scope-guard`, `recon-plan`, `target-fingerprinting`, `evidence-capture`, `vuln-assessment`, `exploit-validation`, `post-exploitation-plan`, `report-generation`, `attack-path-analysis`, `apt-simulation`, `feedback-loop`, `waf-detection`, `statistical-verification`, `oob-verification`, `mcts-planning`, `dfir-triage`, `code-audit-review`, `threat-intel-enrichment`, `wifi-assessment`, `mobile-app-testing`, `binary-exploitation`, `digital-footprint-assessment`, `identity-correlation`, `c2-infrastructure`, `c2-operations`, `wordpress-attack-tree`, `headless-browser-validation`, `bug-bounty-validation`, `http-smuggling-cache-poisoning`, `serverless-edge-recon`. Source: `src/security/skillDefinitions.ts`. Exposed via `SkillTool` and composed into Workflows.
 
-- **Workflow** — an end-to-end engagement template (`web-app-testing`, `api-testing`, `lab-target-testing`, `ctf-mode`, `ad-testing`, `wifi-testing`) mapping Scope intent to Capability Packs, Specialist Agents, and Skill ordering. Source: `src/security/workflows.ts`.
+- **Workflow** — an end-to-end engagement template mapping Scope intent to Capability Packs, Specialist Agents, and Skill ordering. Workflows: `web-app-testing`, `api-testing`, `mobile-app-testing`, `lab-target-testing`, `adversary-emulation`, `bug-bounty-recon-validation`, `ctf-mode`, `ad-testing`, `wifi-testing`, `dfir-incident-response`, `code-audit-review`, `cloud-assessment`. Source: `src/security/workflows.ts`.
 
-- **Specialist Agent** — a Net-Runner built-in agent type with a focused system prompt and tool subset (`engagement-lead`, `recon-specialist`, `web-testing-specialist`, `api-testing-specialist`, `network-testing-specialist`, `exploit-specialist`, `privilege-escalation-specialist`, `lateral-movement-specialist`, `ad-specialist`, `retest-specialist`, `evidence-specialist`, `reporting-specialist`). Source: `src/tools/AgentTool/built-in/`.
+- **Specialist Agent** — a Net-Runner built-in agent type with a focused system prompt and scoped tool allowlist. Specialists: `engagement-lead`, `recon-specialist`, `web-testing-specialist`, `api-testing-specialist`, `network-testing-specialist`, `exploit-specialist`, `privilege-escalation-specialist`, `lateral-movement-specialist`, `ad-specialist`, `retest-specialist`, `evidence-specialist`, `reporting-specialist`, `forensics-specialist`, `code-audit-specialist`, `wifi-specialist`, `mobile-testing-specialist`, `binary-specialist`. Source: `src/tools/AgentTool/built-in/`.
 
 - **Engagement Lead** — the coordinator Specialist Agent. Routes work to other specialists, owns scope adherence, and terminates the engagement.
 
@@ -47,5 +47,5 @@ Canonical vocabulary for the Net-Runner red-team harness. Prefer these terms ove
 - One Engagement owns exactly one `.netrunner/` directory.
 - Every `review`/`block` Guardrail Decision **must** produce an Evidence Ledger entry.
 - Specialist Agents **must not** bypass the Engagement Lead for scope changes.
-- MCP Surface **must not** grow beyond the documented 8 tools.
+- MCP Surface **must not** grow beyond the documented 14 tools.
 - Evidence Ledger is append-only. Never mutate past entries.

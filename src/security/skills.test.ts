@@ -40,6 +40,12 @@ test('Net-Runner registers bundled security workflow skills', () => {
     'mcts-planning',
     'oob-verification',
     'caveman-harness',
+    'dfir-triage',
+    'code-audit-review',
+    'threat-intel-enrichment',
+    'wifi-assessment',
+    'mobile-app-testing',
+    'binary-exploitation',
   ])
   assert.equal(
     getNetRunnerSkillDefinition('scope-guard')?.primaryExecutionModel,

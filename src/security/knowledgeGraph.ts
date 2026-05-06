@@ -362,6 +362,44 @@ export class KnowledgeGraph {
     this.relationCounter = 0
   }
 
+  /** Query all entities and relations relevant to a given target string (case-insensitive substring match on entity id and properties). */
+  queryForTarget(target: string): GraphQueryResult {
+    const lc = target.toLowerCase()
+    const matched = new Set<string>()
+    for (const entity of Array.from(this.entities.values())) {
+      if (entity.id.toLowerCase().includes(lc)) {
+        matched.add(entity.id)
+        continue
+      }
+      for (const val of Object.values(entity.properties)) {
+        if (typeof val === 'string' && val.toLowerCase().includes(lc)) {
+          matched.add(entity.id)
+          break
+        }
+      }
+    }
+    const entities: KnowledgeEntity[] = []
+    const relations: KnowledgeRelation[] = []
+    const seenRel = new Set<string>()
+    for (const id of Array.from(matched)) {
+      const e = this.entities.get(id)
+      if (e) entities.push(e)
+      for (const rel of [...this.getRelationsFrom(id), ...this.getRelationsTo(id)]) {
+        if (!seenRel.has(rel.id)) {
+          seenRel.add(rel.id)
+          relations.push(rel)
+          // pull in the other side of each relation
+          const otherId = rel.sourceId === id ? rel.targetId : rel.sourceId
+          if (!matched.has(otherId)) {
+            const other = this.entities.get(otherId)
+            if (other) entities.push(other)
+          }
+        }
+      }
+    }
+    return { entities, relations }
+  }
+
   /** Import from a flat array of evidence entries (e.g., from JSONL evidence ledger). */
   ingestEvidenceEntries(entries: Array<Record<string, unknown>>): number {
     let imported = 0

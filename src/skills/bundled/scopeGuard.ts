@@ -16,19 +16,18 @@ export function registerScopeGuardSkill(): void {
           type: 'text',
           text: `# Scope Guard
 
-Review the next planned action against the current engagement boundary before execution.
+Code-side guardrail (assessActionAgainstImpact) already runs on every Bash command. Use this skill only when planning a high-impact step ahead of execution.
 
 Planned action:
-${args || 'No planned action was supplied. Inspect the current plan and identify the next risky step.'}
+${args || '(none — inspect current plan)'}
 
-Instructions:
-1. State the target, engagement type, and allowed impact level as currently understood.
-2. Determine whether the planned action is clearly in scope, unclear, or out of scope.
-3. Flag destructive, disruptive, or persistence-related actions separately.
-4. If the boundary is unclear, stop and ask for explicit operator confirmation.
-5. If the action is acceptable, restate the guardrails that still apply.
+Steps:
+1. Run \`nr_scope_check\` MCP tool with the planned action.
+2. If decision = allow: proceed silently.
+3. If decision = review: surface reason to operator with one-line recommendation.
+4. If decision = block: stop and report reason.
 
-Do not treat scope as implied. Prefer stopping over assuming authorization.`,
+Do not re-extract scope or re-ask authorization. Manifest is authoritative.`,
         },
       ]
     },

@@ -223,6 +223,6 @@ Tool Performance Report:
 
 **MCP Tool Surface Expansion for Batch/Skill Logic**: Composite execution and intelligence behavior now live inside existing tool/skill boundaries. Adding more MCP tools for these same concerns would reintroduce context bloat.
 
-**Generic External Python Tool Wrappers**: Already have 153+ tools. Do not add wrappers just to increase tool count. Exceptions must be evidence-backed capabilities that change the assessment flow. Maigret is treated as one of those exceptions because `/digital-footprint-assessment` uses it for scoped username/profile OSINT with JSON/HTML/TXT artifacts, readiness checks, and evidence correlation.
+**Generic External Python Tool Wrappers**: Already have 215+ tools. Do not add wrappers just to increase tool count. Exceptions must be evidence-backed capabilities that change the assessment flow. Maigret is treated as one of those exceptions because `/digital-footprint-assessment` uses it for scoped username/profile OSINT with JSON/HTML/TXT artifacts, readiness checks, and evidence correlation.
 
 **Distributed Scanning**: Adds deployment complexity. Single-machine sequential execution is simpler and easier to debug for academic project.

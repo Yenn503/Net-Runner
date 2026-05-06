@@ -9,6 +9,11 @@ import { ENGAGEMENT_LEAD_AGENT } from './built-in/engagementLeadAgent.js'
 import { EXPLORE_AGENT } from './built-in/exploreAgent.js'
 import { API_TESTING_SPECIALIST_AGENT } from './built-in/apiTestingSpecialistAgent.js'
 import { EVIDENCE_SPECIALIST_AGENT } from './built-in/evidenceSpecialistAgent.js'
+import { FORENSICS_SPECIALIST_AGENT } from './built-in/forensicsSpecialistAgent.js'
+import { CODE_AUDIT_SPECIALIST_AGENT } from './built-in/codeAuditSpecialistAgent.js'
+import { WIFI_SPECIALIST_AGENT } from './built-in/wifiSpecialistAgent.js'
+import { MOBILE_TESTING_SPECIALIST_AGENT } from './built-in/mobileTestingSpecialistAgent.js'
+import { BINARY_SPECIALIST_AGENT } from './built-in/binarySpecialistAgent.js'
 import { EXPLOIT_SPECIALIST_AGENT } from './built-in/exploitSpecialistAgent.js'
 import { GENERAL_PURPOSE_AGENT } from './built-in/generalPurposeAgent.js'
 import { AD_SPECIALIST_AGENT } from './built-in/adSpecialistAgent.js'
@@ -49,6 +54,11 @@ const NET_RUNNER_SECURITY_AGENT_TYPES = new Set([
   'retest-specialist',
   'evidence-specialist',
   'reporting-specialist',
+  'forensics-specialist',
+  'code-audit-specialist',
+  'wifi-specialist',
+  'mobile-testing-specialist',
+  'binary-specialist',
 ])
 
 function withNetRunnerSecurityMemory(
@@ -121,6 +131,11 @@ export function getBuiltInAgents(): AgentDefinition[] {
       AD_SPECIALIST_AGENT,
       RETEST_SPECIALIST_AGENT,
       EVIDENCE_SPECIALIST_AGENT,
+      FORENSICS_SPECIALIST_AGENT,
+      CODE_AUDIT_SPECIALIST_AGENT,
+      WIFI_SPECIALIST_AGENT,
+      MOBILE_TESTING_SPECIALIST_AGENT,
+      BINARY_SPECIALIST_AGENT,
       REPORTING_SPECIALIST_AGENT,
     )
   }
