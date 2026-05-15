@@ -25,10 +25,15 @@ exploit specialists pick the right one before running anything.
   a hostile sample is detonated in a disposable VM with snapshot/rollback —
   never on `kali-operator` or `windows-operator`. The `cve-intelligence-lookup`
   skill enforces this.
-- **`nr_exec` currently runs on the operator host.** Until a container/VM
-  execution adapter lands, treat every `nr_exec` call as `kali-operator` /
-  `windows-operator` and do not run untrusted payloads through it. This is a
-  known limitation tracked in the project docs.
+- **`nr_exec` runs on the operator host by default.** Set
+  `NETRUNNER_EXEC_SANDBOX=docker` to route every `nr_exec` command through a
+  disposable `sandbox-container` instead — Docker, working dir mounted
+  read-only at `/work`, `--network none` by default, dropped capabilities.
+  Unset = host execution (unchanged). Tuning vars:
+  `NETRUNNER_EXEC_SANDBOX_IMAGE`, `_NETWORK` (`none`|`host` — set `host` when
+  commands must reach in-scope targets), `_MEMORY`, `_CPUS`, and `_FALLBACK`
+  (`refuse` default, or `host` to degrade to host execution if Docker is
+  absent). The CLI-driven Bash tool is a separate path and is not affected.
 - **Match the tool to the environment.** Scanners belong in
   `sandbox-container`; AD tradecraft in `windows-operator` or `network`;
   binary detonation in `vm-isolated`.

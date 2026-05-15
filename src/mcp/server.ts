@@ -53,6 +53,7 @@ import {
   clearAgentDefinitionsCache,
   getAgentDefinitionsWithOverrides,
 } from '../tools/AgentTool/loadAgentsDir.js'
+import { getSandboxConfig, probeDocker, runInSandbox } from './execSandbox.js'
 
 const execAsync = promisify(exec)
 
@@ -124,6 +125,10 @@ const CONTEXT_BUDGET_WARN_TOKENS = parseInt(
   process.env.NR_CONTEXT_BUDGET_WARN_TOKENS ?? '45000',
   10,
 )
+
+// Opt-in nr_exec sandbox. Unset NETRUNNER_EXEC_SANDBOX => host execution
+// (default, unchanged). =docker routes nr_exec through a Docker container.
+const SANDBOX_CONFIG = getSandboxConfig()
 
 const sessionBudgets = new Map<string, SessionBudget>()
 
@@ -332,12 +337,48 @@ async function executeCommandWithIntelligence(
     `running ${formatCommandPreview(command)} · timeout=${timeout}ms`,
   )
   try {
-    const { stdout, stderr } = await execAsync(command, {
-      cwd: CWD,
-      timeout,
-      maxBuffer: EXEC_MAX_BUFFER_BYTES,
-      env: { ...process.env, TERM: 'dumb' },
-    })
+    let stdout: string
+    let stderr: string
+    if (SANDBOX_CONFIG.enabled) {
+      const dockerVersion = await probeDocker()
+      if (!dockerVersion) {
+        if (!SANDBOX_CONFIG.fallbackToHost) {
+          throw new Error(
+            'Sandbox execution requested (NETRUNNER_EXEC_SANDBOX=docker) but ' +
+              'Docker is unavailable. Refusing to run on the operator host. ' +
+              'Set NETRUNNER_EXEC_SANDBOX_FALLBACK=host to override, or unset ' +
+              'NETRUNNER_EXEC_SANDBOX.',
+          )
+        }
+        logRuntimeEvent(
+          'EXEC',
+          'Docker unavailable — NETRUNNER_EXEC_SANDBOX_FALLBACK=host, running on operator host',
+          undefined,
+          YELLOW,
+        )
+        ;({ stdout, stderr } = await execAsync(command, {
+          cwd: CWD,
+          timeout,
+          maxBuffer: EXEC_MAX_BUFFER_BYTES,
+          env: { ...process.env, TERM: 'dumb' },
+        }))
+      } else {
+        ;({ stdout, stderr } = await runInSandbox(
+          command,
+          CWD,
+          timeout,
+          SANDBOX_CONFIG,
+          msg => logRuntimeEvent('EXEC', msg, undefined, YELLOW),
+        ))
+      }
+    } else {
+      ;({ stdout, stderr } = await execAsync(command, {
+        cwd: CWD,
+        timeout,
+        maxBuffer: EXEC_MAX_BUFFER_BYTES,
+        env: { ...process.env, TERM: 'dumb' },
+      }))
+    }
     const parts: string[] = []
     if (stdout.trim()) parts.push(stdout.trim())
     if (stderr.trim()) parts.push(`[stderr]\n${stderr.trim()}`)
