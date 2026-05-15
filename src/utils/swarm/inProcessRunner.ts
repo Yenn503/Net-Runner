@@ -67,7 +67,9 @@ import { tokenCountWithEstimation } from '../../utils/tokens.js'
 import { createAbortController } from '../abortController.js'
 import { type AgentContext, runWithAgentContext } from '../agentContext.js'
 import { count } from '../array.js'
+import { getCwd } from '../cwd.js'
 import { logForDebugging } from '../debug.js'
+import { recordSubagentExecution } from '../../security/runtimeIntegration.js'
 import { cloneFileStateCache } from '../fileStateCache.js'
 import {
   SUBAGENT_REJECT_MESSAGE,
@@ -901,6 +903,13 @@ export async function runInProcessTeammate(
   } = config
   const { setAppState } = toolUseContext
 
+  // Captured once, at the top, outside the teammate's AsyncLocalStorage
+  // context so it reflects the engagement cwd consistently. Used to record an
+  // execution_step evidence entry when this teammate completes or fails.
+  const runStartMs = Date.now()
+  const engagementCwd = getCwd()
+  const teammateAgentType = agentDefinition?.agentType ?? identity.agentName
+
   logForDebugging(
     `[inProcessRunner] Starting agent loop for ${identity.agentId}`,
   )
@@ -1461,6 +1470,22 @@ export async function runInProcessTeammate(
     }
 
     unregisterPerfettoAgent(identity.agentId)
+    // Record an execution_step in the evidence ledger so a swarm-only
+    // workflow does not finish with an empty ledger. No-ops when there is no
+    // engagement manifest; internally fault-isolated.
+    try {
+      await recordSubagentExecution({
+        cwd: engagementCwd,
+        agentType: teammateAgentType,
+        status: 'completed',
+        description: description ?? prompt,
+        prompt,
+        summary: getLastPeerDmSummary(allMessages),
+        totalDurationMs: Date.now() - runStartMs,
+      })
+    } catch {
+      // evidence write is best-effort; never block the teammate result
+    }
     return { success: true, messages: allMessages }
   } catch (error) {
     const errorMessage =
@@ -1525,6 +1550,21 @@ export async function runInProcessTeammate(
     )
 
     unregisterPerfettoAgent(identity.agentId)
+    // Record the failed execution_step — a failed swarm run must still leave
+    // a ledger trail with the failure reason carried in `summary`.
+    try {
+      await recordSubagentExecution({
+        cwd: engagementCwd,
+        agentType: teammateAgentType,
+        status: 'failed',
+        description: description ?? prompt,
+        prompt,
+        summary: `Teammate run failed: ${errorMessage}`,
+        totalDurationMs: Date.now() - runStartMs,
+      })
+    } catch {
+      // evidence write is best-effort; never mask the original failure
+    }
     return {
       success: false,
       error: errorMessage,

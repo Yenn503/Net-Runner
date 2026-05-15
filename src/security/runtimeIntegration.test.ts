@@ -64,6 +64,43 @@ test('recordSubagentExecution appends runtime execution notes into evidence ledg
   )
 })
 
+test('recordSubagentExecution records a failed run with the failure summary', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'net-runner-subagent-fail-'))
+  await initializeNetRunnerProject({ cwd, workflowId: 'web-app-testing' })
+
+  await recordSubagentExecution({
+    cwd,
+    agentType: 'recon-specialist',
+    status: 'failed',
+    description: 'port scan',
+    prompt: 'scan the target host',
+    summary: 'Teammate run failed: connection refused',
+    totalDurationMs: 1200,
+  })
+
+  const steps = (await readEvidenceEntries(cwd)).filter(
+    entry => entry.type === 'execution_step',
+  )
+  assert.equal(steps.length, 1)
+  if (steps[0]?.type === 'execution_step') {
+    assert.equal(steps[0].status, 'failed')
+    assert.match(steps[0].summary ?? '', /connection refused/)
+  }
+})
+
+test('recordSubagentExecution writes nothing when no engagement is initialized', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'net-runner-subagent-nomanifest-'))
+  await recordSubagentExecution({
+    cwd,
+    agentType: 'infra-specialist',
+    status: 'completed',
+    description: 'noop',
+    prompt: 'noop',
+  })
+  const entries = await readEvidenceEntries(cwd)
+  assert.equal(entries.length, 0)
+})
+
 test('evaluateEngagementGuardrail flags out-of-scope direct actions', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'net-runner-guardrail-scope-'))
   await initializeNetRunnerProject({
