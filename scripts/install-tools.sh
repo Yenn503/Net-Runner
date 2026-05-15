@@ -50,7 +50,7 @@ need_sudo() {
 
 # ---- apt batch -----------------------------------------------------------
 APT_PKGS=(
-  jadx apktool yara sleuthkit volatility3 chisel
+  jadx apktool yara sleuthkit volatility3 chisel plaso
   golang-go
   python3-pip python3-venv pipx
 )
@@ -77,6 +77,7 @@ install_apt() {
 PIPX_PKGS=(
   maigret holehe ghunt certipy-ad pacu frida-tools objection
   arjun apkleaks pwntools semgrep checkov bbot
+  scoutsuite dnstwist netexec cartography
 )
 
 install_pipx() {
@@ -98,6 +99,7 @@ install_pipx() {
 GO_PKGS=(
   "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
   "github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"
+  "github.com/ffuf/ffuf/v2@latest"
   "github.com/hahwul/dalfox/v2@latest"
   "github.com/gitleaks/gitleaks/v8@latest"
   "github.com/BishopFox/cloudfox@latest"
