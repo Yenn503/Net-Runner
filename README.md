@@ -161,7 +161,7 @@ Built on [OpenClaude](https://github.com/Gitlawb/openclaude). Red-team layer (ag
 
 Candid engineering view: [`docs/project/harness-assessment.md`](docs/project/harness-assessment.md).
 
-**Docs:** [Workflows](docs/workflows/overview.md) · [APT Sim](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md) · [Customization](docs/customization/README.md)
+**Docs:** [Workflows](docs/workflows/overview.md) · [APT Sim](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md) · [Environments](docs/environments/README.md) · [Customization](docs/customization/README.md)
 
 ## Contributing
 
