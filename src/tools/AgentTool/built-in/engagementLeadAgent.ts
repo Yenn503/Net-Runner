@@ -1,4 +1,30 @@
+import {
+  SECURITY_WORKFLOWS,
+  WORKFLOW_CATEGORIES,
+  getWorkflowsByCategory,
+} from '../../../security/workflows.js'
 import { defineNetRunnerSpecialist } from './defineNetRunnerSpecialist.js'
+
+/**
+ * Builds the startup mode menu from the workflow registry so it can never
+ * drift out of sync with SECURITY_WORKFLOWS. Workflows are numbered 1..N in
+ * category order; each row shows the exact workflow id the operator's pick
+ * maps to.
+ */
+function buildModeMenu(): string {
+  const idWidth = Math.max(...SECURITY_WORKFLOWS.map(w => w.id.length)) + 2
+  let n = 0
+  const blocks = WORKFLOW_CATEGORIES.map(cat => {
+    const rows = getWorkflowsByCategory(cat.id).map(w => {
+      n += 1
+      return `   ${String(n).padStart(2)}  ${w.id.padEnd(idWidth)}${w.label}`
+    })
+    return `  ${cat.label.toUpperCase()} — ${cat.blurb}\n${rows.join('\n')}`
+  })
+  return blocks.join('\n\n')
+}
+
+const MODE_MENU = buildModeMenu()
 
 const SYSTEM_PROMPT = `You are the engagement lead for Net-Runner, a security-first testing framework.
 
@@ -19,31 +45,14 @@ When the operator opens a fresh session with no engagement, your FIRST reply is 
 \`\`\`
   Net-Runner — pick what you're doing today:
 
-   WEB & API
-    1  web-app-testing      Test a website for XSS, SQLi, SSRF, auth flaws
-    2  api-testing          Test a REST / GraphQL / SOAP API
-    3  mobile-app-testing   Test an Android or iOS app
+${MODE_MENU}
 
-   NETWORK & INFRA
-    4  lab-target-testing   Full attack chain on a host or lab box (HTB-style)
-    5  ad-testing           Active Directory — Kerberos, ADCS, BloodHound
-    6  wifi-testing         802.11 wireless network assessment
-    7  cloud-assessment     AWS / Azure / GCP / Kubernetes attack paths
-
-   RED TEAM & CTF
-    8  adversary-emulation  Emulate a named threat actor end-to-end
-    9  ctf-mode             Capture-the-flag — fast, no report
-
-   RECON & REVIEW
-   10  bug-bounty-recon-validation   Recon a scope, validate findings
-   11  code-audit-review             Static review of a code repository
-   12  dfir-incident-response        Investigate a compromised host
-
-  Reply with a number + target  →  e.g.  "1 example.com"   or   "4 10.10.10.42"
+  Reply with a number + target  →  e.g.  "1 10.10.10.42"   or   "web-app-testing example.com"
   Or just describe the job in plain English and I'll pick the mode for you.
+  (You can also browse modes any time with the /mode command.)
 \`\`\`
 
-If the operator's first message already names a target and intent ("scan example.com for XSS", "audit this Python repo"), skip the menu and infer the workflow yourself — the menu is only for a cold, ambiguous open.
+The row number and the workflow id both identify the same workflow — map the operator's pick to the workflow id shown on that row. If their first message already names a target and intent ("scan example.com for XSS", "audit this Python repo"), skip the menu and infer the workflow yourself — the menu is only for a cold, ambiguous open.
 
 Operating principles:
 - After mode + target are chosen, initialize the engagement with nr_engagement_init using the selected workflow id. Do not ask the operator to confirm authorization in chat — the manifest is authoritative.

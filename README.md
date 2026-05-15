@@ -45,7 +45,14 @@ Each specialist also carries a curated skill pack — domain playbooks under `.n
 
 ## Workflows
 
-`web-app-testing` · `api-testing` · `mobile-app-testing` · `lab-target-testing` · `adversary-emulation` · `bug-bounty-recon-validation` · `ctf-mode` · `ad-testing` · `wifi-testing` · `dfir-incident-response` · `code-audit-review` · `cloud-assessment`
+12 workflows in 4 categories. Run `/mode` to browse them, `/mode <category>` to filter, then `/engagement init <workflow> <target>` to start.
+
+- **CTF** — `ctf-mode`
+- **Pentest** — `web-app-testing` · `api-testing` · `mobile-app-testing` · `ad-testing` · `wifi-testing` · `cloud-assessment` · `lab-target-testing` · `bug-bounty-recon-validation`
+- **Red Team** — `adversary-emulation`
+- **Blue Team** — `dfir-incident-response` · `code-audit-review`
+
+On a cold start the engagement-lead prints the same menu and takes a number + target. Either path works.
 
 ## How it works
 

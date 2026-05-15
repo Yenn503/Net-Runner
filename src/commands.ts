@@ -33,6 +33,7 @@ import installGitHubApp from './commands/install-github-app/index.js'
 import installSlackApp from './commands/install-slack-app/index.js'
 import breakCache from './commands/break-cache/index.js'
 import mcp from './commands/mcp/index.js'
+import mode from './commands/mode/index.js'
 import onboarding from './commands/onboarding/index.js'
 import pr_comments from './commands/pr_comments/index.js'
 import report from './commands/report/index.js'
@@ -271,6 +272,7 @@ const COMMANDS = memoize((): Command[] => [
   installSlackApp,
   mcp,
   memory,
+  mode,
   model,
   outputStyle,
   remoteEnv,

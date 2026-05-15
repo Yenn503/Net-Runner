@@ -31,7 +31,7 @@ import {
 } from '../security/capabilities.js'
 import { IMPORTED_PENTEST_CAPABILITIES, getToolById } from '../security/catalog/index.js'
 import { getOrPopulateHelp } from '../security/catalog/helpCache.js'
-import { SECURITY_WORKFLOWS } from '../security/workflows.js'
+import { SECURITY_WORKFLOWS, WORKFLOW_IDS } from '../security/workflows.js'
 import { NET_RUNNER_SKILL_DEFINITIONS } from '../security/skillDefinitions.js'
 import {
   getNetRunnerProjectDir,
@@ -759,10 +759,7 @@ server.addTool({
   annotations: MUTATING_STATE_TOOL_ANNOTATIONS,
   parameters: z.object({
     name: z.string().optional().describe('Engagement name'),
-    workflow: z.enum([
-      'web-app-testing', 'api-testing', 'mobile-app-testing',
-      'lab-target-testing', 'ctf-mode', 'ad-testing', 'wifi-testing',
-    ]).optional().describe('Workflow (default: web-app-testing)'),
+    workflow: z.enum(WORKFLOW_IDS).optional().describe('Workflow (default: web-app-testing)'),
     targets: z.array(z.string()).optional().describe('Target hosts/URLs'),
     objectives: z.array(z.string()).optional().describe('Testing objectives'),
     scope_summary: z.string().optional().describe('Scope description'),

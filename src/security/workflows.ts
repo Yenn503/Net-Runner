@@ -34,6 +34,25 @@ export type CapabilityPack = {
   optionalIntegrations?: string[]
 }
 
+export type WorkflowCategory = 'ctf' | 'pentest' | 'redteam' | 'blueteam'
+
+export type WorkflowCategoryInfo = {
+  id: WorkflowCategory
+  label: string
+  blurb: string
+}
+
+/**
+ * Top-level grouping shown by the `/mode` command and the engagement-lead
+ * startup menu. Every SecurityWorkflow belongs to exactly one category.
+ */
+export const WORKFLOW_CATEGORIES: WorkflowCategoryInfo[] = [
+  { id: 'ctf', label: 'CTF', blurb: 'Capture-the-flag — fast, time-boxed, no client report.' },
+  { id: 'pentest', label: 'Pentest', blurb: 'Scoped penetration tests against apps, networks, and cloud.' },
+  { id: 'redteam', label: 'Red Team', blurb: 'Adversary emulation — full-chain, threat-actor TTPs.' },
+  { id: 'blueteam', label: 'Blue Team', blurb: 'Defensive work — incident response, forensics, code audit.' },
+]
+
 export type SecurityWorkflow = {
   id:
     | 'web-app-testing'
@@ -48,6 +67,7 @@ export type SecurityWorkflow = {
     | 'dfir-incident-response'
     | 'code-audit-review'
     | 'cloud-assessment'
+  category: WorkflowCategory
   label: string
   description: string
   capabilityPacks: CapabilityPackName[]
@@ -185,6 +205,7 @@ export const CAPABILITY_PACKS: CapabilityPack[] = [
 export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   {
     id: 'web-app-testing',
+    category: 'pentest',
     label: 'Web App Testing',
     description: 'Security testing workflow for web application targets.',
     capabilityPacks: [
@@ -220,6 +241,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'api-testing',
+    category: 'pentest',
     label: 'API Testing',
     description: 'Security testing workflow for HTTP and programmatic APIs.',
     capabilityPacks: [
@@ -253,6 +275,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'mobile-app-testing',
+    category: 'pentest',
     label: 'Mobile App Testing',
     description: 'Security testing workflow for Android and mobile application targets.',
     capabilityPacks: [
@@ -280,6 +303,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'lab-target-testing',
+    category: 'pentest',
     label: 'Lab Target Testing',
     description: 'Structured testing workflow for labs, HTB, and internal targets.',
     capabilityPacks: [
@@ -321,6 +345,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'adversary-emulation',
+    category: 'redteam',
     label: 'Adversary Emulation',
     description: 'Guarded command-and-control and post-compromise workflow for explicitly authorized adversary-emulation operations.',
     capabilityPacks: [
@@ -358,6 +383,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'bug-bounty-recon-validation',
+    category: 'pentest',
     label: 'Bug Bounty Recon & Validation',
     description: 'External bug-bounty workflow chaining recon, parameter mining, headless DOM XSS confirmation, and OOB verification with evidence-tagged findings.',
     capabilityPacks: [
@@ -395,6 +421,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'ctf-mode',
+    category: 'ctf',
     label: 'CTF Mode',
     description: 'Time-boxed testing workflow for challenge environments.',
     capabilityPacks: [
@@ -436,6 +463,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'ad-testing',
+    category: 'pentest',
     label: 'Active Directory Testing',
     description: 'Structured testing workflow for Active Directory domain environments.',
     capabilityPacks: [
@@ -476,6 +504,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'wifi-testing',
+    category: 'pentest',
     label: 'WiFi Testing',
     description: 'Wireless network security assessment workflow for 802.11 environments.',
     capabilityPacks: [
@@ -501,6 +530,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'dfir-incident-response',
+    category: 'blueteam',
     label: 'DFIR Incident Response',
     description: 'Triage and analysis workflow for incident response and forensic investigation engagements.',
     capabilityPacks: ['recon', 'forensics', 'evidence', 'reporting', 'coordination', 'threat-intel'],
@@ -515,6 +545,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'code-audit-review',
+    category: 'blueteam',
     label: 'Code Audit Review',
     description: 'Static analysis, secret-scan, dependency, and IaC audit workflow for source code repositories.',
     capabilityPacks: ['code-audit', 'evidence', 'reporting', 'coordination'],
@@ -528,6 +559,7 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
   {
     id: 'cloud-assessment',
+    category: 'pentest',
     label: 'Cloud Assessment',
     description: 'Cloud posture and platform-security workflow for AWS, Azure, GCP, and Kubernetes targets. Routes to existing specialists; cloud tooling is shell-driven via the catalog.',
     capabilityPacks: ['recon', 'cloud', 'network', 'exploitation', 'evidence', 'reporting', 'coordination'],
@@ -543,8 +575,30 @@ export const SECURITY_WORKFLOWS: SecurityWorkflow[] = [
   },
 ]
 
+/**
+ * Every workflow id as a non-empty tuple — single source of truth for Zod
+ * enums and any other place that needs the exhaustive list. Keeps validators
+ * from drifting out of sync with SECURITY_WORKFLOWS.
+ */
+export const WORKFLOW_IDS = SECURITY_WORKFLOWS.map(w => w.id) as [
+  SecurityWorkflow['id'],
+  ...SecurityWorkflow['id'][],
+]
+
 export function findWorkflow(id: SecurityWorkflow['id']): SecurityWorkflow | undefined {
   return SECURITY_WORKFLOWS.find(workflow => workflow.id === id)
+}
+
+/** True when `id` is a valid workflow id. */
+export function isWorkflowId(id: string): id is SecurityWorkflow['id'] {
+  return SECURITY_WORKFLOWS.some(workflow => workflow.id === id)
+}
+
+/** All workflows in a category, in registry order. */
+export function getWorkflowsByCategory(
+  category: WorkflowCategory,
+): SecurityWorkflow[] {
+  return SECURITY_WORKFLOWS.filter(workflow => workflow.category === category)
 }
 
 export function getCapabilityPack(name: CapabilityPackName): CapabilityPack | undefined {
