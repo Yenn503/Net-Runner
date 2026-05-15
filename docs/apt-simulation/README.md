@@ -1,13 +1,8 @@
 # APT Simulation — Implementation Reference
 
-> Comprehensive documentation for the APT Simulation subsystem in Net-Runner.
-> This document is designed for agent review — every claim maps to a specific file and line range.
-
----
-
 ## Overview
 
-The APT Simulation subsystem enables red teams to simulate realistic Advanced Persistent Threat (APT) attack chains against specific industries. When a client operates in finance, government, healthcare, telecom, or another sector, the operator selects an APT simulation workflow that mirrors the real-world threat actors most likely to target that industry.
+Simulate realistic APT attack chains against specific industries (finance, government, healthcare, telecom, …). The operator picks a workflow mirroring threat actors most likely to target the client's sector.
 
 **Key stats:**
 - **40 APT groups** profiled with full MITRE ATT&CK technique mappings
@@ -249,7 +244,7 @@ The `/apt-simulation` skill provides:
 
 ## Source References
 
-All APT group profiles reference authoritative sources:
+Per-group MITRE ATT&CK pages, CISA advisories, Microsoft TI, and Mandiant reports are linked inline within `attack-chain-reference.md`. Master source list:
 
 ### MITRE ATT&CK Group Pages
 - APT29: https://attack.mitre.org/groups/G0016/
@@ -354,16 +349,11 @@ const stats = getAptSimulationStats()
 
 ---
 
-## How It Integrates with the Existing Engine
+## Integration
 
-1. **Skill System**: The `/apt-simulation` skill is registered alongside existing security skills in `src/skills/bundled/index.ts`. It uses the same `registerBundledSkill()` API.
-
-2. **Auto-Engagement**: When a user mentions APT-related keywords (group names, "threat simulation", etc.), `autoEngagement.ts` detects this and routes to the `lab-target-testing` base workflow, which provides the broadest set of capability packs and agents.
-
-3. **Prompt Injection**: `formatAptSimulationPrompt()` builds a structured context block that can be injected into the LLM's system prompt, giving it step-by-step attack guidance, key techniques, and MITRE ATT&CK references.
-
-4. **Agent Routing**: Each attack chain phase specifies which specialist agents should handle that phase. The engagement-lead agent uses this to delegate work correctly.
-
-5. **Guardrails**: Impact phases in attack chains that involve destructive operations (wiper, ransomware) are explicitly marked as "SIMULATION ONLY" in the guidance text. The existing guardrail system will still block or flag high-impact actions.
-
-6. **Evidence**: All simulation activity flows through the normal evidence capture system — findings, artifacts, and notes are stored in `.netrunner/evidence/`.
+- `/apt-simulation` skill registered in `src/skills/bundled/index.ts`
+- `autoEngagement.ts` detects APT keywords, routes to `lab-target-testing` base workflow
+- `formatAptSimulationPrompt()` injects per-chain MITRE technique guidance into the LLM system prompt
+- Each chain phase declares the specialist agent that handles it
+- Destructive phases (wiper, ransomware) marked SIMULATION ONLY; guardrails still gate high-impact actions
+- All activity flows through `.netrunner/evidence/` like any other engagement

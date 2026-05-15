@@ -108,5 +108,22 @@ else
 EOF
 fi
 
+step "Custom red-team tooling"
+warn "Net-Runner's specialist agents reference ~60 tools."
+cat <<'EOF'
+
+   Check what's missing on this host:
+     bash scripts/install-tools.sh --check
+
+   Install everything missing (apt + pipx + go + GitHub releases):
+     bash scripts/install-tools.sh
+
+   Or by group:
+     bash scripts/install-tools.sh --apt-only
+     bash scripts/install-tools.sh --pipx-only
+     bash scripts/install-tools.sh --go-only
+     bash scripts/install-tools.sh --gh-only
+EOF
+
 step "Done"
 ok "Net-Runner is ready on this host"

@@ -1,19 +1,8 @@
 # Service Surfaces
 
-Net-Runner runs locally first, but some optional features still depend on hosted services.
+Net-Runner runs locally first. Optional hosted surfaces (listed below) are integration debt — replace, self-host, or remove cleanly. Default supported path: local CLI + local-first MCP.
 
-This document defines the retained service contracts so future updates can replace, self-host, or remove them cleanly.
-
-For the current OSS repository, these hosted surfaces should be treated as **optional integration debt**, not as part of the default supported runtime. The default supported path remains local CLI + local-first MCP. Hosted assistant-session flows, the direct-connect session server, and the shipped SSH remote implementation are not bundled as stable OSS runtime paths in this snapshot.
-
-## Rule
-
-Target state:
-- Keep a service-backed feature only if it can run behind Net-Runner-owned configuration.
-- If a feature depends on Anthropic-owned infrastructure with no Net-Runner replacement path, remove it instead of leaving a hidden dependency.
-
-Current state:
-- The runtime still includes some non-Net-Runner-owned API dependencies. Those exceptions are listed explicitly below and should be treated as migration debt, not completion.
+**Rule:** keep a service-backed feature only if it can run behind Net-Runner-owned config. If it depends on Anthropic-owned infra with no replacement path, remove it.
 
 ## Hosted Web Workspace
 

@@ -4,76 +4,76 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
-[![License](https://img.shields.io/badge/License-Educational%20Use-red?style=for-the-badge)](#license)
+[![MCP](https://img.shields.io/badge/MCP-FastMCP-7C3AED?style=for-the-badge)](https://www.anthropic.com/engineering/code-execution-with-mcp)
+[![License](https://img.shields.io/badge/Educational%20Use-red?style=for-the-badge)](#license)
 
-*Agentic red-team runtime — workflow control, evidence chain, memory, and specialist agents.* 🔥
+**Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
 
-<sub>6 specialist agents · 228 cataloged tools · 279 capabilities · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
-
----
+<sub>6 specialists · 228 cataloged tools · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
 
 </div>
 
-Net-Runner is a final-year university research project — an agentic red-team harness where an LLM drives full security assessments. It picks a workflow, spins up specialist agents, runs 228 cataloged tools through a single shell-execution surface, enforces scope guardrails, logs every action to an append-only evidence ledger, and generates traceable reports. Built on [OpenClaude](https://github.com/Gitlawb/openclaude).
-
-The design follows Anthropic's [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern: 14 `nr_*` tools instead of 228 MCP definitions, with `nr_exec` as the shell workhorse. Any MCP-compatible client — Claude Code, Cursor, Windsurf — can drive the harness without configuring API keys inside Net-Runner.
-
 ---
 
-## How it works 🎯
+Final-year university research project. An LLM drives full security assessments end-to-end: picks a workflow, spins up specialists, runs cataloged tooling under scope guardrails, logs everything to an append-only evidence ledger, generates traceable reports.
 
-1. Describe target and goal in plain English
-2. `.netrunner/` created with scope envelope, impact boundary, and run state
-3. Matching workflow loaded — specialist agents, role contracts, and prior session memory injected
-4. Tools run with guardrail checks before each risky action
-5. Evidence, findings, validation entries, and artifacts written to `.netrunner/` throughout
-6. Reports generated from the evidence ledger — not from chat transcripts
+Built on [OpenClaude](https://github.com/Gitlawb/openclaude). Follows Anthropic's [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — 14 `nr_*` tools instead of 228 MCP definitions, with `nr_exec` as the shell workhorse. Any MCP client (Claude Code, Cursor, Windsurf) can drive the harness.
 
-Every finding starts `Unvalidated`. Validation is a typed step: command replay via `nr_validate_finding`, statistical verification, OOB callback, or artifact review. Reports label each finding `Validated`, `Unvalidated`, `Inconclusive`, or `Disputed`. MITRE coverage counts only replay-validated findings.
+## Quick start
 
----
+```bash
+bun install && bun run build
+bun run setup          # interactive wizard — picks provider, validates token
+bun run dev:profile    # launch
+```
 
-## Specialist agents 🤖
+## Specialist agents
 
-| Agent | Domain | Key tools |
-|---|---|---|
-| **engagement-lead** | Coordinates phases, routes specialists, queries KG before discovery, enforces scope | Agent routing, `nr_kg_query`, `nr_scope_check`, MCTS planner |
-| **recon-specialist** | Target discovery, DNS/OSINT/surface mapping, cloud asset enum, username footprinting, 802.11 (AP discovery, PMKID/handshake, evil-twin) | `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `httpx`, `theHarvester`, `maigret`, `cloud_enum`, `GHunt`, `holehe`, `airodump-ng`, `hcxdumptool` |
-| **app-testing-specialist** | Web (XSS, SQLi, SSRF, smuggling, auth bypass), REST/GraphQL/SOAP (JWT, IDOR), Android/iOS (static + dynamic, Frida, SSL unpin) | `sqlmap`, `dalfox`, `ffuf`, `nuclei`, `nikto`, `jwt_tool`, `arjun`, `jadx`, `apktool`, `frida`, `objection`, MobSF |
-| **infra-specialist** | Network services, exploit validation, Linux/Windows/K8s privesc, lateral movement, AD (Kerberos/ADCS/BloodHound), cloud attack paths (AWS/Azure/GCP), binary RE + CTF pwn | `nmap`, `netexec`, `impacket-*`, `bloodhound`, `certipy`, `linpeas`, `winpeas`, `peirates`, `pacu`, `cloudfox`, `prowler`, `chisel`, `ghidra`, `pwntools` |
-| **code-forensics-specialist** | SAST, secret scanning, dependency CVEs, IaC misconfig, memory/disk forensics, log timelining, IOC extraction | `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara` |
-| **evidence-reporting-specialist** | Chain-of-custody curation, finding retest + remediation validation, client-ready reports | SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`, `nr_verify_evidence`, replay harness |
+- 🎯 **Lead** — phase coordination, routing, scope enforcement, KG queries before discovery, MCTS planner
+- 🛰️ **Recon** — DNS, OSINT, surface mapping, cloud asset enum, 802.11 · `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `theHarvester`, `cloud_enum`, `airodump-ng`, `hcxdumptool`
+- 🕷️ **AppSec** — web (XSS/SQLi/SSRF/smuggling), API (JWT/IDOR), mobile (Frida/MobSF) · `sqlmap`, `dalfox`, `nuclei`, `ffuf`, `jwt_tool`, `arjun`, `jadx`, `frida`, `objection`
+- ⚔️ **Infra** — services, privesc, AD (Kerberos/ADCS/BloodHound), cloud paths, RE + CTF pwn · `netexec`, `impacket-*`, `bloodhound`, `certipy`, `linpeas`, `peirates`, `pacu`, `cloudfox`, `chisel`, `ghidra`, `pwntools`
+- 🔬 **CodeAudit** — SAST, secrets, CVE/IaC, memory + disk forensics, log timelining · `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara`
+- 📋 **Reporter** — chain-of-custody curation, retest, remediation validation, client reports · SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`
 
-Each specialist gets the full toolset. Compressed-output discipline applies to all internal reasoning except `engagement-lead` and `evidence-reporting-specialist`.
-
----
+Each specialist sees the full toolset. Compressed-output discipline applies to internal reasoning except Lead and Reporter.
 
 ## Workflows
 
 `web-app-testing` · `api-testing` · `mobile-app-testing` · `lab-target-testing` · `adversary-emulation` · `bug-bounty-recon-validation` · `ctf-mode` · `ad-testing` · `wifi-testing` · `dfir-incident-response` · `code-audit-review` · `cloud-assessment`
 
----
+## How it works
 
-## Intelligence engine 🧠
+1. Describe target and goal in plain English
+2. `.netrunner/` initialized with scope envelope + impact boundary
+3. Workflow loads — specialists, role contracts, prior session memory injected
+4. Tools run with `nr_scope_check` gating risky actions
+5. Findings, validation entries, artifacts written to `.netrunner/` throughout
+6. Reports generated from the evidence ledger — not chat transcripts
 
-- **Knowledge Graph** — entity/relation graph built from evidence; queried before any discovery action to avoid redundant probes
-- **MCTS planner** — ranks next actions by expected information gain against current graph state
-- **WAF detection/bypass** — classifies defenses, selects bypass strategy, persists to engagement state
+Findings start `Unvalidated`. Validation is typed: command replay (`nr_validate_finding`), statistical verification, OOB callback, or artifact review. Reports label `Validated` / `Unvalidated` / `Inconclusive` / `Disputed`. MITRE coverage counts replay-validated findings only.
+
+## Intelligence engine
+
+- **Knowledge Graph** — entity/relation graph from evidence; queried before discovery to avoid redundant probes
+- **MCTS planner** — ranks next actions by expected information gain
+- **WAF detection** — classifies defenses, selects bypass strategy, persists to engagement state
 - **Statistical verifier** — gates blind findings before they enter the ledger
 - **OOB verification** — callback-based confirmation for out-of-band techniques
-- **Feedback loop** — payload mutations (encoding, header, delay, protocol) tracked against per-target effectiveness history
+- **Feedback loop** — payload mutation history (encoding, header, delay, protocol) per target
 
-State persists at `.netrunner/intelligence-state.json`. Per-engagement singleton.
-
----
+State at `.netrunner/intelligence-state.json`. Per-engagement singleton.
 
 ## MCP surface
 
+14 tools. `nr_exec` is the workhorse — all 228 cataloged tools run through shell. Remaining 13 cover engagement state, scope, evidence, discovery, KG, validation, report export.
+
+<details>
+<summary>Tool list</summary>
+
 `nr_exec` · `nr_engagement_init` · `nr_engagement_status` · `nr_scope_check` · `nr_save_finding` · `nr_save_note` · `nr_list_evidence` · `nr_discover` · `nr_tool_help` · `nr_kg_query` · `nr_verify_evidence` · `nr_validate_finding` · `nr_coverage_status` · `nr_export_report`
 
-`nr_exec` is the workhorse — all 228 tools run through shell. The remaining 13 cover engagement state, scope, evidence, progressive discovery, Knowledge Graph, and report export.
-
----
+</details>
 
 ## Reports
 
@@ -83,29 +83,19 @@ State persists at `.netrunner/intelligence-state.json`. Per-engagement singleton
 /report --all latest     # both
 ```
 
-Reports include executive dashboard, attack-path narrative, finding cards, remediation backlog, compliance mappings, MITRE ATT&CK coverage, and evidence appendix. SARIF 2.1, STIX 2.1, and MISP exports via `nr_export_report`.
-
----
-
-## Quick start ⚡
-
-```bash
-bun install && bun run build
-bun run setup        # interactive wizard — picks provider, validates token, saves profile
-bun run dev:profile  # launch
-```
+Executive dashboard, attack-path narrative, finding cards, remediation backlog, compliance mappings, MITRE ATT&CK coverage, evidence appendix. SARIF 2.1 / STIX 2.1 / MISP via `nr_export_report`.
 
 <details>
-<summary>Manual env var launch, Ollama, MCP server, IDE config</summary>
+<summary>Manual env launch, Ollama, MCP server, IDE config</summary>
 
-**Direct env var launch:**
+**Direct env var launch**
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."   # or OPENAI_API_KEY / GEMINI_API_KEY
 node dist/cli.mjs
 ```
 
-**Ollama (local, no API key):**
+**Ollama (local, no API key)**
 
 ```bash
 ollama serve && ollama pull llama3.1:8b
@@ -114,20 +104,20 @@ export OPENAI_MODEL="llama3.1:8b"
 node dist/cli.mjs
 ```
 
-**MCP server:**
+**MCP server**
 
 ```bash
 bun run mcp:server              # http://localhost:8745/mcp
 NR_PORT=9000 bun run mcp:server # custom port
 ```
 
-**Claude Code:**
+**Claude Code**
 
 ```bash
 claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
 ```
 
-**`.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`:**
+**`.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json`**
 
 ```json
 {
@@ -143,29 +133,23 @@ claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
 
 </details>
 
----
-
 ## Camofox browser
 
-Optional Firefox backend patched at C++ level for anti-bot bypass, used by the `headless-browser-validation` skill. Falls back to local Playwright/Chromium automatically if unreachable.
+Optional Firefox patched at C++ level for anti-bot bypass. Used by the `headless-browser-validation` skill. Auto-falls back to local Playwright/Chromium.
 
-**Upstream:** [https://github.com/jo-inc/camofox-browser](https://github.com/jo-inc/camofox-browser) · `bun run setup:camofox`
-
----
+Upstream: [jo-inc/camofox-browser](https://github.com/jo-inc/camofox-browser) · install: `bun run setup:camofox`
 
 ## Provenance
 
-Built on [OpenClaude](https://github.com/Gitlawb/openclaude). All red-team features are Net-Runner additions.
+Built on [OpenClaude](https://github.com/Gitlawb/openclaude). Red-team layer (agents, workflows, intelligence engine, evidence ledger) is Net-Runner.
 
-For a candid engineering view of what the harness proves and where it falls short, see [`docs/project/harness-assessment.md`](docs/project/harness-assessment.md).
+Candid engineering view: [`docs/project/harness-assessment.md`](docs/project/harness-assessment.md).
 
-**Docs:** [Workflows](docs/workflows/overview.md) · [APT Simulation](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
-
----
+**Docs:** [Workflows](docs/workflows/overview.md) · [APT Sim](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
 
 ## Contributing
 
-Issues and PRs welcome. Keep changes scoped; run `bun run typecheck` before submitting.
+Issues and PRs welcome. Run `bun run typecheck` before submitting.
 
 ## License
 

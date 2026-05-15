@@ -24,12 +24,6 @@ That means:
 - specialist agents are used for scoped tasks
 - MCP is kept for external systems and typed integration boundaries
 
-## Why the implementation changed
-
-The AI tooling space changed quickly during development. Public runtimes improved, tool calling got better, and it became easier to test what should stay inside the main runtime and what should move out into separate integrations.
-
-So the implementation changed with the evidence instead of staying fixed to the first technical assumption. The research question did not change. The implementation got sharper.
-
 ## How this fits the proposal
 
 The proposal outline still maps to the current repository:
@@ -40,15 +34,6 @@ The proposal outline still maps to the current repository:
 - evidence capture and reporting are still built into the workflow
 
 What changed is the practical answer to the execution layer. The current answer is not "more MCP everywhere." It is "use MCP where it helps, and keep the rest of the framework simple."
-
-## How to describe it in the report
-
-Use a plain description:
-
-1. The project started as a modular red-team framework with language-model support.
-2. Early design work gave more weight to MCP-compatible execution and platform layers.
-3. Later implementation work showed that a skills-first runtime with direct tool use was a better fit for the main assessment loop.
-4. The final build keeps the original aim, but changes the implementation to match what worked best in practice.
 
 ## Scope and ethics
 

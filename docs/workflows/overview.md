@@ -2,9 +2,7 @@
 
 Net-Runner runs assessments through a project-scoped runtime. Workflow state, guardrails, evidence, findings, and reporting sit inside `.netrunner/`. Persistent memory, session summaries, and optional shared team memory sit outside that project folder and feed context back into later runs.
 
-The strongest supported path in the OSS build is the local workflow runtime. Experimental coordinator-mode and agent-team surfaces still exist, but they should be treated as pilot functionality rather than the default execution path.
-
-That local runtime can be driven in two ways:
+The runtime can be driven in two ways:
 
 - through the Net-Runner CLI with a provider credential (API key, or GitHub Copilot subscription via OAuth device-code flow)
 - through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 14 `nr_*` tools
@@ -84,8 +82,6 @@ These fill gaps that matter in external bug bounty, mobile, and enterprise-targe
 | `evidence-reporting-specialist` | Chain-of-custody evidence curation, finding retest and remediation validation, polished client-ready reports (Markdown, HTML, SARIF 2.1, STIX 2.1, MISP) |
 
 The evidence-reporting specialist owns final report delivery end-to-end. It reads the evidence ledger, correlates artifacts, merges duplicates, frames severity and business impact, and emits Markdown/HTML reports with executive dashboard, attack-path narrative, finding cards, remediation backlog, compliance mapping, MITRE coverage, and evidence appendix.
-
-Operator chat is not proof. A finding becomes validated only through a typed validation entry, usually replay via `nr_validate_finding`, statistical verification, OOB callback confirmation, or artifact review. If validation is missing, the report must say so instead of implying certainty.
 
 ## Capability packs
 

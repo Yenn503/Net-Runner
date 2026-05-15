@@ -127,7 +127,7 @@ for i in $(seq 1 60); do
     break
   fi
   if [ "$i" -eq 60 ]; then
-    fail "Juice Shop did not respond after 60 seconds — check  docker logs $CONTAINER_NAME"
+    fail "Juice Shop did not respond after 60 seconds — check $DOCKER logs $CONTAINER_NAME"
   fi
   sleep 1
 done
