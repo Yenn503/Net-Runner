@@ -14,7 +14,7 @@
 </div>
 
 ---
-red team Agent swarm, built on top of Claude code. 
+Red team Agent swarm, built on top of Claude code. 
 
 CLI driven or any MCP client (Claude Code, Cursor, Windsurf) can drive the harness too.
 
