@@ -25,14 +25,17 @@ cd "$REPO_ROOT"
 MODE="all"
 for arg in "$@"; do
   case "$arg" in
-    --apt-only)  MODE="apt" ;;
-    --pipx-only) MODE="pipx" ;;
-    --go-only)   MODE="go" ;;
-    --gh-only)   MODE="gh" ;;
-    --check)     MODE="check" ;;
-    -h|--help)   sed -n '2,22p' "$0"; exit 0 ;;
+    --apt-only)   MODE="apt" ;;
+    --pipx-only)  MODE="pipx" ;;
+    --go-only)    MODE="go" ;;
+    --gh-only)    MODE="gh" ;;
+    --user-only)  MODE="user" ;;
+    --check)      MODE="check" ;;
+    -h|--help)    sed -n '2,22p' "$0"; exit 0 ;;
   esac
 done
+
+USER_TOOLS_FILE="${NETRUNNER_TOOLS_YAML:-$HOME/.netrunner/tools.yaml}"
 
 step()  { printf '\n\033[1;36m== %s\033[0m\n' "$1"; }
 ok()    { printf '   \033[32m✓\033[0m %s\n' "$1"; }
@@ -145,6 +148,74 @@ install_gh() {
   install_gh_release chainsaw "https://github.com/WithSecureLabs/chainsaw/releases/latest/download/chainsaw_x86_64-unknown-linux-gnu.tar.gz"
 }
 
+# ---- user-declared tools (~/.netrunner/tools.yaml) ---------------------
+# Format (parsed via python3):
+#   tools:
+#     - name: my-thing
+#       check: command -v my-thing       # optional; skipped if already present
+#       install: pip install --user mything
+#       agents: [recon-specialist]       # optional metadata, surfaced by nr_discover
+#
+install_user_tools() {
+  step "User-declared tools"
+  if [ ! -f "$USER_TOOLS_FILE" ]; then
+    ok "No $USER_TOOLS_FILE — skip"
+    return
+  fi
+  if ! have python3; then
+    warn "python3 missing — cannot parse $USER_TOOLS_FILE"
+    return
+  fi
+  ok "Reading $USER_TOOLS_FILE"
+  python3 - "$USER_TOOLS_FILE" <<'PY' | while IFS= read -r entry; do
+import sys, json
+try:
+    import yaml  # pyyaml; may be absent
+except ImportError:
+    # fallback: tolerate simple flat parse
+    yaml = None
+path = sys.argv[1]
+with open(path) as f:
+    raw = f.read()
+if yaml:
+    data = yaml.safe_load(raw) or {}
+else:
+    # minimal parser — line-based, sufficient for documented format
+    data = {"tools": []}
+    cur = None
+    for line in raw.splitlines():
+        s = line.rstrip()
+        if not s or s.lstrip().startswith("#"): continue
+        if s.lstrip().startswith("- name:"):
+            cur = {"name": s.split(":", 1)[1].strip()}
+            data["tools"].append(cur)
+        elif cur and s.lstrip().startswith("install:"):
+            cur["install"] = s.split(":", 1)[1].strip()
+        elif cur and s.lstrip().startswith("check:"):
+            cur["check"] = s.split(":", 1)[1].strip()
+for t in (data.get("tools") or []):
+    name = (t.get("name") or "").strip()
+    install = (t.get("install") or "").strip()
+    check = (t.get("check") or f"command -v {name}").strip() if name else ""
+    if not name or not install: continue
+    print(json.dumps({"name": name, "check": check, "install": install}))
+PY
+    name=$(echo "$entry" | python3 -c 'import sys,json;print(json.loads(sys.stdin.read())["name"])')
+    check_cmd=$(echo "$entry" | python3 -c 'import sys,json;print(json.loads(sys.stdin.read())["check"])')
+    install_cmd=$(echo "$entry" | python3 -c 'import sys,json;print(json.loads(sys.stdin.read())["install"])')
+    if eval "$check_cmd" >/dev/null 2>&1; then
+      skip "$name"
+    else
+      printf '   installing %s ... ' "$name"
+      if eval "$install_cmd" >/dev/null 2>&1; then
+        printf '\033[32m✓\033[0m\n'
+      else
+        printf '\033[33m! failed\033[0m (cmd: %s)\n' "$install_cmd"
+      fi
+    fi
+  done
+}
+
 # ---- check-only mode -----------------------------------------------------
 if [ "$MODE" = "check" ]; then
   exec bash "$REPO_ROOT/scripts/check-tools.sh"
@@ -154,11 +225,12 @@ step "Net-Runner tool installer"
 ok "Mode: $MODE"
 
 case "$MODE" in
-  all)  install_apt; install_pipx; install_go; install_gh ;;
+  all)  install_apt; install_pipx; install_go; install_gh; install_user_tools ;;
   apt)  install_apt ;;
   pipx) install_pipx ;;
   go)   install_go ;;
   gh)   install_gh ;;
+  user) install_user_tools ;;
 esac
 
 step "Done"

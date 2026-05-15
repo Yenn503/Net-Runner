@@ -1,0 +1,6 @@
+# Force LF for shell + interpreter scripts so they run on Linux/WSL when the
+# repo is cloned on Windows. CRLF endings cause shebang failures ("env bash\r"
+# is not on PATH), which falls back to dash and breaks `set -o pipefail`.
+*.sh    text eol=lf
+*.bash  text eol=lf
+bin/*   text eol=lf

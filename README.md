@@ -9,7 +9,7 @@
 
 **Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
 
-<sub>6 specialists · 228 cataloged tools · 32 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
+<sub>6 specialists · 228 cataloged tools · 98 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
 
 </div>
 
@@ -36,6 +36,12 @@ bun run dev:profile    # launch
 - 📋 **Reporter** — chain-of-custody curation, retest, remediation validation, client reports · SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`
 
 Each specialist sees the full toolset. Compressed-output discipline applies to internal reasoning except Lead and Reporter.
+
+## Swarm
+
+The Lead doesn't do the work — it routes it. Independent tasks on disjoint targets fan out to specialists running in parallel; dependent work hands off in sequence with a full context packet (target slice, scope, known facts, evidence refs, stop conditions, next owner). Specialists talk to each other directly through the Agent SDK message channel — no round-tripping every decision through the Lead. Findings and artifacts land in the shared `.netrunner/` ledger as they go, so a handoff is a pointer, not a transcript.
+
+Each specialist also carries a curated skill pack — domain playbooks under `.netrunner/skills/<namespace>/` (`recon:`, `appsec:`, `infra:`, `forensics:`, `lead:`, `reporting:`) covering the techniques that domain actually runs. See [Customization](docs/customization/README.md) to add your own.
 
 ## Workflows
 
@@ -144,7 +150,7 @@ Built on [OpenClaude](https://github.com/Gitlawb/openclaude). Red-team layer (ag
 
 Candid engineering view: [`docs/project/harness-assessment.md`](docs/project/harness-assessment.md).
 
-**Docs:** [Workflows](docs/workflows/overview.md) · [APT Sim](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md)
+**Docs:** [Workflows](docs/workflows/overview.md) · [APT Sim](docs/apt-simulation/README.md) · [Intelligence Engine](docs/intelligence-engine/README.md) · [MCP Integration](docs/mcp-integration/README.md) · [Skills-First Architecture](docs/capabilities/skills-first-architecture.md) · [Customization](docs/customization/README.md)
 
 ## Contributing
 

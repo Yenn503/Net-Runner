@@ -21,8 +21,9 @@ import { AGENT_TOOL_NAME } from '../constants.js'
 import type { BuiltInAgentDefinition } from '../loadAgentsDir.js'
 
 /**
- * Default tool subset assigned to every Net-Runner specialist agent.
- * Specialists can override by passing `tools` to defineNetRunnerSpecialist.
+ * Default tool subset assigned to every Net-Runner specialist agent that
+ * actually authors content (exploit PoCs, payloads, malware samples,
+ * remediation patches): AppSec, Infra, CodeAudit, Reporter.
  */
 export const NET_RUNNER_SPECIALIST_TOOLSET: readonly string[] = [
   AGENT_TOOL_NAME,
@@ -40,6 +41,21 @@ export const NET_RUNNER_SPECIALIST_TOOLSET: readonly string[] = [
   WEB_FETCH_TOOL_NAME,
   WEB_SEARCH_TOOL_NAME,
 ]
+
+/**
+ * Per-agent skill namespace. Curated cybersecurity playbooks ship under
+ * .netrunner/skills/<namespace>/<skill>/SKILL.md and load as `<namespace>:<skill>`.
+ * Each specialist is pointed at its own pack so the model reaches for the
+ * right domain playbook without scanning the whole catalog.
+ */
+const AGENT_SKILL_NAMESPACE: Partial<Record<NetRunnerAgentType, string>> = {
+  'engagement-lead': 'lead',
+  'recon-specialist': 'recon',
+  'app-testing-specialist': 'appsec',
+  'infra-specialist': 'infra',
+  'code-forensics-specialist': 'forensics',
+  'evidence-reporting-specialist': 'reporting',
+}
 
 export interface NetRunnerSpecialistOptions {
   agentType: NetRunnerAgentType
@@ -133,6 +149,10 @@ export function defineNetRunnerSpecialist(
   const stylePreamble = SKIP_OUTPUT_STYLE_AGENTS.has(options.agentType)
     ? ''
     : `\n\n${COMPRESSED_OUTPUT_STYLE}`
+  const namespace = AGENT_SKILL_NAMESPACE[options.agentType]
+  const skillPack = namespace
+    ? `\n\nSkill pack: your domain playbooks load under the \`${namespace}:\` namespace (curated red-team / forensics skills). Invoke the matching \`${namespace}:*\` skill before improvising a known technique — they carry the methodology, tool flags, and evidence checklist. Bundled \`nr_*\` skills remain available to every agent.`
+    : ''
   const prompt = `${options.systemPrompt}
 
 ${AUTHORIZATION_FRAMEWORK}
@@ -145,7 +165,7 @@ ${TERMINAL_PROTOCOL}
 
 ${DOMAIN_EXPERT_STANDARD}
 
-${formatNetRunnerAgentRolePolicy(rolePolicy)}${stylePreamble}`
+${formatNetRunnerAgentRolePolicy(rolePolicy)}${skillPack}${stylePreamble}`
   return {
     agentType: definition.agentType,
     whenToUse: options.whenToUse,
