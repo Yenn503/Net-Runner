@@ -14,10 +14,9 @@
 </div>
 
 ---
+red team Agent swarm, built on top of Claude code. 
 
-Final-year university research project. An LLM drives full security assessments end-to-end: picks a workflow, spins up specialists, runs cataloged tooling under scope guardrails, logs everything to an append-only evidence ledger, generates traceable reports.
-
-Built on [OpenClaude](https://github.com/Gitlawb/openclaude). Follows Anthropic's [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp) pattern — 14 `nr_*` tools instead of 228 MCP definitions, with `nr_exec` as the shell workhorse. Any MCP client (Claude Code, Cursor, Windsurf) can drive the harness.
+CLI driven or any MCP client (Claude Code, Cursor, Windsurf) can drive the harness too.
 
 ## Quick start
 
