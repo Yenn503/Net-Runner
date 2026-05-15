@@ -8,27 +8,29 @@ export function registerReconPlanSkill(): void {
   registerBundledSkill({
     name: definition.name,
     description: definition.description,
-    allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'WebFetch', 'WebSearch', 'TodoWrite'],
+    allowedTools: ['Read', 'Bash', 'WebFetch'],
     argumentHint: '[target or objective]',
     async getPromptForCommand(args) {
       return [
         {
           type: 'text',
-          text: `# Recon Plan
+          text: `# Recon Plan — RUN, NOT WRITE
 
-Build a phased reconnaissance and enumeration plan for the current Net-Runner engagement.
+Execute recon. Save evidence. Do not author plan documents.
 
-Target context:
-${args || 'No target details were supplied. Infer only what is safe, then ask for missing scope-critical details.'}
+Target / objective:
+${args || '(none — derive from engagement scope. Stop and ask if scope unclear.)'}
 
-Instructions:
-1. Start with passive and low-impact information gathering.
-2. Break the work into phases: target profiling, surface mapping, validation, and next-step decision points.
-3. Call out which steps need explicit approval before execution.
-4. Prefer built-in shell, file, and web tooling plus reusable skills.
-5. Only recommend MCP-backed actions when they provide a clear integration advantage.
-6. End with a concise ordered checklist the operator or specialist subagent can execute.
-`,
+Required actions:
+1. \`nr_kg_query\` — pull anything already known about the target. Avoid re-probing.
+2. Passive layer first: \`nr_exec\` for DNS, WHOIS, cert transparency. Save results via \`nr_save_note\` category=recon.
+3. Active surface map second (only if maxImpact permits): subdomain enum, port scan, HTTP fingerprinting. Save artifacts.
+4. \`nr_scope_check\` before any active probe that touches a new host or path.
+5. Hand off via send_message to app-testing-specialist or infra-specialist with: surface count, top-3 candidates.
+
+Output discipline:
+- No "phased plan" markdown. The plan IS the tool sequence above.
+- Reply with: passive facts saved, active probes run, candidates handed off. One line.`,
         },
       ]
     },

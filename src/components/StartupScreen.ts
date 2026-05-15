@@ -101,17 +101,37 @@ function detectProvider(): { name: string; model: string; baseUrl: string; isLoc
     const model = process.env.OPENAI_MODEL || 'gpt-4o'
     const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
     const isLocal = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(baseUrl)
+
+    // Saved-profile name is authoritative when the launcher stamped it.
+    // Maps the persisted ProviderProfile value to a human-readable label so
+    // the banner never lies about which provider the user picked.
+    const profileLabels: Record<string, string> = {
+      copilot: 'GitHub Copilot',
+      codex: 'OpenAI Codex',
+      github: 'GitHub Models',
+      openai: 'OpenAI',
+      gemini: 'Google Gemini',
+      ollama: 'Ollama',
+    }
+    const stamped = process.env.NETRUNNER_PROFILE_NAME
+    if (stamped && profileLabels[stamped]) {
+      return { name: profileLabels[stamped], model, baseUrl, isLocal: stamped === 'ollama' || isLocal }
+    }
+
     let name = 'OpenAI'
-    if (/deepseek/i.test(baseUrl) || /deepseek/i.test(model))       name = 'DeepSeek'
+    if (/githubcopilot\.com/i.test(baseUrl))                          name = 'GitHub Copilot'
+    else if (/models\.github\.ai/i.test(baseUrl))                     name = 'GitHub Models'
+    else if (/chatgpt\.com\/backend-api\/codex/i.test(baseUrl))       name = 'OpenAI Codex'
+    else if (/deepseek/i.test(baseUrl) || /deepseek/i.test(model))    name = 'DeepSeek'
     else if (/openrouter/i.test(baseUrl))                             name = 'OpenRouter'
     else if (/together/i.test(baseUrl))                               name = 'Together AI'
     else if (/groq/i.test(baseUrl))                                   name = 'Groq'
-    else if (/mistral/i.test(baseUrl) || /mistral/i.test(model))     name = 'Mistral'
+    else if (/mistral/i.test(baseUrl) || /mistral/i.test(model))      name = 'Mistral'
     else if (/azure/i.test(baseUrl))                                  name = 'Azure OpenAI'
     else if (/localhost:11434/i.test(baseUrl))                        name = 'Ollama'
     else if (/localhost:1234/i.test(baseUrl))                         name = 'LM Studio'
     else if (/llama/i.test(model))                                    name = 'Meta Llama'
-    else if (isLocal)                                                  name = 'Local'
+    else if (isLocal)                                                 name = 'Local'
     return { name, model, baseUrl, isLocal }
   }
 

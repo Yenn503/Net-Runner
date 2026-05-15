@@ -10,32 +10,29 @@ export function registerVulnAssessmentSkill(): void {
   registerBundledSkill({
     name: definition.name,
     description: definition.description,
-    allowedTools: ['Read', 'Write', 'Edit', 'Grep', 'Glob', 'Bash', 'WebFetch', 'WebSearch', 'TodoWrite'],
-    argumentHint: '[target area or hypothesis]',
+    allowedTools: ['Read', 'Bash', 'Grep', 'WebFetch'],
+    argumentHint: '[focus area]',
     async getPromptForCommand(args) {
       return [
         {
           type: 'text',
-          text: `# Vulnerability Assessment
+          text: `# Vulnerability Assessment — TOOL, SAVE, VALIDATE
 
-Run a structured vulnerability assessment for the current Net-Runner engagement.
+Run probes. Save findings to ledger. Validate inline. No "assessment report" markdown.
 
-Assessment focus:
-${args || 'No explicit focus area was supplied. Start from the current fingerprint, recon plan, and collected evidence.'}
+Focus:
+${args || '(none — start from highest-attack-surface fingerprint facts in the KG.)'}
 
-Instructions:
-1. Start from confirmed attack surface and prioritize the most likely high-value weaknesses first.
-2. Prefer reproducible validation over speculative claims. Re-run with tighter scope before escalating a weak signal into a finding.
-3. Use direct tool execution and short helper scripts before reaching for MCP-backed integrations.
-4. For every candidate finding, capture the reproduction path, prerequisites, observed impact, and confidence.
-5. Add classification details for validated findings: CWE, CVSS 3.1, MITRE ATT&CK, OWASP Top 10, and relevant compliance mappings.
-6. Separate validated findings, disproved hypotheses, and open questions.
+Required actions:
+1. \`nr_kg_query\` — list known fingerprint facts and existing findings. Skip duplicates.
+2. \`nr_exec\` — run targeted probe per candidate weakness. Prefer minimum command per check.
+3. For each positive signal: \`nr_save_finding\` (status=Unvalidated, attach cmd + output + CWE if known).
+4. Where cheap to do so, immediately escalate via \`nr_validate_finding\` (command-replay) to flip Unvalidated→Validated.
+5. \`nr_coverage_status\` — report MITRE ATT&CK coverage delta.
 
-Output format:
-- Validated findings
-- False positives / disproved paths
-- Open follow-up checks
-- Recommended specialist handoff if exploitation or retest is needed`,
+Output discipline:
+- No findings in chat output. Findings live in the ledger only.
+- Reply with: tests run, findings saved (Unvalidated count, Validated count), MITRE techniques touched count. One line.`,
         },
       ]
     },

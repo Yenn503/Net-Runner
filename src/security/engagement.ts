@@ -327,18 +327,14 @@ export function formatEngagementContextForPrompt(
     'engagement-lead',
     'recon-specialist',
     'app-testing-specialist',
-    'app-testing-specialist',
     'infra-specialist',
-    'infra-specialist',
-    'infra-specialist',
-    'infra-specialist',
-    'infra-specialist',
-    'evidence-reporting-specialist',
-    'evidence-reporting-specialist',
+    'code-forensics-specialist',
     'evidence-reporting-specialist',
   ].join(', ')
   const routingGuidance =
     'Prefer skills and direct local tools before MCP when the local path is sufficient. Use Plan for multi-phase work or when a written execution plan will reduce drift. Use Explore for broad discovery, repo mapping, or open-ended investigation. Use engagement-lead to coordinate security phases and route domain-specific tasks. Delegate to specialists when the task boundary is clear, expertise changes, or parallel work materially helps. Use verification or retest before claiming exploitability, remediation status, or final completion.'
+  const outputDiscipline =
+    'Tool calls over prose. No markdown summaries or "phase reports" to chat. All artifacts live under .netrunner/ via nr_save_finding, nr_save_note, nr_export_report — never /tmp/ or repo root. Reply to caller with one line per turn unless explicitly asked for a report. Findings are saved to the ledger, not paraphrased in chat.'
 
   return [
     '[Net-Runner engagement context]',
@@ -353,6 +349,7 @@ export function formatEngagementContextForPrompt(
     `core_runtime_agents=${coreRuntimeAgents}`,
     `specialist_agents=${specialistAgents}`,
     `routing_guidance=${truncateContextValue(routingGuidance, 400)}`,
+    `output_discipline=${truncateContextValue(outputDiscipline, 500)}`,
     `default_behavior=${defaultBehavior}`,
     '[/Net-Runner engagement context]',
   ].join('\n')

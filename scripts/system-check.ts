@@ -18,6 +18,7 @@ type CheckResult = {
 type CliOptions = {
   json: boolean
   outFile: string | null
+  verbose: boolean
 }
 
 function pass(label: string, detail?: string): CheckResult {
@@ -45,12 +46,18 @@ function parseOptions(argv: string[]): CliOptions {
   const options: CliOptions = {
     json: false,
     outFile: null,
+    verbose: isTruthy(process.env.NETRUNNER_VERBOSE_LAUNCH),
   }
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--json') {
       options.json = true
+      continue
+    }
+
+    if (arg === '--verbose' || arg === '-v') {
+      options.verbose = true
       continue
     }
 
@@ -504,19 +511,25 @@ async function main(): Promise<void> {
   results.push(await checkBaseUrlReachability())
   results.push(checkOllamaProcessorMode())
 
+  const hasFailure = results.some(result => !result.ok)
+
   if (!options.json) {
-    printResults(results)
+    if (options.verbose || hasFailure) {
+      // On verbose runs or any failure, print the full result table so the
+      // user can see what tripped. Silent success keeps the launch banner
+      // uncluttered for normal users.
+      printResults(options.verbose ? results : results.filter(r => !r.ok))
+    }
   }
 
   writeJsonReport(options, results)
 
-  const hasFailure = results.some(result => !result.ok)
   if (hasFailure) {
     process.exitCode = 1
     return
   }
 
-  if (!options.json) {
+  if (!options.json && options.verbose) {
     console.log('\nRuntime checks completed successfully.')
   }
 }

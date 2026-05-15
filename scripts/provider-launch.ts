@@ -109,6 +109,14 @@ function applyFastFlags(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 function printSummary(profile: ProviderProfile, env: NodeJS.ProcessEnv): void {
+  // Verbose mode reproduces the original env dump for diagnostics.
+  // Default mode stays silent — the startup banner inside the TUI shows
+  // provider, model, and endpoint cleanly. Pre-UI noise was the complaint.
+  const verbose =
+    process.env.NETRUNNER_VERBOSE_LAUNCH === '1' ||
+    process.env.NETRUNNER_VERBOSE_LAUNCH === 'true'
+  if (!verbose) return
+
   console.log(`Launching profile: ${profile}`)
   if (profile === 'gemini') {
     console.log(`GEMINI_MODEL=${env.GEMINI_MODEL}`)
@@ -268,6 +276,10 @@ async function main(): Promise<void> {
   }
 
   if (profile !== null) {
+    // Stamp the saved profile name so the startup banner can label the
+    // provider correctly even when several profiles share OPENAI_BASE_URL
+    // semantics (Copilot, Codex, GitHub Models all run over the OpenAI shim).
+    env.NETRUNNER_PROFILE_NAME = profile
     printSummary(profile, env)
   }
 
@@ -352,7 +364,10 @@ async function refreshCopilotTokenIfExpired(env: NodeJS.ProcessEnv): Promise<voi
   const nowSec = Math.floor(Date.now() / 1000)
   if (expiresAt > nowSec + 60) return
 
-  console.log('Refreshing Copilot service token...')
+  const verbose =
+    process.env.NETRUNNER_VERBOSE_LAUNCH === '1' ||
+    process.env.NETRUNNER_VERBOSE_LAUNCH === 'true'
+  if (verbose) console.log('Refreshing Copilot service token...')
   try {
     const refreshed = await exchangeForCopilotToken(githubToken)
     env.OPENAI_API_KEY = refreshed.token
@@ -370,7 +385,7 @@ async function refreshCopilotTokenIfExpired(env: NodeJS.ProcessEnv): Promise<voi
         console.warn(`Could not persist refreshed Copilot token: ${(err as Error).message}`)
       }
     }
-    console.log(`Copilot token refreshed (expires at ${new Date(refreshed.expires_at * 1000).toISOString()}).`)
+    if (verbose) console.log(`Copilot token refreshed (expires at ${new Date(refreshed.expires_at * 1000).toISOString()}).`)
   } catch (err) {
     console.error(`Failed to refresh Copilot token: ${(err as Error).message}`)
     console.error('Re-run `bun run setup --force` to re-authorise.')

@@ -8,27 +8,30 @@ export function registerEngagementSetupSkill(): void {
   registerBundledSkill({
     name: definition.name,
     description: definition.description,
-    allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Task', 'TodoWrite'],
-    argumentHint: '[engagement summary]',
+    allowedTools: ['Bash', 'Read'],
+    argumentHint: '[target and goal]',
     async getPromptForCommand(args) {
       return [
         {
           type: 'text',
-          text: `# Engagement Setup
+          text: `# Engagement Setup — ACTION ONLY
 
-You are initializing a Net-Runner security testing engagement.
+Initialize a Net-Runner engagement. Tool calls, not prose.
 
-User context:
-${args || 'No engagement summary was provided. Ask for the target, objective, authorization boundary, and any required constraints before continuing.'}
+Input:
+${args || '(none — ask the operator for: target, workflow, authorization source, max impact)'}
 
-Instructions:
-1. Identify the target, testing goal, engagement type, and allowed impact level.
-2. Confirm scope boundaries, exclusions, and whether the target is a lab, research, or customer-authorized environment.
-3. Determine which workflow best fits the task: web-app-testing, api-testing, lab-target-testing, or ctf-mode.
-4. Record missing prerequisites, credentials, or infrastructure dependencies.
-5. Produce a short operator-ready engagement brief before moving into recon or validation work.
+Required actions (in order):
+1. Call \`nr_engagement_init\` with { workflowId, targets[], authorizedBy, maxImpact }.
+2. Call \`nr_scope_check\` to confirm targets are inside scope.
+3. Call \`nr_engagement_status\` to verify state.
 
-Favor skill-driven planning and direct tool execution. Use MCP only when an external integration materially helps.`,
+Output discipline:
+- No markdown summaries. No "engagement brief" documents. No \`/tmp/*.md\` writes.
+- All artifacts live under \`.netrunner/\`. Save notes via \`nr_save_note\`, findings via \`nr_save_finding\`.
+- Reply to the operator with ≤3 lines: workflow, scope confirmation, next specialist to invoke.
+
+If any required input is missing, ask one direct question and stop. Do not stub values.`,
         },
       ]
     },

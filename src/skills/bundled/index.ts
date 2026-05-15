@@ -67,15 +67,7 @@ Execution:
 6. Parse Maigret JSON/TXT results. Correlate accounts by confidence, platform category, profile metadata, reused links, avatars, aliases, and discovered IDs.
 7. Route concrete web/API/network hypotheses to specialists; route raw artifacts to evidence specialist.
 
-Output:
-- Scope decision
-- Commands run
-- Artifact paths
-- Confirmed accounts
-- Possible accounts needing manual verification
-- Correlated identifiers
-- Confidence and false-positive risks
-- Next actions`,
+Output discipline: artifacts live in the evidence directory above. Save confirmed accounts via nr_save_finding, correlated identifiers via nr_save_note. Reply one line: scope decision, accounts confirmed/possible counts, next specialist.`,
         },
       ]
     },
@@ -124,15 +116,7 @@ Execution:
 8. Save correlated entities as \`identity-correlation.json\` with confidence, source artifacts, and false-positive notes.
 9. Route concrete auth, phishing, web, API, or AD hypotheses to relevant specialists; route raw artifacts to evidence specialist.
 
-Output:
-- Scope decision
-- Commands run
-- Artifact paths
-- Confirmed people / handles / emails
-- Correlated accounts by source
-- Confidence and collision risks
-- Candidate username/email patterns
-- Specialist handoff recommendations`,
+Output discipline: artifacts live in the evidence directory above. Save correlated identities via nr_save_finding (people / handles / emails) and nr_save_note (candidate patterns). Reply one line: people confirmed, handoff target.`,
         },
       ]
     },
@@ -177,15 +161,7 @@ Execution:
 7. Log operator roles and visibility: operator, lead, spectator when using Mythic-style operations.
 8. Write explicit teardown steps: listener stop, payload cleanup, redirector removal, log export, artifact hashing.
 
-Output:
-- Scope decision
-- C2 stack selected
-- Approved transports / profiles
-- Redirector and callback plan
-- Operator role plan
-- Artifact paths
-- Teardown checklist
-- Guardrail checkpoints before payload generation`,
+Output discipline: persist the C2 plan via nr_save_note (category=c2-infra) covering stack, transports, redirectors, operator roles, teardown checkpoints. No markdown plan documents. Reply one line: stack, callback host, teardown ready y/n.`,
         },
       ]
     },
@@ -234,15 +210,7 @@ Execution:
 6. Route post-callback host actions to exploit, privilege-escalation, lateral-movement, evidence, and reporting specialists rather than keeping them in one monolithic C2 thread.
 7. If operator privileges, domains, transports, or teardown are not explicit, stop and ask rather than drifting.
 
-Output:
-- Scope decision
-- Commands run
-- Team server / redirector summary
-- Payload and callback metadata
-- Callback activity summary
-- Specialist handoffs
-- Artifact paths
-- Cleanup / teardown status`,
+Output discipline: every lifecycle event (payload, listener, callback, pivot, teardown) saved via nr_save_note with timestamp + command + result. Findings (confirmed access, lateral hop, exfil path) saved via nr_save_finding. Reply one line: callbacks, pivots, teardown status.`,
         },
       ]
     },
@@ -293,13 +261,7 @@ Execution:
    - Use snapshot + Get Links to walk authorized routes and capture client-only endpoints.
 6. Respect rate limits and engagement scope. Close all tabs/sessions on completion.
 
-Output:
-- Browser engine used and version
-- Commands and API calls run
-- Evidence artifact paths (HTML, screenshots, logs)
-- DOM-confirmed findings vs candidate-only findings
-- False-positive notes
-- Cleanup actions performed`,
+Output discipline: rendered evidence (HTML, screenshots, har/log) saved under the evidence directory. DOM-confirmed positives go through nr_save_finding with status=Validated and mode=headless-browser-replay. Reply one line: engine, dom-confirmed count, candidates count.`,
         },
       ]
     },
@@ -351,15 +313,7 @@ Execution:
    - Tag confidence per finding: dom-confirmed, oob-confirmed, candidate-only, suspected-fp.
 9. Route confirmed findings to web/api/exploit/evidence/reporting specialists. Drop candidate-only findings into a follow-up queue, do not promote them.
 
-Output:
-- Scope decision and disallowed-action list
-- Commands run with timestamps
-- Recon counts (subs, live hosts, urls, params)
-- XSS candidates vs DOM-confirmed
-- OOB hits with correlation IDs
-- Confidence-tagged findings
-- Specialist handoffs and follow-up queue
-- False-positive notes`,
+Output discipline: recon artifacts saved under the evidence directory. Confirmed findings (dom-confirmed, oob-confirmed) go through nr_save_finding tagged with confidence. Candidate-only and suspected-fp stay as nr_save_note. Reply one line: subs, live hosts, confirmed findings, follow-up queue size.`,
         },
       ]
     },
@@ -410,15 +364,7 @@ Execution:
    - OOB callbacks correlated by ID
 8. Mark a finding confirmed only when timing evidence, cache reflection, or OOB callback is reproduced. Otherwise tag as candidate.
 
-Output:
-- Scope decision and probe set used
-- Commands run with timestamps
-- Smuggler log and per-vector verdict
-- Cache poisoning candidates vs confirmed
-- OOB correlations
-- Evidence artifact paths
-- False-positive and impact notes
-- Cleanup actions (e.g. cache purge requests if available and authorized)`,
+Output discipline: probe evidence (request pair, headers, timing, OOB IDs) saved under the evidence directory. Confirmed smuggling or cache-poisoning vectors go through nr_save_finding with timing + OOB correlation attached. Reply one line: probes run, confirmed count, candidates count, cleanup state.`,
         },
       ]
     },
@@ -475,15 +421,7 @@ Execution:
    - On authorized lab targets only, probe \`169.254.169.254\` style metadata via OOB through \`interactsh-client\`. Do not target shared cloud providers without explicit authorization.
 9. Tag findings: provider-confirmed, function-exposed, secret-leaked, ssrf-candidate, ssrf-confirmed.
 
-Output:
-- Scope decision
-- Detected providers per asset
-- Discovered function endpoints
-- Secret/env leakage findings
-- SSRF candidates vs OOB-confirmed
-- Evidence artifact paths
-- Specialist handoffs (web/api/exploit/evidence/reporting)
-- False-positive and impact notes`,
+Output discipline: provider mappings and route inventories saved via nr_save_note (category=serverless-edge). Secret leakage and OOB-confirmed SSRF saved via nr_save_finding. Candidate-only SSRF stays as nr_save_note until OOB confirms. Reply one line: providers detected, functions discovered, secret-leak findings, ssrf confirmed.`,
         },
       ]
     },
@@ -533,15 +471,7 @@ Execution:
 7. Only propose credential attacks or XML-RPC multicall brute-force when the engagement scope allows auth attacks. Treat this as guarded escalation, not default recon.
 8. If WAF or rate limiting appears, document it. WPScan supports \`--random-user-agent\`; use proxy inspection only when troubleshooting false positives or negatives.
 
-Output:
-- Scope decision
-- Commands run
-- Artifact paths
-- WordPress fingerprint summary
-- Enumerated users/plugins/themes/backups
-- Confirmed attack paths
-- Guarded next steps for auth or exploit validation
-- Evidence gaps and false-positive risks`,
+Output discipline: WPScan output and probe artifacts saved under the evidence directory. Enumerated users/plugins/themes and confirmed attack paths each saved via nr_save_finding with CVE/CWE/MITRE tags where known. Reply one line: users, plugins, themes, confirmed attack paths.`,
         },
       ]
     },

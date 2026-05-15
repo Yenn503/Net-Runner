@@ -26,7 +26,7 @@ test('initializing an engagement creates the Net-Runner project envelope', async
   assert.equal(manifest.workflowId, 'api-testing')
   assert.equal(loaded?.authorization.authorizedBy, 'qa-team')
   assert.deepEqual(loaded?.targets, ['https://api.target.lab'])
-  assert.match(getEngagementManifestPath(cwd), /\.netrunner\/engagement\.json$/)
+  assert.match(getEngagementManifestPath(cwd), /[\\/]\.netrunner[\\/]engagement\.json$/)
   const runState = JSON.parse(await readFile(getRunStatePath(cwd), 'utf8')) as {
     workflowId: string
   }
@@ -65,7 +65,7 @@ test('re-initializing an active engagement throws an idempotence error', async (
   await initializeNetRunnerProject({ cwd, workflowId: 'web-app-testing' })
   await assert.rejects(
     () => initializeNetRunnerProject({ cwd, workflowId: 'web-app-testing' }),
-    /Engagement already active at \.netrunner\/engagement\.json\. Pause or close it before re-init\./,
+    /Engagement already active at [\\/]?\.netrunner[\\/]engagement\.json\. Pause or close it before re-init\./,
   )
 })
 

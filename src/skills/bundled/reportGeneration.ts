@@ -10,32 +10,28 @@ export function registerReportGenerationSkill(): void {
   registerBundledSkill({
     name: definition.name,
     description: definition.description,
-    allowedTools: ['Read', 'Write', 'Edit', 'Grep', 'Glob', 'TodoWrite'],
-    argumentHint: '[report scope or audience]',
+    allowedTools: ['Read', 'Bash'],
+    argumentHint: '[format and audience]',
     async getPromptForCommand(args) {
       return [
         {
           type: 'text',
-          text: `# Report Generation
+          text: `# Report Generation — EXPORT, DO NOT AUTHOR
 
-Transform the current Net-Runner evidence chain into an operator-ready assessment report.
+Reports are rendered from the ledger by \`nr_export_report\`. Do not hand-write report markdown. Do not paraphrase findings.
 
-Report context:
-${args || 'No explicit report audience was supplied. Default to a technical assessment report with a concise executive summary.'}
+Context:
+${args || '(default — markdown + html for technical audience.)'}
 
-Instructions:
-1. Treat the evidence ledger as the source of truth and use findings or artifacts only when they are linked from that ledger.
-2. Preserve the distinction between validated facts, analyst interpretation, and unresolved questions.
-3. For each finding, include severity, CVSS, CWE, OWASP, MITRE ATT&CK, compliance references, reproduction, impact, remediation, and retest criteria.
-4. Summarize the engagement methodology, scope, and key attack-path outcomes without overstating risk.
-5. Produce report-ready markdown that can be handed to the reporting specialist or written directly to the report path.
+Required actions:
+1. \`nr_verify_evidence\` — confirm chain integrity before exporting. Abort if mismatch.
+2. \`nr_coverage_status\` — pull final MITRE ATT&CK coverage figures (Validated only).
+3. \`nr_export_report\` with the requested format. Supported: markdown, html, sarif, stix, misp.
+4. If audience=executive, pass --audience=executive so the exporter selects the appropriate template.
 
-Output format:
-- Executive summary
-- Methodology and scope
-- Findings with full classification and evidence references
-- Remediation priorities
-- Retest criteria and open questions`,
+Output discipline:
+- No prose summaries of the report in chat. The report is the artifact.
+- Reply with: export path(s), finding counts by status, coverage %. One line.`,
         },
       ]
     },

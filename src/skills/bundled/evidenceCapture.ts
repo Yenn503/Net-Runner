@@ -8,26 +8,29 @@ export function registerEvidenceCaptureSkill(): void {
   registerBundledSkill({
     name: definition.name,
     description: definition.description,
-    allowedTools: ['Read', 'Write', 'Edit', 'Glob', 'TodoWrite'],
-    argumentHint: '[finding or artifact context]',
+    allowedTools: ['Read', 'Bash'],
+    argumentHint: '[finding context]',
     async getPromptForCommand(args) {
       return [
         {
           type: 'text',
-          text: `# Evidence Capture
+          text: `# Evidence Capture — LEDGER ONLY
 
-Organize findings and artifacts so they can be used in a retest or final report.
+Move artifacts into \`.netrunner/evidence/\` via the ledger API. No standalone summary documents.
 
 Context:
-${args || 'No finding summary was provided. Review the current session state and summarize what evidence needs to be preserved.'}
+${args || '(none — review current engagement state for unsaved artifacts.)'}
 
-Instructions:
-1. Identify the concrete artifact set: commands, outputs, requests, responses, files, and screenshots.
-2. Distinguish observed facts from operator hypotheses.
-3. Capture reproduction steps and environmental assumptions.
-4. Summarize impact and confidence without overstating claims.
-5. Produce a concise evidence index and a report-ready finding summary.
-`,
+Required actions:
+1. \`nr_list_evidence\` — see what is already saved. Avoid duplicates.
+2. For each unsaved artifact:
+   - \`nr_save_finding\` if it is a candidate vulnerability (status defaults to Unvalidated).
+   - \`nr_save_note\` if it is supporting context (not a finding on its own).
+3. \`nr_verify_evidence\` to confirm SHA-256 chain integrity.
+
+Output discipline:
+- Never write artifacts to \`/tmp/\` or repo root. Ledger path only.
+- Reply with: count saved, count duplicates, count verification failures. One line.`,
         },
       ]
     },

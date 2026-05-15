@@ -193,7 +193,7 @@ export function ListItem(t0: ListItemProps) {
   }
   let t9;
   if ($[14] !== children || $[15] !== disabled || $[16] !== styled || $[17] !== textColor) {
-    t9 = styled ? <Text color={textColor} dimColor={disabled}>{children}</Text> : children;
+    t9 = styled ? <Text color={textColor} dimColor={disabled} bold={(isFocused || isSelected) && !disabled}>{children}</Text> : children;
     $[14] = children;
     $[15] = disabled;
     $[16] = styled;

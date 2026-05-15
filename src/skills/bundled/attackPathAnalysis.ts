@@ -10,33 +10,29 @@ export function registerAttackPathAnalysisSkill(): void {
   registerBundledSkill({
     name: definition.name,
     description: definition.description,
-    allowedTools: ['Read', 'Write', 'Edit', 'Grep', 'Glob', 'TodoWrite'],
-    argumentHint: '[findings set or objective]',
+    allowedTools: ['Read', 'Bash', 'Grep'],
+    argumentHint: '[objective or findings set]',
     async getPromptForCommand(args) {
       return [
         {
           type: 'text',
-          text: `# Attack Path Analysis
+          text: `# Attack Path Analysis — KG QUERY, NOT NARRATIVE
 
-Map the current Net-Runner engagement into explicit attack chains.
+Pull validated findings from the KG, compute chains, persist as graph entries.
 
-Analysis scope:
-${args || 'No explicit objective was supplied. Start from the strongest validated findings and current engagement objectives.'}
+Objective:
+${args || '(none — derive from engagement objective field.)'}
 
-Instructions:
-1. Build a step-by-step path from initial access or exposure to the operator objective.
-2. For each step, record the prerequisite, validating evidence, impact level, and dependent follow-up steps.
-3. Identify where a path branches, where it fails, and which missing evidence blocks the next move.
-4. Separate validated chains from hypothetical chains.
-5. Return a compact graph-ready representation that can be reused in reporting and retesting.
+Required actions:
+1. \`nr_kg_query\` — fetch all Validated findings + assets + identity edges.
+2. \`nr_exec\` — call MCTS planner: \`node scripts/redteam-pipeline.ts plan --target=<obj>\` (where supported). Otherwise compute candidates inline.
+3. For each chain: \`nr_save_note\` category=attack-path with { path_id, hops[], mitre_techniques[], blockers[], validated_hops_count }.
+4. Mark parallelizable hops (different targets, no shared prereq) with batch_id; sequential hops keep depends_on edges.
+5. Hand off top-3 ranked paths to engagement-lead via send_message.
 
-Output format:
-- Validated attack paths
-- Partial or blocked paths
-- Critical dependencies and choke points
-- Recommended next action per path
-- Evidence references for each hop
-- **Parallel execution batches**: group next actions where tasks operate on disjoint targets/services or different attack classes with no shared prerequisite. Label each batch (Batch 1, Batch 2, ...) and list which specialist agent handles each action. The engagement lead spawns all agents within a batch simultaneously, awaits all results, then proceeds to the next batch. Clearly mark actions that MUST be sequential (B depends on A's confirmed output).`,
+Output discipline:
+- No path narrative in chat. No ASCII art chains.
+- Reply with: paths computed, fully-validated chains count, top-3 path ids, batch hint counts. One line.`,
         },
       ]
     },
