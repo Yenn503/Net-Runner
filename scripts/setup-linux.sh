@@ -125,5 +125,14 @@ cat <<'EOF'
      bash scripts/install-tools.sh --gh-only
 EOF
 
+step "Optional MCP packs"
+cat <<'EOF'
+
+   Enable reverse-engineering / web-proxy MCP servers (Ghidra, Binary Ninja,
+   Burp) — the harness preloads them on every launch once enabled:
+     bun run mcp:packs                # list
+     bun run mcp:packs enable <id>    # e.g. ghidra-mcp
+EOF
+
 step "Done"
 ok "Net-Runner is ready on this host"

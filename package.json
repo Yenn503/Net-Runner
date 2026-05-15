@@ -24,6 +24,7 @@
     "tools:user": "bash scripts/install-tools.sh --user-only",
     "skill:new": "bun run scripts/skill-new.ts",
     "skill:install": "bun run scripts/skill-install.ts",
+    "mcp:packs": "bun run scripts/mcp-packs.ts",
     "dev:profile": "bun run scripts/provider-launch.ts",
     "dev:profile:fast": "bun run scripts/provider-launch.ts auto --fast --bare",
     "dev:codex": "bun run scripts/provider-launch.ts codex",

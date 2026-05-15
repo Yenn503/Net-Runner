@@ -102,6 +102,29 @@ bun run tools:check       # report what's missing on this host
 
 `install-tools.sh` is idempotent — re-running skips installed entries.
 
+## Optional MCP packs
+
+Net-Runner always runs its own `net-runner` MCP server. Optional MCP
+*capability packs* add extra MCP servers — reverse-engineering and web-proxy
+tooling — that the harness preloads on every launch once enabled.
+
+```bash
+bun run mcp:packs                  # list packs + enabled state
+bun run mcp:packs enable <id>      # write the pack into .mcp.json
+bun run mcp:packs disable <id>     # remove it
+```
+
+| Pack | Tooling | Environment |
+|---|---|---|
+| `ghidra-mcp` | Ghidra reverse engineering | any |
+| `binary-ninja-mcp` | Binary Ninja reverse engineering | any |
+| `burp-mcp` | Burp Suite web proxy | Kali operator |
+
+Enabling a pack writes its server entry into `.mcp.json`; the harness loads it
+at startup like any MCP server. Each pack has its own install prerequisite
+(printed on `enable`) — the host tool (Ghidra / Binary Ninja / Burp) must be
+running with its MCP bridge started. Pack catalog: `src/mcp/optionalPacks.ts`.
+
 ## Where the harness looks at startup
 
 | Source | Path | Scope |
