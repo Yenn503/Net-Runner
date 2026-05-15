@@ -57,6 +57,16 @@ const AGENT_SKILL_NAMESPACE: Partial<Record<NetRunnerAgentType, string>> = {
   'evidence-reporting-specialist': 'reporting',
 }
 
+/**
+ * Specialists that carry out exploitation. They get pointed at the exploit
+ * arsenal — curated known-exploit leads plus a cross-engagement tracker for
+ * exploits the harness validates. See .netrunner/arsenal/README.md.
+ */
+const EXPLOIT_AGENTS: ReadonlySet<NetRunnerAgentType> = new Set([
+  'infra-specialist',
+  'app-testing-specialist',
+])
+
 export interface NetRunnerSpecialistOptions {
   agentType: NetRunnerAgentType
   whenToUse: string
@@ -153,6 +163,9 @@ export function defineNetRunnerSpecialist(
   const skillPack = namespace
     ? `\n\nSkill pack: your domain playbooks load under the \`${namespace}:\` namespace (curated red-team / forensics skills). Invoke the matching \`${namespace}:*\` skill before improvising a known technique — they carry the methodology, tool flags, and evidence checklist. Bundled \`nr_*\` skills remain available to every agent.`
     : ''
+  const arsenal = EXPLOIT_AGENTS.has(options.agentType)
+    ? `\n\nExploit arsenal: before exploiting a fingerprinted target, read \`.netrunner/arsenal/index/*.yaml\` for a known exploit matching the target's product and version. Arsenal entries are vetted leads, not guarantees — always validate against the live target under scope before treating one as a finding. When you confirm a new working exploit or CVE, append a record to \`.netrunner/arsenal/discovered.jsonl\` (schema in \`.netrunner/arsenal/README.md\`) so it is reusable in future engagements.`
+    : ''
   const prompt = `${options.systemPrompt}
 
 ${AUTHORIZATION_FRAMEWORK}
@@ -165,7 +178,7 @@ ${TERMINAL_PROTOCOL}
 
 ${DOMAIN_EXPERT_STANDARD}
 
-${formatNetRunnerAgentRolePolicy(rolePolicy)}${skillPack}${stylePreamble}`
+${formatNetRunnerAgentRolePolicy(rolePolicy)}${skillPack}${arsenal}${stylePreamble}`
   return {
     agentType: definition.agentType,
     whenToUse: options.whenToUse,

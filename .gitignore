@@ -7,6 +7,10 @@ dist/
 .openclaude-profile.json
 .netrunner/*
 !.netrunner/skills/
+!.netrunner/arsenal/
+.netrunner/arsenal/*
+!.netrunner/arsenal/index/
+!.netrunner/arsenal/README.md
 .claude/
 .windsurf/
 .mcp.json

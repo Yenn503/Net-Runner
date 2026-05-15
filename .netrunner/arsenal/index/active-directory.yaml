@@ -1,0 +1,103 @@
+# Active Directory exploit arsenal — curated leads for the infra-specialist.
+# Every entry is a LEAD: validate against the live target under scope before
+# it counts as a finding. Full schema + field meanings in ../README.md.
+exploits:
+  - id: zerologon
+    cve: CVE-2020-1472
+    name: Zerologon — Netlogon elevation of privilege
+    exploit_type: privilege-escalation
+    affected_versions: Windows Server domain controllers (pre-Aug-2020 patch)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2020-1472
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2020-1472
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network reach to a domain controller
+    execution_environment: network
+    detection_notes: CISA KEV. Netlogon EID 4742 machine-account password change is the loud signal
+    execution_adapter: metasploit
+    operator_notes: Resets the DC machine-account password. Destructive — restore the original hash or the DC breaks.
+
+  - id: nopac
+    cve: CVE-2021-42278
+    name: noPac (sAMAccountName spoofing) — domain user to domain admin
+    exploit_type: privilege-escalation
+    affected_versions: Windows AD domain controllers (pre-Nov-2021 patch, chained with CVE-2021-42287)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-42278
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-42287
+    source: https://nvd.nist.gov/vuln/detail/CVE-2021-42278
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Any authenticated domain user; a machine-account quota > 0
+    execution_environment: network
+    detection_notes: Machine account create/rename events; anomalous TGS for a renamed account
+    execution_adapter: manual
+    operator_notes: Covered in depth by infra:exploiting-nopac-cve-2021-42278-42287.
+
+  - id: certifried
+    cve: CVE-2022-26923
+    name: Certifried — AD Certificate Services privilege escalation
+    exploit_type: privilege-escalation
+    affected_versions: AD environments running AD CS with machine-certificate enrolment
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2022-26923
+    source: https://nvd.nist.gov/vuln/detail/CVE-2022-26923
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: A controllable machine account; AD CS reachable
+    execution_environment: network
+    detection_notes: dNSHostName change + certificate enrolment for a machine identity
+    execution_adapter: manual
+    operator_notes: Manipulate dNSHostName to get a DC-identity cert. Pairs with infra:adcs-esc1 tradecraft.
+
+  - id: petitpotam
+    cve: CVE-2021-36942
+    name: PetitPotam — MS-EFSRPC NTLM coercion
+    exploit_type: credential-access
+    affected_versions: Windows DCs (MS-EFSRPC); chains to AD CS NTLM relay (ESC8)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-36942
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2021-36942
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network position to coerce the DC and relay to AD CS HTTP enrolment
+    execution_environment: network
+    detection_notes: CISA KEV. EFSRPC calls from an unexpected host; NTLM relay to the CA web endpoint
+    execution_adapter: manual
+    operator_notes: Coerce DC auth, relay to AD CS for a DC cert. Classic unauth domain-takeover chain.
+
+  - id: printnightmare
+    cve: CVE-2021-34527
+    name: PrintNightmare — Windows Print Spooler RCE / LPE
+    exploit_type: rce
+    affected_versions: Windows Print Spooler service — DCs and workstations
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-34527
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2021-34527
+    reliability: medium
+    validation_status: unvalidated
+    prerequisites: Authenticated access; Print Spooler running; Point-and-Print policy permitting
+    execution_environment: network
+    detection_notes: CISA KEV. Spooler driver-load events and new DLLs under the spool directory
+    execution_adapter: metasploit
+    operator_notes: Code execution as SYSTEM via spooler driver loading. Patch state varies — verify per host.
+
+  - id: adcs-esc-family
+    cve: none
+    name: AD CS ESC1–ESC16 certificate-template misconfigurations
+    exploit_type: privilege-escalation
+    affected_versions: AD Certificate Services — vulnerable certificate templates / CA configuration
+    references:
+      - https://posts.specterops.io/certified-pre-owned-d95910965cd2
+    source: https://posts.specterops.io/certified-pre-owned-d95910965cd2
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Authenticated domain user; AD CS present
+    execution_environment: network
+    detection_notes: Certificate enrolment for a privileged identity; certipy/Certify enumeration traffic
+    execution_adapter: manual
+    operator_notes: Misconfiguration class, not one CVE. Enumerate with certipy find. Extend this entry as ESC paths validate.

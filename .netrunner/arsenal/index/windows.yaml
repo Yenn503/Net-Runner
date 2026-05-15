@@ -1,0 +1,102 @@
+# Windows exploit arsenal — curated leads for the infra-specialist.
+# Every entry is a LEAD: validate against the live target under scope before
+# it counts as a finding. Full schema + field meanings in ../README.md.
+exploits:
+  - id: bluehammer
+    cve: none
+    name: BlueHammer — Windows Defender (windefend) vulnerability
+    exploit_type: defense-evasion
+    affected_versions: Windows Defender — windefend RPC interface (build-specific, verify)
+    references:
+      - https://github.com/Nightmare-Eclipse/BlueHammer
+    source: https://github.com/Nightmare-Eclipse/BlueHammer
+    reliability: unverified
+    validation_status: unvalidated
+    prerequisites: Local code execution on the target host
+    execution_environment: windows-target
+    detection_notes: Touches the windefend RPC surface — may itself be logged by Defender/EDR telemetry
+    execution_adapter: manual
+    operator_notes: Community PoC, no assigned CVE. Confirm Defender build/patch level first; behaviour is build-specific.
+
+  - id: redsun
+    cve: none
+    name: RedSun — Windows local vulnerability PoC
+    exploit_type: privilege-escalation
+    affected_versions: Windows (product/version unconfirmed — see source repo)
+    references:
+      - https://github.com/Nightmare-Eclipse/RedSun
+    source: https://github.com/Nightmare-Eclipse/RedSun
+    reliability: unverified
+    validation_status: unvalidated
+    prerequisites: Local unprivileged code execution
+    execution_environment: windows-target
+    detection_notes: Unknown — characterise in an isolated VM before any live use
+    execution_adapter: custom-script
+    operator_notes: Community C++ PoC, no assigned CVE. Read the repo README for the exact affected component before attempting.
+
+  - id: yellowkey
+    cve: none
+    name: YellowKey — BitLocker bypass
+    exploit_type: auth-bypass
+    affected_versions: BitLocker full-disk encryption (verify Windows build + TPM config)
+    references:
+      - https://github.com/Nightmare-Eclipse/YellowKey
+    source: https://github.com/Nightmare-Eclipse/YellowKey
+    reliability: unverified
+    validation_status: unvalidated
+    prerequisites: Physical or boot-level access to the target machine
+    execution_environment: windows-target
+    detection_notes: Physical-access attack — leaves boot/firmware traces; document chain of custody
+    execution_adapter: manual
+    operator_notes: High-impact. Confirm in scope; re-lock the volume and restore state afterwards.
+
+  - id: miniplasma
+    cve: CVE-2020-17103
+    name: MiniPlasma — Windows Cloud Files Mini Filter Driver LPE
+    exploit_type: privilege-escalation
+    affected_versions: Windows 10 / Server — cldflt.sys (pre-Nov-2020 patch)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2020-17103
+      - https://github.com/Nightmare-Eclipse/MiniPlasma
+    source: https://github.com/Nightmare-Eclipse/MiniPlasma
+    reliability: medium
+    validation_status: unvalidated
+    prerequisites: Local unprivileged shell on the target
+    execution_environment: windows-target
+    detection_notes: cldflt.sys exploitation may surface in EDR kernel-callback telemetry
+    execution_adapter: custom-script
+    operator_notes: LPE via cldflt.sys. Repo says it "supposedly still works" — verify target patch level first.
+
+  - id: clfs-lpe-2023-28252
+    cve: CVE-2023-28252
+    name: Windows Common Log File System (CLFS) driver LPE
+    exploit_type: privilege-escalation
+    affected_versions: Windows 10/11 / Server — clfs.sys (pre-Apr-2023 patch)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2023-28252
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2023-28252
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Local code execution as a standard user
+    execution_environment: windows-target
+    detection_notes: CISA KEV — actively exploited; mature EDR detections exist for the CLFS primitive
+    execution_adapter: metasploit
+    operator_notes: Reliable LPE to SYSTEM on unpatched builds. Confirm the April-2023+ patch state.
+
+  - id: smartscreen-bypass-2024-21412
+    cve: CVE-2024-21412
+    name: Windows SmartScreen / Mark-of-the-Web bypass
+    exploit_type: defense-evasion
+    affected_versions: Windows 10/11 — Internet Shortcut (.url) handling
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2024-21412
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2024-21412
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Target opens a crafted .url file (phishing initial access)
+    execution_environment: windows-target
+    detection_notes: CISA KEV — abused by Water Hydra/DarkGate; email gateways and EDR now flag the .url chain
+    execution_adapter: manual
+    operator_notes: Used for authorized phishing initial-access simulation. Pairs with a spearphishing skill.

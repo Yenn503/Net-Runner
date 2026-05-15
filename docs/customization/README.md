@@ -13,7 +13,7 @@ The harness walks both at startup. Restart Net-Runner after dropping a new skill
 
 ### Curated skill packs
 
-Net-Runner ships ~66 curated red-team / forensics playbooks under `.netrunner/skills/<namespace>/`, one namespace per specialist:
+Net-Runner ships 87 curated red-team / forensics playbooks under `.netrunner/skills/<namespace>/`, one namespace per specialist:
 
 | Namespace | Specialist | Covers |
 |---|---|---|

@@ -1,0 +1,122 @@
+# Web app + network-appliance exploit arsenal — curated leads for the
+# app-testing-specialist and infra-specialist. Every entry is a LEAD:
+# validate against the live target under scope. Full schema in ../README.md.
+exploits:
+  - id: log4shell
+    cve: CVE-2021-44228
+    name: Log4Shell — Apache Log4j2 JNDI remote code execution
+    exploit_type: rce
+    affected_versions: Apache Log4j2 2.0-beta9 – 2.14.1
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: An app field whose value reaches a vulnerable Log4j2 logger
+    execution_environment: network
+    detection_notes: CISA KEV. ${jndi:} strings and outbound LDAP/RMI are heavily signatured by WAF/IDS
+    execution_adapter: nuclei
+    operator_notes: Confirm blind hits with the oob-verification skill.
+
+  - id: citrix-bleed
+    cve: CVE-2023-4966
+    name: Citrix Bleed — NetScaler ADC/Gateway session-token disclosure
+    exploit_type: info-disclosure
+    affected_versions: Citrix NetScaler ADC & Gateway 13.1 / 14.1 (pre-patch)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2023-4966
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2023-4966
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network reach to the NetScaler appliance
+    execution_environment: network
+    detection_notes: CISA KEV. Oversized HTTP responses + token reuse from a new IP are the signals
+    execution_adapter: nuclei
+    operator_notes: Leaks valid session tokens → MFA-bypassing session hijack.
+
+  - id: moveit-sqli
+    cve: CVE-2023-34362
+    name: MOVEit Transfer — SQL injection to remote code execution
+    exploit_type: rce
+    affected_versions: Progress MOVEit Transfer (pre-May-2023 patch)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2023-34362
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2023-34362
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network reach to the MOVEit web interface
+    execution_environment: network
+    detection_notes: CISA KEV. Webshell drop (human2.aspx-style) and anomalous SQL are well-signatured post-Cl0p
+    execution_adapter: manual
+    operator_notes: Pre-auth SQLi chain to webshell. The Cl0p mass-exploitation CVE.
+
+  - id: panos-globalprotect
+    cve: CVE-2024-3400
+    name: PAN-OS GlobalProtect command injection
+    exploit_type: rce
+    affected_versions: Palo Alto PAN-OS 10.2 / 11.0 / 11.1 with GlobalProtect + device telemetry
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2024-3400
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2024-3400
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network reach to the GlobalProtect portal
+    execution_environment: network
+    detection_notes: CISA KEV. Malformed SESSID cookie + filesystem writes under the web root
+    execution_adapter: nuclei
+    operator_notes: Pre-auth OS command injection → root.
+
+  - id: screenconnect-auth-bypass
+    cve: CVE-2024-1709
+    name: ConnectWise ScreenConnect authentication bypass
+    exploit_type: auth-bypass
+    affected_versions: ConnectWise ScreenConnect <= 23.9.7
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2024-1709
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2024-1709
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network reach to the ScreenConnect web UI
+    execution_environment: network
+    detection_notes: CISA KEV. A new admin user appearing in the User.xml is the tell
+    execution_adapter: nuclei
+    operator_notes: Path-traversal auth bypass creates an admin user. Chain with CVE-2024-1708 for RCE.
+
+  - id: activemq-rce
+    cve: CVE-2023-46604
+    name: Apache ActiveMQ OpenWire deserialization RCE
+    exploit_type: rce
+    affected_versions: Apache ActiveMQ < 5.15.16 / 5.16.7 / 5.17.6 / 5.18.3 (OpenWire :61616)
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2023-46604
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2023-46604
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network reach to the OpenWire port (61616)
+    execution_environment: network
+    detection_notes: CISA KEV. Outbound fetch of a remote Spring XML on broker start
+    execution_adapter: metasploit
+    operator_notes: Pre-auth RCE via crafted OpenWire marshalled exception class.
+
+  - id: confluence-broken-access
+    cve: CVE-2023-22515
+    name: Atlassian Confluence broken access control — admin takeover
+    exploit_type: auth-bypass
+    affected_versions: Confluence Data Center & Server 8.0 – 8.5.1
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2023-22515
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2023-22515
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Network reach to the Confluence instance
+    execution_environment: network
+    detection_notes: CISA KEV. /setup/* requests post-install and a new admin account
+    execution_adapter: nuclei
+    operator_notes: Reset setup state, create an admin account. Pre-auth.

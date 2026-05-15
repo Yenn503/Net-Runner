@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit review config. Vendored/generated content is excluded so reviews
+# focus on first-party Net-Runner code.
+reviews:
+  path_filters:
+    - "!.netrunner/skills/**"   # vendored upstream cybersecurity-skill playbooks
+    - "!dist/**"                # build output
+    - "!**/*.lock"
+    - "!bun.lock"

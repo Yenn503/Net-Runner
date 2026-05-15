@@ -9,7 +9,7 @@
 
 **Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
 
-<sub>6 specialists · 228 cataloged tools · 98 skills · 12 workflows · 21 capability packs · 10 APT simulations</sub>
+<sub>6 specialists · 228 cataloged tools · 32 core skills + 87 curated playbooks · 12 workflows · 10 APT simulations</sub>
 
 </div>
 
@@ -42,6 +42,10 @@ Each specialist sees the full toolset. Compressed-output discipline applies to i
 The Lead doesn't do the work — it routes it. Independent tasks on disjoint targets fan out to specialists running in parallel; dependent work hands off in sequence with a full context packet (target slice, scope, known facts, evidence refs, stop conditions, next owner). Specialists talk to each other directly through the Agent SDK message channel — no round-tripping every decision through the Lead. Findings and artifacts land in the shared `.netrunner/` ledger as they go, so a handoff is a pointer, not a transcript.
 
 Each specialist also carries a curated skill pack — domain playbooks under `.netrunner/skills/<namespace>/` (`recon:`, `appsec:`, `infra:`, `forensics:`, `lead:`, `reporting:`) covering the techniques that domain actually runs. See [Customization](docs/customization/README.md) to add your own.
+
+## Exploit arsenal
+
+The exploit specialists carry a curated arsenal at `.netrunner/arsenal/`. `index/*.yaml` is a vetted set of known exploits — recent high-impact CVEs (Citrix Bleed, PwnKit, Zerologon, PAN-OS, MOVEit…) grouped by surface (windows / linux / web-and-appliance / active-directory). Before exploiting a fingerprinted target the agent matches it against the index instead of re-deriving an exploit from scratch. Exploits the harness validates in an engagement are appended to `discovered.jsonl`, so a working exploit is reusable across future engagements. Arsenal entries are leads — every one is validated against the live target under scope before it counts as a finding.
 
 ## Workflows
 

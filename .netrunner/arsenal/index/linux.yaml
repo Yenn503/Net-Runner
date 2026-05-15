@@ -1,0 +1,85 @@
+# Linux exploit arsenal — curated leads for the infra-specialist.
+# Every entry is a LEAD: validate against the live target under scope before
+# it counts as a finding. Full schema + field meanings in ../README.md.
+exploits:
+  - id: pwnkit
+    cve: CVE-2021-4034
+    name: PwnKit — polkit pkexec local privilege escalation
+    exploit_type: privilege-escalation
+    affected_versions: polkit pkexec — most distros, default install, 2009 to Jan 2022
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-4034
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2021-4034
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Any local unprivileged shell
+    execution_environment: linux-target
+    detection_notes: CISA KEV. pkexec exec + crafted argv is detectable via auditd/EDR exec logging
+    execution_adapter: metasploit
+    operator_notes: Memory-corruption LPE to root. Extremely reliable on unpatched hosts.
+
+  - id: dirty-pipe
+    cve: CVE-2022-0847
+    name: Dirty Pipe — Linux kernel pipe page-cache overwrite
+    exploit_type: privilege-escalation
+    affected_versions: Linux kernel 5.8 – 5.16.11 / 5.15.25 / 5.10.102
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2022-0847
+    source: https://nvd.nist.gov/vuln/detail/CVE-2022-0847
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Local shell with read access to a SUID binary or target file
+    execution_environment: linux-target
+    detection_notes: Overwrites read-only files — file-integrity monitoring (AIDE) flags the change
+    execution_adapter: custom-script
+    operator_notes: Overwrite /etc/passwd or a SUID binary to gain root. Check `uname -r` against patched ranges.
+
+  - id: looney-tunables
+    cve: CVE-2023-4911
+    name: Looney Tunables — glibc ld.so GLIBC_TUNABLES buffer overflow
+    exploit_type: privilege-escalation
+    affected_versions: glibc dynamic loader — Fedora 37/38, Ubuntu 22.04/23.04, Debian 12/13 era builds
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2023-4911
+    source: https://nvd.nist.gov/vuln/detail/CVE-2023-4911
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Local shell; a SUID binary present
+    execution_environment: linux-target
+    detection_notes: Anomalous GLIBC_TUNABLES env on a SUID exec is the signal
+    execution_adapter: custom-script
+    operator_notes: Local root via crafted GLIBC_TUNABLES on a SUID binary.
+
+  - id: nf-tables-lpe
+    cve: CVE-2024-1086
+    name: Linux netfilter nf_tables use-after-free LPE
+    exploit_type: privilege-escalation
+    affected_versions: Linux kernel 5.14 – 6.6, nf_tables enabled
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2024-1086
+      - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    source: https://nvd.nist.gov/vuln/detail/CVE-2024-1086
+    reliability: medium
+    validation_status: unvalidated
+    prerequisites: Unprivileged user namespaces or direct nft access
+    execution_environment: linux-target
+    detection_notes: CISA KEV. Kernel UAF — can panic the host; characterise in a VM first
+    execution_adapter: custom-script
+    operator_notes: UAF in nft_verdict double-free path. Reliable public exploit.
+
+  - id: baron-samedit
+    cve: CVE-2021-3156
+    name: Baron Samedit — sudo heap-based buffer overflow
+    exploit_type: privilege-escalation
+    affected_versions: sudo 1.8.2 – 1.8.31p2 and 1.9.0 – 1.9.5p1
+    references:
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-3156
+    source: https://nvd.nist.gov/vuln/detail/CVE-2021-3156
+    reliability: high
+    validation_status: unvalidated
+    prerequisites: Any local user; no sudo rights required
+    execution_environment: linux-target
+    detection_notes: sudoedit crash artefacts in logs if the exploit misfires
+    execution_adapter: metasploit
+    operator_notes: Heap overflow via sudoedit argv parsing. Check `sudo --version`.
