@@ -233,16 +233,11 @@ Each middleware function produces an `agentContext` string that can be injected 
 
 ## Testing
 
-All modules have comprehensive unit tests using `node:test`:
+Each intelligence module ships `node:test` unit tests alongside it
+(`feedbackEngine.test.ts`, `statisticalVerifier.test.ts`, `wafDetection.test.ts`,
+`mctsPlanner.test.ts`, `knowledgeGraph.test.ts`, `oobVerification.test.ts`,
+`intelligenceMiddleware.test.ts`).
 
 ```bash
-bun test src/security/feedbackEngine.test.ts          # 35 tests
-bun test src/security/statisticalVerifier.test.ts      # 18 tests
-bun test src/security/wafDetection.test.ts             # 16 tests
-bun test src/security/mctsPlanner.test.ts              # 24 tests
-bun test src/security/knowledgeGraph.test.ts           # 19 tests
-bun test src/security/oobVerification.test.ts          # 16 tests
-bun test src/security/intelligenceMiddleware.test.ts   # 31 tests
+bun test src/security/*.test.ts
 ```
-
-Run all: `bun test src/security/*.test.ts` (207 tests / 26 files).
