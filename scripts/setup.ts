@@ -63,13 +63,13 @@ const PROVIDER_PRESETS: Record<Provider, {
     detectFromEnv: () => undefined,
   },
   anthropic: {
-    label: 'Anthropic / Claude     built-in account onboarding flow',
+    label: 'Anthropic / Claude     subscription — built-in account onboarding flow',
     category: 'subscription',
     baseUrl: '',
     defaultModel: '',
     tokenVar: null,
     tokenHint: '',
-    detectFromEnv: () => process.env.ANTHROPIC_API_KEY,
+    detectFromEnv: () => undefined,
   },
   github: {
     label: 'GitHub Models         free with any GitHub account',
