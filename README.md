@@ -14,7 +14,7 @@
 </div>
 
 ---
-Built on OpenClaude with a Net-Runner security workflow layer.
+Built on the [OpenClaude](https://github.com/Gitlawb/openclaude) runtime with a Net-Runner security workflow layer.
 
 Run it in the CLI or from any MCP client (Claude Code, Cursor, Windsurf).
 
