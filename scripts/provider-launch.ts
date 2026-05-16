@@ -387,6 +387,10 @@ async function refreshCopilotTokenIfExpired(env: NodeJS.ProcessEnv): Promise<voi
     if (existsSync(profilePath)) {
       try {
         const current = JSON.parse(readFileSync(profilePath, 'utf8'))
+        if (current.profile !== 'copilot') {
+          if (verbose) console.log('Profile on disk is no longer copilot; skipping token persist.')
+          return
+        }
         current.env = current.env || {}
         current.env.OPENAI_API_KEY = refreshed.token
         current.env.COPILOT_TOKEN_EXPIRES_AT = String(refreshed.expires_at)
