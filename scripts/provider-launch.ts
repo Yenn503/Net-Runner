@@ -22,8 +22,10 @@ import {
   listOllamaModels,
 } from './provider-discovery.ts'
 
+type LaunchProfile = ProviderProfile | 'anthropic'
+
 type LaunchOptions = {
-  requestedProfile: ProviderProfile | 'auto' | null
+  requestedProfile: LaunchProfile | 'auto' | null
   passthroughArgs: string[]
   fast: boolean
   goal: ReturnType<typeof normalizeRecommendationGoal>
@@ -51,10 +53,11 @@ function parseLaunchOptions(argv: string[]): LaunchOptions {
 
     if (
       (lower === 'auto' || lower === 'openai' || lower === 'ollama' ||
-       lower === 'codex' || lower === 'gemini' || lower === 'github' || lower === 'copilot') &&
+       lower === 'codex' || lower === 'gemini' || lower === 'github' ||
+       lower === 'copilot' || lower === 'anthropic') &&
       requestedProfile === 'auto'
     ) {
-      requestedProfile = lower as ProviderProfile | 'auto'
+      requestedProfile = lower as LaunchProfile | 'auto'
       continue
     }
 
@@ -144,15 +147,18 @@ async function main(): Promise<void> {
   const options = parseLaunchOptions(process.argv.slice(2))
   const requestedProfile = options.requestedProfile
   if (!requestedProfile) {
-    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|github|copilot|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
+    console.error('Usage: bun run scripts/provider-launch.ts [openai|ollama|codex|gemini|github|copilot|anthropic|auto] [--fast] [--goal <latency|balanced|coding>] [-- <cli args>]')
     process.exit(1)
   }
 
   const persisted = loadProfileFile()
   let profile: ProviderProfile | null
   let resolvedOllamaModel: string | null = null
+  const useBuiltInWalkthrough = requestedProfile === 'anthropic'
 
-  if (requestedProfile === 'auto') {
+  if (useBuiltInWalkthrough) {
+    profile = null
+  } else if (requestedProfile === 'auto') {
     if (persisted) {
       profile = persisted.profile
     } else if (await hasLocalOllama()) {
@@ -177,7 +183,11 @@ async function main(): Promise<void> {
   }
 
   let env: NodeJS.ProcessEnv
-  if (profile === null) {
+  if (useBuiltInWalkthrough) {
+    console.log('Launching the built-in Anthropic account/API-key walkthrough.')
+    env = { ...process.env }
+    if (env.OPENAI_API_KEY === 'SUA_CHAVE') delete env.OPENAI_API_KEY
+  } else if (profile === null) {
     console.log('No saved provider profile detected. Running Net-Runner setup...')
     const setupCode = await runProcess('bun', ['run', 'scripts/setup.ts'], process.env)
     if (setupCode !== 0) {

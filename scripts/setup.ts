@@ -547,7 +547,7 @@ async function main(): Promise<void> {
       console.log(dim('  Net-Runner will use the built-in Anthropic account/API-key onboarding path.'))
       console.log()
       console.log(bold('Launch with:'))
-      console.log(`  ${cyan('bun run dev:profile')}`)
+      console.log(`  ${cyan('bun run dev:anthropic')}`)
       console.log()
       return
     }
