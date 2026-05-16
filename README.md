@@ -7,16 +7,16 @@
 [![MCP](https://img.shields.io/badge/MCP-FastMCP-7C3AED?style=for-the-badge)](https://www.anthropic.com/engineering/code-execution-with-mcp)
 [![License](https://img.shields.io/badge/Educational%20Use-red?style=for-the-badge)](#license)
 
-**Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
+**Red-team runtime for authorized testing.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
 
 <sub>6 specialists · 228 cataloged tools · 32 core skills + 87 curated playbooks · 12 workflows · 10 APT simulations</sub>
 
 </div>
 
 ---
-Red team Agent swarm, built on top of Claude code. 
+Built on OpenClaude with a Net-Runner security workflow layer.
 
-CLI driven or any MCP client (Claude Code, Cursor, Windsurf) can drive the harness too.
+Run it in the CLI or from any MCP client (Claude Code, Cursor, Windsurf).
 
 ## Quick start
 
@@ -25,6 +25,12 @@ bun install && bun run build
 bun run setup          # interactive wizard — picks provider, validates token
 bun run dev:profile    # launch
 ```
+
+## Providers
+
+- **Subscription (OAuth)** — GitHub Copilot, OpenAI Codex/ChatGPT (via Codex CLI auth)
+- **API key** — GitHub Models (`GITHUB_TOKEN`), OpenAI, Gemini
+- **Local** — Ollama
 
 ## Specialist agents
 
@@ -57,6 +63,15 @@ The exploit specialists carry a curated arsenal at `.netrunner/arsenal/`. `index
 - **Blue Team** — `dfir-incident-response` · `code-audit-review`
 
 On a cold start the engagement-lead prints the same menu and takes a number + target. Either path works.
+
+## APT simulation
+
+- 40 APT group profiles with MITRE ATT&CK mappings
+- 10 detailed attack chains
+- 10 simulation workflows
+- 13 industry threat profiles
+
+Use `/apt-simulation <group|industry>` to load simulation context and route onto the lab-target workflow under normal scope controls.
 
 ## How it works
 
@@ -149,7 +164,7 @@ claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
 
 </details>
 
-## Camofox browser
+## Camofox browser (optional)
 
 Optional Firefox patched at C++ level for anti-bot bypass. Used by the `headless-browser-validation` skill. Auto-falls back to local Playwright/Chromium.
 
