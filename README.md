@@ -22,49 +22,46 @@ CLI driven or any MCP client (Claude Code, Cursor, Windsurf) can drive the harne
 
 ```bash
 bun install && bun run build
-bun run setup          # interactive wizard — picks provider, validates token
+bun run setup          # interactive wizard: picks provider and validates token
 bun run dev:profile    # launch
 ```
 
 ## Providers
 
-- **Subscription (OAuth, no API key)** — GitHub Copilot (`bun run dev:copilot`)
-- **Subscription (CLI auth)** — OpenAI Codex / ChatGPT (`bun run dev:codex`)
-- **Subscription (built-in account flow)** — Anthropic / Claude (`bun run dev:anthropic`)
-- **API key** — GitHub Models (`GITHUB_TOKEN`), OpenAI, Gemini
-- **Local** — Ollama
+- **Subscription (OAuth, no API key):** GitHub Copilot (`bun run dev:copilot`)
+- **Subscription (CLI auth):** OpenAI Codex / ChatGPT (`bun run dev:codex`)
+- **Subscription (built-in account flow):** Anthropic / Claude (`bun run dev:anthropic`)
+- **API key:** GitHub Models (`GITHUB_TOKEN`), OpenAI, Gemini
+- **Local:** Ollama
 
 `bun run setup` writes a saved provider profile for Copilot, Codex, GitHub Models, OpenAI, Gemini, and Ollama. Anthropic deliberately stays on the built-in account/API-key onboarding path rather than writing `.net-runner-profile.json`.
 
 ## Specialist agents
 
-- 🎯 **Lead** — phase coordination, routing, scope enforcement, KG queries before discovery, MCTS planner
-- 🛰️ **Recon** — DNS, OSINT, surface mapping, cloud asset enum, 802.11 · `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `theHarvester`, `cloud_enum`, `airodump-ng`, `hcxdumptool`
-- 🕷️ **AppSec** — web (XSS/SQLi/SSRF/smuggling), API (JWT/IDOR), mobile (Frida/MobSF) · `sqlmap`, `dalfox`, `nuclei`, `ffuf`, `jwt_tool`, `arjun`, `jadx`, `frida`, `objection`
-- ⚔️ **Infra** — services, privesc, AD (Kerberos/ADCS/BloodHound), cloud paths, RE + CTF pwn · `netexec`, `impacket-*`, `bloodhound`, `certipy`, `linpeas`, `peirates`, `pacu`, `cloudfox`, `chisel`, `ghidra`, `pwntools`
-- 🔬 **CodeAudit** — SAST, secrets, CVE/IaC, memory + disk forensics, log timelining · `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara`
-- 📋 **Reporter** — chain-of-custody curation, retest, remediation validation, client reports · SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`
+- 🎯 **Lead:** phase coordination, routing, scope enforcement, KG queries before discovery, MCTS planner
+- 🛰️ **Recon:** DNS, OSINT, surface mapping, cloud asset enum, 802.11 · `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `theHarvester`, `cloud_enum`, `airodump-ng`, `hcxdumptool`
+- 🕷️ **AppSec:** web (XSS/SQLi/SSRF/smuggling), API (JWT/IDOR), mobile (Frida/MobSF) · `sqlmap`, `dalfox`, `nuclei`, `ffuf`, `jwt_tool`, `arjun`, `jadx`, `frida`, `objection`
+- ⚔️ **Infra:** services, privesc, AD (Kerberos/ADCS/BloodHound), cloud paths, RE + CTF pwn · `netexec`, `impacket-*`, `bloodhound`, `certipy`, `linpeas`, `peirates`, `pacu`, `cloudfox`, `chisel`, `ghidra`, `pwntools`
+- 🔬 **CodeAudit:** SAST, secrets, CVE/IaC, memory + disk forensics, log timelining · `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara`
+- 📋 **Reporter:** chain-of-custody curation, retest, remediation validation, client reports · SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`
 
 Each specialist sees the full toolset. Compressed-output discipline applies to internal reasoning except Lead and Reporter.
 
 ## Swarm
 
-The Lead doesn't do the work — it routes it. Independent tasks on disjoint targets fan out to specialists running in parallel; dependent work hands off in sequence with a full context packet (target slice, scope, known facts, evidence refs, stop conditions, next owner). Specialists talk to each other directly through the Agent SDK message channel — no round-tripping every decision through the Lead. Findings and artifacts land in the shared `.netrunner/` ledger as they go, so a handoff is a pointer, not a transcript.
+The Lead does not do the work; it routes it. Independent tasks on disjoint targets fan out to specialists running in parallel, and dependent work hands off in sequence with a full context packet (target slice, scope, known facts, evidence refs, stop conditions, next owner). Specialists talk to each other directly through the Agent SDK message channel, with no round-tripping every decision through the Lead. Findings and artifacts land in the shared `.netrunner/` ledger as they go, so a handoff is a pointer, not a transcript.
 
-Each specialist also carries a curated skill pack — domain playbooks under `.netrunner/skills/<namespace>/` (`recon:`, `appsec:`, `infra:`, `forensics:`, `lead:`, `reporting:`) covering the techniques that domain actually runs. See [Customization](docs/customization/README.md) to add your own.
+Each specialist also carries a curated skill pack: domain playbooks under `.netrunner/skills/<namespace>/` (`recon:`, `appsec:`, `infra:`, `forensics:`, `lead:`, `reporting:`) covering the techniques that domain actually runs. See [Customization](docs/customization/README.md) to add your own.
 
 ## Exploit arsenal
 
-The exploit specialists carry a curated arsenal at `.netrunner/arsenal/`. `index/*.yaml` is a vetted set of known exploits — recent high-impact CVEs (Citrix Bleed, PwnKit, Zerologon, PAN-OS, MOVEit…) grouped by surface (windows / linux / web-and-appliance / active-directory). Before exploiting a fingerprinted target the agent matches it against the index instead of re-deriving an exploit from scratch. Exploits the harness validates in an engagement are appended to `discovered.jsonl`, so a working exploit is reusable across future engagements. Arsenal entries are leads — every one is validated against the live target under scope before it counts as a finding.
+The exploit specialists carry a curated arsenal at `.netrunner/arsenal/`. `index/*.yaml` is a vetted set of known exploits, including recent high-impact CVEs (Citrix Bleed, PwnKit, Zerologon, PAN-OS, MOVEit…) grouped by surface (windows / linux / web-and-appliance / active-directory). Before exploiting a fingerprinted target, the agent matches it against the index instead of re-deriving an exploit from scratch. Exploits the harness validates in an engagement are appended to `discovered.jsonl`, so a working exploit is reusable across future engagements. Arsenal entries are leads, and every one is validated against the live target under scope before it counts as a finding.
 
 ## Workflows
 
 12 workflows in 4 categories. Run `/mode` to browse them, `/mode <category>` to filter, then `/engagement init <workflow> <target>` to start.
 
-- **CTF** — `ctf-mode`
-- **Pentest** — `web-app-testing` · `api-testing` · `mobile-app-testing` · `ad-testing` · `wifi-testing` · `cloud-assessment` · `lab-target-testing` · `bug-bounty-recon-validation`
-- **Red Team** — `adversary-emulation`
-- **Blue Team** — `dfir-incident-response` · `code-audit-review`
+Use one workflow per engagement, selected from the menu, rather than maintaining a long tag list in the README.
 
 On a cold start the engagement-lead prints the same menu and takes a number + target. Either path works.
 
@@ -72,27 +69,27 @@ On a cold start the engagement-lead prints the same menu and takes a number + ta
 
 1. Describe target and goal in plain English
 2. `.netrunner/` initialized with scope envelope + impact boundary
-3. Workflow loads — specialists, role contracts, prior session memory injected
+3. Workflow loads: specialists, role contracts, and prior session memory
 4. Tools run with `nr_scope_check` gating risky actions
 5. Findings, validation entries, artifacts written to `.netrunner/` throughout
-6. Reports generated from the evidence ledger — not chat transcripts
+6. Reports generated from the evidence ledger, not chat transcripts
 
 Findings start `Unvalidated`. Validation is typed: command replay (`nr_validate_finding`), statistical verification, OOB callback, or artifact review. Reports label `Validated` / `Unvalidated` / `Inconclusive` / `Disputed`. MITRE coverage counts replay-validated findings only.
 
 ## Intelligence engine
 
-- **Knowledge Graph** — entity/relation graph from evidence; queried before discovery to avoid redundant probes
-- **MCTS planner** — ranks next actions by expected information gain
-- **WAF detection** — classifies defenses, selects bypass strategy, persists to engagement state
-- **Statistical verifier** — gates blind findings before they enter the ledger
-- **OOB verification** — callback-based confirmation for out-of-band techniques
-- **Feedback loop** — payload mutation history (encoding, header, delay, protocol) per target
+- **Knowledge Graph:** entity/relation graph from evidence; queried before discovery to avoid redundant probes
+- **MCTS planner:** ranks next actions by expected information gain
+- **WAF detection:** classifies defenses, selects bypass strategy, persists to engagement state
+- **Statistical verifier:** gates blind findings before they enter the ledger
+- **OOB verification:** callback-based confirmation for out-of-band techniques
+- **Feedback loop:** payload mutation history (encoding, header, delay, protocol) per target
 
 State at `.netrunner/intelligence-state.json`. Per-engagement singleton.
 
 ## MCP surface
 
-16 tools. `nr_exec` is the workhorse — all 228 catalogued tools run through shell. Remaining 15 cover engagement state, scope, evidence, discovery, tool readiness, KG, validation, report export, and curated arsenal lookup.
+16 tools. `nr_exec` is the workhorse, and all 228 catalogued tools run through shell. The remaining 15 cover engagement state, scope, evidence, discovery, tool readiness, KG, validation, report export, and curated arsenal lookup.
 
 <details>
 <summary>Tool list</summary>
