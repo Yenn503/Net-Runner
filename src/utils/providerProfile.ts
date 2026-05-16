@@ -295,6 +295,16 @@ export function selectAutoProfile(
   const looksLikeGithubToken = (value: string | undefined): boolean =>
     !!value && (value.startsWith('github_pat_') || value.startsWith('ghp_') || value.startsWith('gho_') || value.startsWith('ghu_') || value.startsWith('ghs_'))
 
+  // Warn when multiple provider env vars are set — the auto-detect priority
+  // (github > openai > gemini) may surprise users who set more than one.
+  const detectedProviders: string[] = []
+  if (env.GITHUB_TOKEN || env.GH_TOKEN || looksLikeGithubToken(openAiKey)) detectedProviders.push('github')
+  if (openAiKey && openAiKey !== 'SUA_CHAVE') detectedProviders.push('openai')
+  if (env.GEMINI_API_KEY) detectedProviders.push('gemini')
+  if (detectedProviders.length > 1) {
+    console.warn(`[net-runner] Multiple provider credentials detected in environment: ${detectedProviders.join(', ')}. Auto-selecting "github" (priority: github > openai > gemini). Set only the env var for the provider you intend, or use an explicit command like \`bun run dev:openai\`.`)
+  }
+
   if (env.GITHUB_TOKEN || env.GH_TOKEN || looksLikeGithubToken(openAiKey)) {
     return 'github'
   }
