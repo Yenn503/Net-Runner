@@ -7,7 +7,7 @@
 [![MCP](https://img.shields.io/badge/MCP-FastMCP-7C3AED?style=for-the-badge)](https://www.anthropic.com/engineering/code-execution-with-mcp)
 [![License](https://img.shields.io/badge/Educational%20Use-red?style=for-the-badge)](#license)
 
-**Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools.
+**Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools · 68 skill packs · 12 workflows · 10 APT simulations · exploit arsenal · C2 operations · optional MCP packs (Ghidra, Burp, Binary Ninja, Windows)
 
 </div>
 
@@ -24,40 +24,74 @@ bun run dev:profile    # launch
 
 ## Providers
 
-- **Subscription (OAuth, no API key)** — GitHub Copilot (`bun run dev:copilot`)
-- **Subscription (CLI auth)** — OpenAI Codex / ChatGPT (`bun run dev:codex`)
-- **Subscription (built-in account flow)** — Anthropic / Claude (`bun run dev:anthropic`)
-- **API key** — GitHub Models (`GITHUB_TOKEN`), OpenAI, Gemini
-- **Local** — Ollama
+| Type | Provider | Command |
+|------|----------|---------|
+| Subscription (OAuth) | GitHub Copilot | `bun run dev:copilot` |
+| Subscription (CLI auth) | OpenAI Codex / ChatGPT | `bun run dev:codex` |
+| Subscription (built-in) | Anthropic / Claude | `bun run dev:anthropic` |
+| API key | GitHub Models, OpenAI, Gemini | `GITHUB_TOKEN` / `OPENAI_API_KEY` / `GEMINI_API_KEY` |
+| Local | Ollama | `bun run dev:ollama` |
 
-`bun run setup` writes a saved profile for all providers except Anthropic (uses built-in onboarding).
+`bun run setup` saves a profile for all except Anthropic (uses built-in account/API-key onboarding).
 
 ## Specialist agents
 
-Six specialists share the same tool surface. Each carries a curated skill pack under `.netrunner/skills/<namespace>/`.
+Six agents, each with curated skill packs under `.netrunner/skills/<namespace>/`. They share the full 228-tool surface and communicate via the Agent SDK channel — no round-tripping every decision through the Lead.
 
-| Agent | Role | Focus areas |
-|-------|------|-------------|
-| 🎯 **Lead** | Phase coordination, routing, scope enforcement | KG queries, MCTS planning, guardrail decisions, handoff orchestration |
-| 🛰️ **Recon** | Discovery, mapping, OSINT | DNS, surface mapping, cloud enumeration, 802.11 |
-| 🕷️ **AppSec** | Web, API, mobile security testing | XSS, SQLi, SSRF, JWT, API fuzzing, mobile analysis |
-| ⚔️ **Infra** | Network exploitation, privesc, AD, cloud, binary | Kerberos, ADCS, BloodHound, cloud attack paths, RE |
-| 🔬 **CodeAudit** | SAST, secrets, forensics | CVE/IaC scanning, memory forensics, log timelining |
-| 📋 **Reporter** | Evidence, retest, reporting | Chain-of-custody, remediation validation, export |
-
-## Swarm
-
-The Lead routes work to specialists — parallel for independent tasks, sequential for dependent ones with full context handoff (scope, evidence refs, next owner). Specialists communicate directly through the Agent SDK channel. Findings land in the shared `.netrunner/` ledger.
-
-See [Customization](docs/customization/README.md) to add your own skill packs.
+| Agent | Domain | Capabilities |
+|-------|--------|-------------|
+| 🎯 **Lead** | Engagement orchestration | Phase coordination, task routing, scope/impact guardrails, KG queries, MCTS path planning, handoff management, engagement lifecycle |
+| 🛰️ **Recon** | Discovery & OSINT | DNS enumeration, subdomain discovery, port/service scanning, cloud asset discovery, wireless surveying, identity OSINT (Maigret, GHunt, Holehe), digital footprint assessment, darkweb monitoring, IoT/Bluetooth recon |
+| 🕷️ **AppSec** | Web, API & mobile | XSS, SQLi, SSRF, XXE, IDOR, JWT, deserialization, SSTI, CORS, race conditions, NoSQLi, open redirect, GraphQL testing, API fuzzing, mobile cert pinning bypass, Android static/dynamic analysis, mass assignment, BOLA |
+| ⚔️ **Infra** | Network, AD, cloud, binary & C2 | Service exploitation, privesc (Linux/Windows), AD (Kerberos, ADCS, BloodHound), cloud attack paths (AWS/Azure/GCP/K8s), binary RE, exploit dev, C2 infrastructure (Sliver/Mythic), AV/EDR evasion (BOAZ loaders, gocheck, MultCheck), WiFi assessment |
+| 🔬 **CodeAudit** | SAST, secrets & forensics | Static analysis (Semgrep, CodeQL), secret scanning (Gitleaks, NoseyParker), dependency/CVE scanning (Trivy, Grype), IaC misconfigs (Checkov, KICS), memory forensics (Volatility3), disk forensics (Sleuthkit), Windows EVTX (Chainsaw, Hayabusa), YARA, log timelining, threat intel enrichment |
+| 📋 **Reporter** | Evidence & reporting | Chain-of-custody curation, SHA-256 evidence ledger, retest/remediation validation, CVSS/SSVC scoring, MITRE ATT&CK coverage mapping, SARIF/STIX/MISP export, executive dashboards |
 
 ## Exploit arsenal
 
-Curated CVE index (Citrix Bleed, PwnKit, Zerologon, PAN-OS, MOVEit…) at `.netrunner/arsenal/index/*.yaml`, grouped by attack surface. The agent matches fingerprinted targets against the index before re-deriving exploits. Validated exploits persist to `discovered.jsonl` for reuse across engagements.
+Curated CVE index at `.netrunner/arsenal/index/*.yaml`, grouped by attack surface. Agents match fingerprinted targets against the index before re-deriving exploits. Validated exploits persist to `discovered.jsonl` for cross-engagement reuse.
+
+**Notable exploits by surface:**
+
+| Surface | Exploits |
+|---------|----------|
+| **Windows** | BlueHammer (Defender RPC), RedSun (LPE), YellowKey (BitLocker bypass), MiniPlasma (CVE-2020-17103), CLFS LPE (CVE-2023-28252), SmartScreen bypass (CVE-2024-21412), GreenPlasma (CTFMON LPE), UnDefend (Defender DoS), defendnot (WSC fake-AV) |
+| **Linux** | PwnKit (CVE-2021-4034), Dirty Pipe (CVE-2022-0847), Looney Tunables (CVE-2023-4911), nf_tables LPE (CVE-2024-1086), Baron Samedit (CVE-2021-3156) |
+| **Active Directory** | Zerologon (CVE-2020-1472), noPac (CVE-2021-42278/42287), Certifried (CVE-2022-26923), PetitPotam (CVE-2021-36942), PrintNightmare (CVE-2021-34527), AD CS ESC1-ESC16 |
+| **Web & Appliance** | Log4Shell (CVE-2021-44228), Citrix Bleed (CVE-2023-4966), MOVEit SQLi (CVE-2023-34362), PAN-OS (CVE-2024-3400), ScreenConnect (CVE-2024-1709), ActiveMQ RCE (CVE-2023-46604), Spring4Shell (CVE-2022-22965), ProxyLogon/Shell/NotShell, F5 BIG-IP (CVE-2022-1388), Confluence (CVE-2023-22515), Veeam (CVE-2024-40711), vCenter (CVE-2021-21972) |
+
+## Evasion & EDR testing
+
+Dedicated skills for testing payloads against endpoint defenses:
+
+- **BOAZ evasive loaders** — Multi-layered AV/EDR-evasion shellcode loaders (donut, LLVM obfuscation, proxy syscalls, sleep masking, UUID/MAC/IPv4/XOR/RC4/AES/DES encoders)
+- **gocheck** — Binary-search payloads for exact bytes triggering Defender/AMSI signatures (modern Go reimplementation of ThreatCheck)
+- **MultCheck** — Batch multi-engine AV scanning (ESET, Sophos, CrowdStrike, SentinelOne, Bitdefender, Kaspersky, Trend Micro, McAfee, Symantec) — locally, never uploads to VirusTotal
+- **WAF detection** — Fingerprints 11 WAF vendors (Cloudflare, Akamai, Imperva, F5, ModSecurity, AWS WAF, Azure Front Door, Sucuri, etc.) with tailored bypass strategies per vendor
+- **Feedback loop** — Automated payload mutation history (encoding, headers, delays, protocols) per target with retry adaptation
+
+## C2 operations
+
+Full command-and-control workflows with guardrails:
+
+- **C2 infrastructure** — Redirector/fronting setup, listener transports (mTLS, WireGuard, HTTPS, DNS), domain approval, profile config, payload generation (Sliver, Mythic), teardown checkpoints
+- **C2 operations** — Payload staging, listener lifecycle, callback handling, pivot enablement, operator role separation (operator/lead/spectator)
+- Guarded by default — C2 actions blocked unless engagement authorises adversary emulation or C2
+
+## Optional MCP packs
+
+Extend the harness with specialised MCP servers. Enable via `bun run mcp:packs`.
+
+| Pack | Environment | Purpose |
+|------|-------------|---------|
+| **Ghidra MCP** | Any | Drive Ghidra RE — decompilation, call graphs, P-code emulation, debugger |
+| **Binary Ninja MCP** | Any | Alternative RE MCP (requires licensed Binary Ninja) |
+| **Burp Suite MCP** | Kali | Web proxy automation via official PortSwigger MCP BApp |
+| **Windows MCP** | Windows | Agentic Windows control — file nav, app control, GUI interaction, screen capture. Run Windows-locked tools, AD tradecraft, payload prep against Defender on a Windows host or detonation VM |
 
 ## Workflows
 
-12 workflows in 4 categories. Run `/mode` to browse, `/engagement init <workflow> <target>` to start.
+12 workflows in 4 categories. `/mode` to browse, `/engagement init <workflow> <target>` to start.
 
 | Category | Workflows |
 |----------|-----------|
@@ -75,7 +109,7 @@ Curated CVE index (Citrix Bleed, PwnKit, Zerologon, PAN-OS, MOVEit…) at `.netr
 5. Findings and artifacts write to `.netrunner/` throughout
 6. Reports generated from the evidence ledger, not chat transcripts
 
-Findings start `Unvalidated`. Validation types: command replay, statistical verification, OOB callback, or artifact review. Reports label `Validated` / `Unvalidated` / `Inconclusive` / `Disputed`. MITRE coverage counts replay-validated findings only.
+Findings start `Unvalidated`. Validation: command replay, statistical verification, OOB callback, or artifact review. Reports label `Validated` / `Unvalidated` / `Inconclusive` / `Disputed`.
 
 ## Intelligence engine
 
@@ -87,7 +121,7 @@ Findings start `Unvalidated`. Validation types: command replay, statistical veri
 
 ## MCP surface
 
-16 `nr_*` tools for external clients. `nr_exec` runs all 228 catalogued tools through shell. The rest cover engagement state, scope, evidence, discovery, and reporting.
+16 `nr_*` tools exposed to external clients. `nr_exec` is the workhorse — all 228 catalogued tools run through shell.
 
 <details>
 <summary>Tool list</summary>
@@ -151,7 +185,7 @@ claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
 
 ## Camofox browser (optional)
 
-Patched Firefox for anti-bot bypass. Falls back to Playwright/Chromium. Install: `bun run setup:camofox`
+Patched Firefox for anti-bot bypass. Falls back to Playwright/Chromium. `bun run setup:camofox`
 
 ## Provenance
 
