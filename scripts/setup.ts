@@ -29,12 +29,15 @@ import {
 } from './copilot-auth.ts'
 
 type Provider = 'github' | 'copilot' | 'codex' | 'anthropic' | 'openai' | 'gemini' | 'ollama'
+type ProfileProvider = Exclude<Provider, 'anthropic'>
 
 const PROFILE_PATH = resolve(process.cwd(), '.net-runner-profile.json')
 
 const CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex'
 
-const PROVIDER_PRESETS: Record<Provider, {
+const ANTHROPIC_SETUP_LABEL = 'Anthropic / Claude subscription — built-in account onboarding flow'
+
+const PROVIDER_PRESETS: Record<ProfileProvider, {
   label: string
   category: 'subscription' | 'api-key' | 'local'
   baseUrl: string
@@ -58,15 +61,6 @@ const PROVIDER_PRESETS: Record<Provider, {
     category: 'subscription',
     baseUrl: CODEX_BASE_URL,
     defaultModel: 'codexplan',
-    tokenVar: null,
-    tokenHint: '',
-    detectFromEnv: () => undefined,
-  },
-  anthropic: {
-    label: 'Anthropic / Claude     subscription — built-in account onboarding flow',
-    category: 'subscription',
-    baseUrl: '',
-    defaultModel: '',
     tokenVar: null,
     tokenHint: '',
     detectFromEnv: () => undefined,
@@ -141,7 +135,7 @@ async function pickProvider(rl: ReturnType<typeof createInterface>): Promise<Pro
   console.log(dim('  — Subscription (OAuth, no API key) —'))
   console.log(`  ${cyan('1')}. ${PROVIDER_PRESETS.copilot.label}`)
   console.log(`  ${cyan('2')}. ${PROVIDER_PRESETS.codex.label}`)
-  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.anthropic.label}`)
+  console.log(`  ${cyan('3')}. ${ANTHROPIC_SETUP_LABEL}`)
   console.log()
   console.log(dim('  — API key —'))
   console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.github.label}  ${green('(default — free)')}`)
@@ -542,7 +536,7 @@ async function main(): Promise<void> {
       console.log()
       return
     }
-    const preset = PROVIDER_PRESETS[provider]
+    const preset = PROVIDER_PRESETS[provider as ProfileProvider]
 
     let copilotAuth: { githubAccessToken: string; copilotToken: string; copilotExpiresAt: number } | undefined
     let copilotModels: CopilotModelEntry[] | undefined
