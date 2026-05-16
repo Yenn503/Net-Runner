@@ -36,16 +36,84 @@ bun run dev:profile    # launch
 
 ## Specialist agents
 
-Six agents, each with curated skill packs under `.netrunner/skills/<namespace>/`. They share the full 228-tool surface and communicate via the Agent SDK channel — no round-tripping every decision through the Lead.
+Six agents share the full 228-tool surface with curated skill packs under `.netrunner/skills/<namespace>/`. They communicate directly through the Agent SDK channel — no round-tripping every decision through the Lead.
 
-| Agent | Domain | Capabilities |
-|-------|--------|-------------|
-| 🎯 **Lead** | Engagement orchestration | Phase coordination, task routing, scope/impact guardrails, KG queries, MCTS path planning, handoff management, engagement lifecycle |
-| 🛰️ **Recon** | Discovery & OSINT | DNS enumeration, subdomain discovery, port/service scanning, cloud asset discovery, wireless surveying, identity OSINT (Maigret, GHunt, Holehe), digital footprint assessment, darkweb monitoring, IoT/Bluetooth recon |
-| 🕷️ **AppSec** | Web, API & mobile | XSS, SQLi, SSRF, XXE, IDOR, JWT, deserialization, SSTI, CORS, race conditions, NoSQLi, open redirect, GraphQL testing, API fuzzing, mobile cert pinning bypass, Android static/dynamic analysis, mass assignment, BOLA |
-| ⚔️ **Infra** | Network, AD, cloud, binary & C2 | Service exploitation, privesc (Linux/Windows), AD (Kerberos, ADCS, BloodHound), cloud attack paths (AWS/Azure/GCP/K8s), binary RE, exploit dev, C2 infrastructure (Sliver/Mythic), AV/EDR evasion (BOAZ loaders, gocheck, MultCheck), WiFi assessment |
-| 🔬 **CodeAudit** | SAST, secrets & forensics | Static analysis (Semgrep, CodeQL), secret scanning (Gitleaks, NoseyParker), dependency/CVE scanning (Trivy, Grype), IaC misconfigs (Checkov, KICS), memory forensics (Volatility3), disk forensics (Sleuthkit), Windows EVTX (Chainsaw, Hayabusa), YARA, log timelining, threat intel enrichment |
-| 📋 **Reporter** | Evidence & reporting | Chain-of-custody curation, SHA-256 evidence ledger, retest/remediation validation, CVSS/SSVC scoring, MITRE ATT&CK coverage mapping, SARIF/STIX/MISP export, executive dashboards |
+<div align="center">
+<table>
+<tr>
+<td width="33%" valign="top">
+
+<p align="center"><b>🎯 Lead</b><br><sub><i>Engagement orchestration</i></sub></p>
+
+- Phase coordination & task routing
+- Scope & impact guardrails
+- Knowledge Graph queries
+- MCTS path planning
+- Engagement lifecycle mgmt
+
+</td>
+<td width="33%" valign="top">
+
+<p align="center"><b>🛰️ Recon</b><br><sub><i>Discovery & OSINT</i></sub></p>
+
+- DNS, subdomain & port scanning
+- Cloud asset discovery
+- Identity OSINT (Maigret, GHunt)
+- Wireless surveying (802.11)
+- Digital footprint assessment
+
+</td>
+<td width="33%" valign="top">
+
+<p align="center"><b>🕷️ AppSec</b><br><sub><i>Web, API & mobile</i></sub></p>
+
+- XSS, SQLi, SSRF, XXE, IDOR, JWT
+- Deserialization, SSTI, CORS
+- GraphQL testing & API fuzzing
+- Mobile cert pinning bypass
+- Android static/dynamic analysis
+
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="33%" valign="top">
+
+<p align="center"><b>⚔️ Infra</b><br><sub><i>Network, AD, cloud & C2</i></sub></p>
+
+- Service exploitation & privesc
+- AD (Kerberos, ADCS, BloodHound)
+- Cloud attack paths (AWS/Azure/K8s)
+- C2 ops (Sliver, Mythic)
+- AV/EDR evasion (BOAZ, gocheck)
+
+</td>
+<td width="33%" valign="top">
+
+<p align="center"><b>🔬 CodeAudit</b><br><sub><i>SAST, secrets & forensics</i></sub></p>
+
+- Static analysis (Semgrep, CodeQL)
+- Secret & dependency scanning
+- IaC misconfigs (Checkov, KICS)
+- Memory & disk forensics
+- Windows EVTX threat hunting
+
+</td>
+<td width="33%" valign="top">
+
+<p align="center"><b>📋 Reporter</b><br><sub><i>Evidence & reporting</i></sub></p>
+
+- Chain-of-custody curation
+- SHA-256 evidence ledger
+- Retest & remediation validation
+- CVSS/SSVC/MITRE ATT&CK mapping
+- SARIF/STIX/MISP report export
+
+</td>
+</tr>
+</table>
+</div>
 
 ## Exploit arsenal
 
