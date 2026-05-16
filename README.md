@@ -30,6 +30,7 @@ bun run dev:profile    # launch
 
 - **Subscription (no API key)** — GitHub Copilot (OAuth/device flow)
 - **Subscription (CLI auth)** — OpenAI Codex/ChatGPT (via Codex CLI auth)
+- **Subscription (built-in account flow)** — Anthropic/Claude
 - **API key** — GitHub Models (`GITHUB_TOKEN`), OpenAI, Gemini
 - **Local** — Ollama
 

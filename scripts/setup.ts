@@ -8,13 +8,13 @@
  * invokes this script automatically.
  *
  * Provider categories:
- *   Subscription  — copilot (GitHub Copilot), codex (OpenAI Codex / ChatGPT)
+ *   Subscription  — copilot (GitHub Copilot), codex (OpenAI Codex / ChatGPT), anthropic (built-in account flow)
  *   API key       — github (GitHub Models, free), openai, gemini
  *   Local         — ollama (no key, no account)
  */
 
 import { createInterface } from 'node:readline'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import {
@@ -28,7 +28,7 @@ import {
   type CopilotModelEntry,
 } from './copilot-auth.ts'
 
-type Provider = 'github' | 'copilot' | 'codex' | 'openai' | 'gemini' | 'ollama'
+type Provider = 'github' | 'copilot' | 'codex' | 'anthropic' | 'openai' | 'gemini' | 'ollama'
 
 const PROFILE_PATH = resolve(process.cwd(), '.net-runner-profile.json')
 
@@ -61,6 +61,15 @@ const PROVIDER_PRESETS: Record<Provider, {
     tokenVar: null,
     tokenHint: '',
     detectFromEnv: () => undefined,
+  },
+  anthropic: {
+    label: 'Anthropic / Claude     built-in account onboarding flow',
+    category: 'subscription',
+    baseUrl: '',
+    defaultModel: '',
+    tokenVar: null,
+    tokenHint: '',
+    detectFromEnv: () => process.env.ANTHROPIC_API_KEY,
   },
   github: {
     label: 'GitHub Models         free with any GitHub account',
@@ -132,22 +141,24 @@ async function pickProvider(rl: ReturnType<typeof createInterface>): Promise<Pro
   console.log(dim('  — Subscription (OAuth, no API key) —'))
   console.log(`  ${cyan('1')}. ${PROVIDER_PRESETS.copilot.label}`)
   console.log(`  ${cyan('2')}. ${PROVIDER_PRESETS.codex.label}`)
+  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.anthropic.label}`)
   console.log()
   console.log(dim('  — API key —'))
-  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.github.label}  ${green('(default — free)')}`)
-  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.openai.label}`)
-  console.log(`  ${cyan('5')}. ${PROVIDER_PRESETS.gemini.label}`)
+  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.github.label}  ${green('(default — free)')}`)
+  console.log(`  ${cyan('5')}. ${PROVIDER_PRESETS.openai.label}`)
+  console.log(`  ${cyan('6')}. ${PROVIDER_PRESETS.gemini.label}`)
   console.log()
   console.log(dim('  — Local —'))
-  console.log(`  ${cyan('6')}. ${PROVIDER_PRESETS.ollama.label}`)
+  console.log(`  ${cyan('7')}. ${PROVIDER_PRESETS.ollama.label}`)
   console.log()
-  const ans = (await prompt(rl, dim('Enter 1-6 (or press Enter for GitHub Models): '))).trim()
+  const ans = (await prompt(rl, dim('Enter 1-7 (or press Enter for GitHub Models): '))).trim()
   if (ans === '1') return 'copilot'
   if (ans === '2') return 'codex'
-  if (ans === '' || ans === '3') return 'github'
-  if (ans === '4') return 'openai'
-  if (ans === '5') return 'gemini'
-  if (ans === '6') return 'ollama'
+  if (ans === '3') return 'anthropic'
+  if (ans === '' || ans === '4') return 'github'
+  if (ans === '5') return 'openai'
+  if (ans === '6') return 'gemini'
+  if (ans === '7') return 'ollama'
   console.log(red(`'${ans}' is not a valid choice. Defaulting to GitHub Models.`))
   return 'github'
 }
@@ -518,6 +529,19 @@ async function main(): Promise<void> {
   const rl = createInterface({ input: process.stdin, output: process.stdout })
   try {
     const provider = await pickProvider(rl)
+    if (provider === 'anthropic') {
+      if (existsSync(PROFILE_PATH)) {
+        rmSync(PROFILE_PATH, { force: true })
+      }
+      console.log()
+      console.log(green('✔ Cleared saved provider profile.'))
+      console.log(dim('  Net-Runner will use the built-in Anthropic account/API-key onboarding path.'))
+      console.log()
+      console.log(bold('Launch with:'))
+      console.log(`  ${cyan('bun run dev:profile')}`)
+      console.log()
+      return
+    }
     const preset = PROVIDER_PRESETS[provider]
 
     let copilotAuth: { githubAccessToken: string; copilotToken: string; copilotExpiresAt: number } | undefined
