@@ -129,7 +129,7 @@ export function SpinnerAnimationRow({
     stalledIntensity
   } = useStalledAnimation(time, currentResponseLength, hasActiveTools || leaderIsIdle, reducedMotion);
   const frame = reducedMotion ? 0 : Math.floor(time / 120);
-  const glimmerSpeed = mode === 'requesting' ? 50 : 200;
+  const glimmerSpeed = mode === 'requesting' ? 100 : 400;
   // message is stable within a turn; stringWidth is expensive enough (Bun native
   // call per code point) to memoize explicitly across the 50ms loop.
   const glimmerMessageWidth = useMemo(() => stringWidth(message), [message]);

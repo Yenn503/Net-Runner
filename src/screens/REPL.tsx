@@ -200,7 +200,7 @@ import { runPostCompactCleanup } from '../services/compact/postCompactCleanup.js
 import { provisionContentReplacementState, reconstructContentReplacementState, type ContentReplacementRecord } from '../utils/toolResultStorage.js';
 import { partialCompactConversation } from '../services/compact/compact.js';
 import type { LogOption } from '../types/logs.js';
-import type { AgentColorName } from '../tools/AgentTool/agentColorManager.js';
+import { getAgentColor, type AgentColorName } from '../tools/AgentTool/agentColorManager.js';
 import { fileHistoryMakeSnapshot, type FileHistoryState, fileHistoryRewind, type FileHistorySnapshot, copyFileHistoryForResume, fileHistoryEnabled, fileHistoryHasAnyChanges } from '../utils/fileHistory.js';
 import { type AttributionState, incrementPromptCount } from '../utils/commitAttribution.js';
 import { recordAttributionSnapshot } from '../utils/sessionStorage.js';
@@ -1632,6 +1632,16 @@ export function REPL({
     // Promise chains for unconsumed checks (denied/aborted paths).
     clearSpeculativeChecks();
   }, [pickNewSpinnerTip]);
+
+  // Set spinner color based on agent type when a turn starts
+  useEffect(() => {
+    if (isLoading && mainThreadAgentDefinition?.agentType && !spinnerColor) {
+      const themeColor = getAgentColor(mainThreadAgentDefinition.agentType);
+      if (themeColor) {
+        setSpinnerColor(themeColor);
+      }
+    }
+  }, [isLoading, mainThreadAgentDefinition]);
 
   // Session backgrounding — hook is below, after getToolUseContext
 

@@ -12,6 +12,7 @@ import {
 } from '../src/utils/providerRecommendation.ts'
 import {
   buildLaunchEnv,
+  clearManagedProfileEnv,
   loadProfileFile,
   selectAutoProfile,
   type ProviderProfile,
@@ -186,6 +187,7 @@ async function main(): Promise<void> {
   if (useBuiltInWalkthrough) {
     console.log('Launching the built-in Anthropic account/API-key walkthrough.')
     env = { ...process.env }
+    clearManagedProfileEnv(env)
     if (env.OPENAI_API_KEY === 'SUA_CHAVE') delete env.OPENAI_API_KEY
   } else if (profile === null) {
     console.log('No saved provider profile detected. Running Net-Runner setup...')
@@ -228,6 +230,7 @@ async function main(): Promise<void> {
     console.log(`${reason} Launching the built-in first-run walkthrough instead.`)
     profile = null
     env = { ...process.env }
+    clearManagedProfileEnv(env)
     if (env.OPENAI_API_KEY === 'SUA_CHAVE') delete env.OPENAI_API_KEY
   }
 

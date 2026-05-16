@@ -206,5 +206,5 @@ export function printStartupScreen(): void {
   out.push(`  ${DIM}${rgb(...DIMCOL)}net-runner ${RESET}${rgb(...ACCENT)}v${MACRO.DISPLAY_VERSION ?? MACRO.VERSION}${RESET}`)
   out.push('')
 
-  process.stdout.write(out.join('\n') + '\n')
+  process.stderr.write(out.join('\n') + '\n')
 }

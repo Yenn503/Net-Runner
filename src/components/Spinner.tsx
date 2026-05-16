@@ -39,7 +39,7 @@ import { useAnimationFrame } from '../ink.js';
 import { getGlobalConfig } from '../utils/config.js';
 export type { SpinnerMode } from './Spinner/index.js';
 const DEFAULT_CHARACTERS = getDefaultCharacters();
-const SPINNER_FRAMES = [...DEFAULT_CHARACTERS, ...[...DEFAULT_CHARACTERS].reverse()];
+const SPINNER_FRAMES = [...DEFAULT_CHARACTERS];
 type Props = {
   mode: SpinnerMode;
   loadingStartTimeRef: React.RefObject<number>;

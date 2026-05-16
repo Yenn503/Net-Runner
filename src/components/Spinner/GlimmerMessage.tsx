@@ -208,8 +208,8 @@ export function GlimmerMessage(t0: Props) {
   if (t2 !== Symbol.for("react.early_return_sentinel")) {
     return t2;
   }
-  const shimmerStart = glimmerIndex - 1;
-  const shimmerEnd = glimmerIndex + 1;
+  const shimmerStart = glimmerIndex - 3;
+  const shimmerEnd = glimmerIndex + 3;
   if (shimmerStart >= messageWidth || shimmerEnd < 0) {
     let t3;
     if ($[40] !== message || $[41] !== messageColor) {
