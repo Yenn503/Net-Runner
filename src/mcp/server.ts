@@ -25,6 +25,14 @@ import { verifyEvidenceChain } from '../security/evidenceHash.js'
 import { validateFinding } from '../security/validateFinding.js'
 import { computeCoverage } from '../security/coverage.js'
 import {
+  loadArsenal,
+  matchArsenal,
+  renderArsenalLookupResult,
+  sortArsenalHits,
+  type ArsenalLookupFilter,
+  type ReliabilityScore,
+} from '../security/arsenal.js'
+import {
   getCapabilityReadinessSnapshot,
   getNetRunnerCapabilities,
   type CapabilityReadiness,
@@ -109,6 +117,7 @@ const OPEN_WORLD_EXEC_TOOL_ANNOTATIONS = {
 } as const
 
 const EXEC_MAX_BUFFER_BYTES = 10 * 1024 * 1024
+const INSTALL_MAX_BUFFER_BYTES = 10 * 1024 * 1024
 const EXEC_TRUNCATE_THRESHOLD_CHARS = parseInt(
   process.env.NR_EXEC_MAX_CHARS ?? '8000',
   10,
@@ -248,6 +257,100 @@ function summarizeTextBlock(text: string, maxLines = 6): string {
     return text
   }
   return [...lines.slice(0, maxLines), `[... ${lines.length - maxLines} lines omitted ...]`].join('\n')
+}
+
+const TOOL_INSTALL_MODES = ['check', 'all', 'apt', 'pipx', 'go', 'gh', 'user'] as const
+const TOOL_INSTALL_ENVIRONMENTS = ['auto', 'host', 'wsl-kali'] as const
+
+type ToolInstallMode = typeof TOOL_INSTALL_MODES[number]
+type ToolInstallEnvironment = typeof TOOL_INSTALL_ENVIRONMENTS[number]
+
+function windowsPathToWslPath(path: string): string {
+  const match = /^([a-zA-Z]):[\\/](.*)$/.exec(path)
+  if (!match) {
+    return path.replace(/\\/g, '/')
+  }
+  const drive = match[1]!.toLowerCase()
+  const rest = match[2]!.replace(/\\/g, '/')
+  return `/mnt/${drive}/${rest}`
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`
+}
+
+function installArgsForMode(mode: ToolInstallMode): string {
+  switch (mode) {
+    case 'check':
+      return '--check'
+    case 'apt':
+      return '--apt-only'
+    case 'pipx':
+      return '--pipx-only'
+    case 'go':
+      return '--go-only'
+    case 'gh':
+      return '--gh-only'
+    case 'user':
+      return '--user-only'
+    case 'all':
+      return ''
+  }
+}
+
+async function runToolInstaller(options: {
+  mode: ToolInstallMode
+  environment: ToolInstallEnvironment
+  timeout: number
+}): Promise<string> {
+  const args = installArgsForMode(options.mode)
+  let command: string
+  let resolvedEnvironment = options.environment
+
+  if (resolvedEnvironment === 'auto') {
+    resolvedEnvironment = process.platform === 'win32' ? 'wsl-kali' : 'host'
+  }
+
+  if (resolvedEnvironment === 'wsl-kali') {
+    const wslCwd = windowsPathToWslPath(CWD)
+    command = `wsl -d kali-linux -u root -e bash -lc ${shellQuote(`cd ${shellQuote(wslCwd)} && bash scripts/install-tools.sh ${args}`)}`
+  } else {
+    command = `bash scripts/install-tools.sh ${args}`
+  }
+
+  logRuntimeEvent(
+    'EXEC',
+    `tool installer mode=${options.mode} environment=${resolvedEnvironment}`,
+    undefined,
+    YELLOW,
+  )
+
+  try {
+    const { stdout, stderr } = await execAsync(command, {
+      cwd: CWD,
+      timeout: options.timeout,
+      maxBuffer: INSTALL_MAX_BUFFER_BYTES,
+      env: { ...process.env, TERM: 'dumb' },
+    })
+    const output = [stdout.trim(), stderr.trim() ? `[stderr]\n${stderr.trim()}` : '']
+      .filter(Boolean)
+      .join('\n')
+    return [
+      `[tool install] mode=${options.mode} environment=${resolvedEnvironment} exit=0`,
+      output || '(no output)',
+    ].join('\n')
+  } catch (err: any) {
+    const output = [
+      err.stdout?.trim(),
+      err.stderr?.trim() ? `[stderr]\n${err.stderr.trim()}` : '',
+      err.killed ? `[killed] installer timed out after ${options.timeout}ms` : '',
+      err.message,
+    ].filter(Boolean).join('\n')
+    return [
+      `[tool install] mode=${options.mode} environment=${resolvedEnvironment} exit=${String(err.code ?? '?')}`,
+      output || '(no output)',
+    ].join('\n')
+  }
 }
 
 async function writeExecArtifact(command: string, output: string): Promise<string> {
@@ -701,7 +804,7 @@ function traced<T extends Record<string, unknown>>(
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TOOL_COUNT = 14
+const TOOL_COUNT = 16
 const CATALOG_TOOL_COUNT = IMPORTED_PENTEST_CAPABILITIES.length
 
 const server = new FastMCP({
@@ -1119,6 +1222,34 @@ server.addTool({
 // ═══════════════════════════════════════════════════════════════════════════
 
 server.addTool({
+  name: 'nr_tool_install',
+  description: 'Check or install Net-Runner engagement tooling through scripts/install-tools.sh. Use mode=check first. Install modes require confirm=true because they can change the operator host or Kali WSL package state.',
+  annotations: OPEN_WORLD_EXEC_TOOL_ANNOTATIONS,
+  parameters: z.object({
+    mode: z.enum(TOOL_INSTALL_MODES).optional().describe('check reports missing tools. all/apt/pipx/go/gh/user install the corresponding installer group. Default: check.'),
+    environment: z.enum(TOOL_INSTALL_ENVIRONMENTS).optional().describe('auto uses Kali WSL on Windows and host bash elsewhere. Use host or wsl-kali to force a target. Default: auto.'),
+    confirm: z.boolean().optional().describe('Required for install modes. Not required for mode=check.'),
+    timeout_ms: z.number().optional().describe('Installer timeout in ms (default 900000).'),
+  }),
+  execute: traced('nr_tool_install', async (args) => {
+    const mode = args.mode ?? 'check'
+    if (mode !== 'check' && args.confirm !== true) {
+      return [
+        `[tool install] refused mode=${mode}`,
+        'Installation changes the operator environment. Re-run with confirm=true after the operator has agreed to install missing tooling.',
+        'Use mode=check first to show what is missing.',
+      ].join('\n')
+    }
+
+    return runToolInstaller({
+      mode,
+      environment: args.environment ?? 'auto',
+      timeout: args.timeout_ms ?? 900_000,
+    })
+  }),
+})
+
+server.addTool({
   name: 'nr_kg_query',
   description: 'Query the engagement Knowledge Graph for prior evidence about a target (host, domain, IP, URL). Use BEFORE running new discovery probes — only run scans for genuinely missing facts. Returns matched entities and relations.',
   annotations: READ_ONLY_TOOL_ANNOTATIONS,
@@ -1305,6 +1436,86 @@ server.addTool({
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  15. nr_arsenal_lookup — Typed lookup over the curated exploit arsenal
+// ═══════════════════════════════════════════════════════════════════════════
+
+const RELIABILITY_VALUES = ['high', 'medium', 'low', 'unverified'] as const
+const EXPLOIT_TYPE_VALUES = [
+  'rce',
+  'privilege-escalation',
+  'auth-bypass',
+  'defense-evasion',
+  'credential-access',
+  'info-disclosure',
+  'dos',
+  'lateral-movement',
+] as const
+
+const ARSENAL_RENDER_LIMIT = 8
+
+server.addTool({
+  name: 'nr_arsenal_lookup',
+  description:
+    'Query the curated exploit arsenal (.netrunner/arsenal/index/*.yaml) for known-exploit leads matching a fingerprinted target. Filter by product/version substring, exact CVE, exploit type, surface, or minimum reliability. Returns typed entries (NVD/KEV-tagged metadata + operator notes + execution adapter) sorted by reliability. Read this BEFORE doing a fresh CVE intelligence lookup — the arsenal is the operator-vetted cache.',
+  annotations: READ_ONLY_TOOL_ANNOTATIONS,
+  parameters: z
+    .object({
+      product: z
+        .string()
+        .optional()
+        .describe('Product / vendor substring (case-insensitive). Matched against entry name + affected_versions.'),
+      version: z
+        .string()
+        .optional()
+        .describe('Version string (substring). Matched against affected_versions.'),
+      cve: z
+        .string()
+        .optional()
+        .describe('Exact CVE id, e.g. CVE-2021-44228.'),
+      exploit_type: z.enum(EXPLOIT_TYPE_VALUES).optional(),
+      surface: z
+        .string()
+        .optional()
+        .describe('Restrict to one surface yaml: windows | linux | web-and-appliance | active-directory'),
+      min_reliability: z.enum(RELIABILITY_VALUES).optional(),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(50)
+        .optional()
+        .describe(`Maximum entries to render in detail (default ${ARSENAL_RENDER_LIMIT}).`),
+    })
+    .refine(
+      v =>
+        v.product !== undefined ||
+        v.version !== undefined ||
+        v.cve !== undefined ||
+        v.exploit_type !== undefined ||
+        v.surface !== undefined ||
+        v.min_reliability !== undefined,
+      { message: 'Supply at least one filter (product, version, cve, exploit_type, surface, or min_reliability).' },
+    ),
+  execute: traced('nr_arsenal_lookup', async (args) => {
+    const filter: ArsenalLookupFilter = {
+      product: args.product,
+      version: args.version,
+      cve: args.cve,
+      exploit_type: args.exploit_type,
+      surface: args.surface,
+      min_reliability: args.min_reliability as ReliabilityScore | undefined,
+    }
+    const { entries, errors } = await loadArsenal(CWD)
+    if (entries.length === 0 && errors.length === 0) {
+      return 'Arsenal is empty (no .netrunner/arsenal/index/*.yaml). Seed it from the repo or run an engagement to populate discovered.jsonl.'
+    }
+    const hits = sortArsenalHits(matchArsenal(entries, filter))
+    const limit = args.limit ?? ARSENAL_RENDER_LIMIT
+    return renderArsenalLookupResult(entries.length, hits, errors, { limit })
+  }),
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  BANNER & START (matching harness StartupScreen.ts gradient + box style)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1336,11 +1547,13 @@ const TOOLS_MANIFEST: [string, string][] = [
   ['nr_list_evidence', 'Query evidence ledger'],
   ['nr_discover', 'Progressive disclosure (agents/skills/workflows/caps)'],
   ['nr_tool_help', 'Authoritative --help text per catalog tool (anti-hallucination)'],
+  ['nr_tool_install', 'Check/install engagement tools via host or Kali WSL'],
   ['nr_kg_query', 'Knowledge Graph lookup for target (avoid redundant scans)'],
   ['nr_verify_evidence', 'Verify SHA-256 hash chain integrity of evidence ledger'],
   ['nr_validate_finding', 'Replay finding command + diff output vs original evidence'],
   ['nr_coverage_status', 'MITRE ATT&CK coverage: expected vs covered techniques'],
   ['nr_export_report', 'Export reports: Markdown / HTML / SARIF / STIX / MISP'],
+  ['nr_arsenal_lookup', 'Query the curated exploit arsenal by product/version/CVE'],
 ]
 
 function boxRow(content: string, width: number, rawLen: number): string {

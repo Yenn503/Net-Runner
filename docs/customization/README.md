@@ -13,7 +13,7 @@ The harness walks both at startup. Restart Net-Runner after dropping a new skill
 
 ### Curated skill packs
 
-Net-Runner ships 87 curated red-team / forensics playbooks under `.netrunner/skills/<namespace>/`, one namespace per specialist:
+Net-Runner ships 90 curated red-team / forensics playbooks under `.netrunner/skills/<namespace>/`, one namespace per specialist:
 
 | Namespace | Specialist | Covers |
 |---|---|---|
@@ -100,7 +100,7 @@ bun run tools:install     # everything (apt + pipx + go + GitHub releases + user
 bun run tools:check       # report what's missing on this host
 ```
 
-`install-tools.sh` is idempotent — re-running skips installed entries.
+`install-tools.sh` is idempotent — re-running skips installed entries. Over FastMCP, use `nr_tool_install` with `mode=check` first; install modes require `confirm=true`. On Windows, `environment=auto` runs the installer in the `kali-linux` WSL distribution so engagement tooling lands where the Linux assessment commands run.
 
 ## Optional MCP packs
 
@@ -119,11 +119,29 @@ bun run mcp:packs disable <id>     # remove it
 | `ghidra-mcp` | Ghidra reverse engineering | any |
 | `binary-ninja-mcp` | Binary Ninja reverse engineering | any |
 | `burp-mcp` | Burp Suite web proxy | Kali operator |
+| `windows-mcp` | Agentic Windows control (file/app/GUI) | Windows operator |
 
 Enabling a pack writes its server entry into `.mcp.json`; the harness loads it
 at startup like any MCP server. Each pack has its own install prerequisite
-(printed on `enable`) — the host tool (Ghidra / Binary Ninja / Burp) must be
-running with its MCP bridge started. Pack catalog: `src/mcp/optionalPacks.ts`.
+(printed on `enable`) — the host tool (Ghidra / Binary Ninja / Burp / Windows
+host) must be running with its MCP bridge started. Pack catalog:
+`src/mcp/optionalPacks.ts`.
+
+## Exploit arsenal
+
+Curated, provenance-tracked exploit leads live in
+`.netrunner/arsenal/index/*.yaml` (split by surface: windows, linux,
+web-and-appliance, active-directory). Agents query it through the typed CLI
+tool **`ArsenalLookup`** or the FastMCP tool **`nr_arsenal_lookup`**. Both
+surfaces share the same loader, matcher, sorter, and renderer. Filter by
+`product`, `version`, `cve`, `exploit_type`, `surface`, or
+`min_reliability`. Validate the YAML schema before committing changes:
+
+```bash
+bun run arsenal:check   # validate schema + enum + URL + CVE format
+```
+
+Schema and discipline: `.netrunner/arsenal/README.md`.
 
 ## Where the harness looks at startup
 

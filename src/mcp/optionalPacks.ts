@@ -83,6 +83,20 @@ export const MCP_PACKS: McpPack[] = [
     needsOperatorConfig:
       'Confirm the URL Burp prints when the MCP Server extension loads — edit the .mcp.json entry if it differs from the default port 9876.',
   },
+  {
+    id: 'windows-mcp',
+    name: 'Windows MCP',
+    description:
+      'Agentic Windows control MCP — file navigation, application control, GUI interaction, screen/snapshot capture on a Windows machine. Lets the harness drive a Windows operator host or detonation VM end-to-end (running tools that have no Linux build, AD tradecraft, payload prep against Defender).',
+    homepage: 'https://github.com/CursorTouch/Windows-MCP',
+    environment: 'windows-operator',
+    install:
+      'On the Windows box: install Python 3.13+ and uv (`pip install uv`). The pack invokes `uvx windows-mcp` so no global install is required.',
+    // stdio transport per upstream README. Runs on the Windows machine being controlled.
+    server: { type: 'stdio', command: 'uvx', args: ['windows-mcp'] },
+    needsOperatorConfig:
+      'Windows-MCP runs on the Windows host you want the agent to control. If launching from a remote operator box, run `uvx windows-mcp --transport streamable-http --host 0.0.0.0 --port 8000` on the Windows side and change this pack entry to that http URL.',
+  },
 ]
 
 /** Look up a pack by id. */

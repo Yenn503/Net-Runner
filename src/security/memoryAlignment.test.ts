@@ -32,13 +32,13 @@ test('Net-Runner config home defaults can be redirected through NETRUNNER_CONFIG
 })
 
 test('engagement memory helpers resolve inside the .netrunner envelope', () => {
-  assert.match(
+  assert.equal(
     getEngagementMemoryDir('/tmp/net-runner-workspace'),
-    /\/tmp\/net-runner-workspace\/\.netrunner\/memory$/,
+    join('/tmp/net-runner-workspace', '.netrunner', 'memory'),
   )
-  assert.match(
+  assert.equal(
     getEngagementAgentMemoryDir('/tmp/net-runner-workspace', 'engagement-lead'),
-    /\/tmp\/net-runner-workspace\/\.netrunner\/memory\/agents\/engagement-lead$/,
+    join('/tmp/net-runner-workspace', '.netrunner', 'memory', 'agents', 'engagement-lead'),
   )
 })
 
@@ -86,21 +86,21 @@ test('project settings paths resolve only to the .netrunner envelope', () => {
       '/tmp/net-runner-workspace',
       'projectSettings',
     ),
-    '/tmp/net-runner-workspace/.netrunner/settings.json',
+    join('/tmp/net-runner-workspace', '.netrunner', 'settings.json'),
   )
   assert.equal(
     getPrimaryProjectSettingsPath(
       '/tmp/net-runner-workspace',
       'localSettings',
     ),
-    '/tmp/net-runner-workspace/.netrunner/settings.local.json',
+    join('/tmp/net-runner-workspace', '.netrunner', 'settings.local.json'),
   )
 })
 
 test('scheduled tasks and agent files default to the .netrunner envelope', () => {
   assert.equal(
     getScheduledTasksFilePath('/tmp/net-runner-workspace'),
-    '/tmp/net-runner-workspace/.netrunner/scheduled_tasks.json',
+    join('/tmp/net-runner-workspace', '.netrunner', 'scheduled_tasks.json'),
   )
   assert.equal(AGENT_PATHS.FOLDER_NAME, '.netrunner')
 })

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, writeFile, mkdir, chmod } from 'node:fs/promises'
+import { mkdtemp, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -12,8 +12,12 @@ import {
 
 async function makeFakeBinary(dir: string, name: string, script: string): Promise<string> {
   await mkdir(dir, { recursive: true })
-  const binPath = join(dir, name)
-  await writeFile(binPath, `#!/bin/sh\n${script}\n`, { mode: 0o755 })
+  const binPath = join(dir, process.platform === 'win32' ? `${name}.cmd` : name)
+  const body =
+    process.platform === 'win32'
+      ? script
+      : `#!/bin/sh\n${script}\n`
+  await writeFile(binPath, body, { mode: 0o755 })
   return binPath
 }
 
@@ -26,7 +30,13 @@ test('getCachedHelp returns null when no cache exists', async () => {
 test('populateHelpCache writes cache and returns output', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'nr-help-cache-'))
   const binDir = join(cwd, 'bin')
-  const bin = await makeFakeBinary(binDir, 'faketool', 'echo "USAGE: faketool --bar [OPTIONS]"')
+  const bin = await makeFakeBinary(
+    binDir,
+    'faketool',
+    process.platform === 'win32'
+      ? '@echo USAGE: faketool --bar [OPTIONS]'
+      : 'echo "USAGE: faketool --bar [OPTIONS]"',
+  )
 
   const { cached, output } = await populateHelpCache(cwd, 'kali-faketool', bin)
 
@@ -44,7 +54,10 @@ test('getOrPopulateHelp: cache miss populates, second call returns cached withou
   const binDir = join(cwd, 'bin')
 
   let execCount = 0
-  const countingScript = 'echo "USAGE: countme --flag"; echo "exec-count: called"'
+  const countingScript =
+    process.platform === 'win32'
+      ? '@echo USAGE: countme --flag\r\n@echo exec-count: called'
+      : 'echo "USAGE: countme --flag"; echo "exec-count: called"'
   const bin = await makeFakeBinary(binDir, 'countme', countingScript)
 
   // First call — should populate
@@ -53,7 +66,13 @@ test('getOrPopulateHelp: cache miss populates, second call returns cached withou
 
   // Overwrite binary with a script that would produce different output
   // to prove the second call reads from cache, not re-exec
-  await writeFile(bin, '#!/bin/sh\necho "DIFFERENT OUTPUT"\n', { mode: 0o755 })
+  await writeFile(
+    bin,
+    process.platform === 'win32'
+      ? '@echo DIFFERENT OUTPUT\r\n'
+      : '#!/bin/sh\necho "DIFFERENT OUTPUT"\n',
+    { mode: 0o755 },
+  )
 
   const second = await getOrPopulateHelp(cwd, 'kali-countme', bin)
   assert.ok(second.includes('USAGE: countme'), `second call should be cached: ${second}`)
@@ -65,11 +84,21 @@ test('populateHelpCache falls back to -h when --help produces nothing', async ()
   const binDir = join(cwd, 'bin')
 
   // Script: --help prints nothing, -h prints usage
-  const script = [
-    'if [ "$1" = "--help" ]; then exit 1; fi',
-    'if [ "$1" = "-h" ]; then echo "USAGE: fallback -h works"; exit 0; fi',
-    'exit 1',
-  ].join('\n')
+  const script =
+    process.platform === 'win32'
+      ? [
+          '@if "%1"=="--help" exit /b 1',
+          '@if "%1"=="-h" (',
+          '  echo USAGE: fallback -h works',
+          '  exit /b 0',
+          ')',
+          '@exit /b 1',
+        ].join('\r\n')
+      : [
+          'if [ "$1" = "--help" ]; then exit 1; fi',
+          'if [ "$1" = "-h" ]; then echo "USAGE: fallback -h works"; exit 0; fi',
+          'exit 1',
+        ].join('\n')
   const bin = await makeFakeBinary(binDir, 'fallbacktool', script)
 
   const { cached, output } = await populateHelpCache(cwd, 'kali-fallbacktool', bin)

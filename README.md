@@ -9,7 +9,7 @@
 
 **Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
 
-<sub>6 specialists · 228 cataloged tools · 32 core skills + 87 curated playbooks · 12 workflows · 10 APT simulations</sub>
+<sub>6 specialists · 228 catalogued tools · 32 core skills + 87 curated playbooks · 12 workflows · 10 APT simulations</sub>
 
 </div>
 
@@ -25,6 +25,16 @@ bun install && bun run build
 bun run setup          # interactive wizard — picks provider, validates token
 bun run dev:profile    # launch
 ```
+
+## Providers
+
+- **Subscription (OAuth, no API key)** — GitHub Copilot (`bun run dev:copilot`)
+- **Subscription (CLI auth)** — OpenAI Codex / ChatGPT (`bun run dev:codex`)
+- **Subscription (built-in account flow)** — Anthropic / Claude (`bun run dev:anthropic`)
+- **API key** — GitHub Models (`GITHUB_TOKEN`), OpenAI, Gemini
+- **Local** — Ollama
+
+`bun run setup` writes a saved provider profile for Copilot, Codex, GitHub Models, OpenAI, Gemini, and Ollama. Anthropic deliberately stays on the built-in account/API-key onboarding path rather than writing `.net-runner-profile.json`.
 
 ## Specialist agents
 
@@ -82,14 +92,25 @@ State at `.netrunner/intelligence-state.json`. Per-engagement singleton.
 
 ## MCP surface
 
-14 tools. `nr_exec` is the workhorse — all 228 cataloged tools run through shell. Remaining 13 cover engagement state, scope, evidence, discovery, KG, validation, report export.
+16 tools. `nr_exec` is the workhorse — all 228 catalogued tools run through shell. Remaining 15 cover engagement state, scope, evidence, discovery, tool readiness, KG, validation, report export, and curated arsenal lookup.
 
 <details>
 <summary>Tool list</summary>
 
-`nr_exec` · `nr_engagement_init` · `nr_engagement_status` · `nr_scope_check` · `nr_save_finding` · `nr_save_note` · `nr_list_evidence` · `nr_discover` · `nr_tool_help` · `nr_kg_query` · `nr_verify_evidence` · `nr_validate_finding` · `nr_coverage_status` · `nr_export_report`
+`nr_exec` · `nr_engagement_init` · `nr_engagement_status` · `nr_scope_check` · `nr_save_finding` · `nr_save_note` · `nr_list_evidence` · `nr_discover` · `nr_tool_help` · `nr_tool_install` · `nr_kg_query` · `nr_verify_evidence` · `nr_validate_finding` · `nr_coverage_status` · `nr_export_report` · `nr_arsenal_lookup`
 
 </details>
+
+## Tool readiness
+
+For local checks use:
+
+```bash
+bun run tools:check
+bun run tools:install     # host install, idempotent
+```
+
+For MCP-driven engagements, external LLMs should call `nr_tool_install` with `mode=check` first. Install modes (`all`, `apt`, `pipx`, `go`, `gh`, `user`) require `confirm=true`; on Windows `environment=auto` targets Kali WSL, while Linux/macOS targets host bash. This keeps system changes explicit and still lets the harness install missing engagement tooling when the operator has agreed.
 
 ## Reports
 

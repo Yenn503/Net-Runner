@@ -25,6 +25,21 @@ specialists (`infra-specialist`, `app-testing-specialist`).
   exploits/CVEs the harness validates during engagements, so a working
   exploit is reusable across future engagements.
 
+## How the agent queries it
+
+The exploit specialists (`infra-specialist`, `app-testing-specialist`) query
+the typed arsenal surface instead of grepping YAML by hand:
+
+- CLI runtime: **`ArsenalLookup`**
+- FastMCP runtime: **`nr_arsenal_lookup`**
+
+Filters: `product`, `version`, `cve`, `exploit_type`, `surface`,
+`min_reliability`. Both wrappers share the same loader, matcher, sorter, and
+renderer, returning entries sorted by reliability with references,
+prerequisites, execution adapter, and operator notes.
+
+Operators can validate the YAML with `bun run arsenal:check`.
+
 ## Live intelligence sources
 
 The arsenal `index/` is a curated *cache*. Fresh lookups query upstream:

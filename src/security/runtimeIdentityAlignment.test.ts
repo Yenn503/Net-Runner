@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { join } from 'node:path'
 import test from 'node:test'
 import { buildDeepLink, parseDeepLink } from '../utils/deepLink/parseDeepLink.ts'
 import { getScheduledTasksFilePath } from '../utils/scheduledTasksPaths.ts'
@@ -6,7 +7,7 @@ import { getScheduledTasksFilePath } from '../utils/scheduledTasksPaths.ts'
 test('scheduled tasks default to the .netrunner envelope', () => {
   assert.equal(
     getScheduledTasksFilePath('/tmp/net-runner-workspace'),
-    '/tmp/net-runner-workspace/.netrunner/scheduled_tasks.json',
+    join('/tmp/net-runner-workspace', '.netrunner', 'scheduled_tasks.json'),
   )
 })
 

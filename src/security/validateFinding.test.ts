@@ -7,6 +7,11 @@ import { validateFinding } from './validateFinding.js'
 
 let cwd: string
 
+function printCommand(text: string): string {
+  const payload = Buffer.from(text, 'utf8').toString('base64')
+  return `"${process.execPath}" -e "process.stdout.write(Buffer.from('${payload}','base64').toString())"`
+}
+
 beforeEach(async () => {
   cwd = await mkdtemp(join(tmpdir(), 'nr-validate-test-'))
 })
@@ -28,7 +33,7 @@ describe('validateFinding', () => {
       title: 'Test Finding',
       severity: 'low',
       evidence: 'hello world',
-      replayCommand: 'echo "hello world"',
+      replayCommand: printCommand('hello world'),
     })
 
     const result = await validateFinding(cwd, entry.id)
@@ -43,7 +48,7 @@ describe('validateFinding', () => {
       title: 'Test Finding 2',
       severity: 'medium',
       evidence: 'original output line\nsome other line',
-      replayCommand: 'echo "completely different output"',
+      replayCommand: printCommand('completely different output'),
     })
 
     const result = await validateFinding(cwd, entry.id)
@@ -60,7 +65,7 @@ describe('validateFinding', () => {
       evidence: 'override result',
     })
 
-    const result = await validateFinding(cwd, entry.id, 'echo "override result"')
+    const result = await validateFinding(cwd, entry.id, printCommand('override result'))
     expect(result.verdict).toBe('reproduces')
   })
 
@@ -81,7 +86,7 @@ describe('validateFinding', () => {
       title: 'Audited Finding',
       severity: 'high',
       evidence: 'test output',
-      replayCommand: 'echo "test output"',
+      replayCommand: printCommand('test output'),
     })
 
     await validateFinding(cwd, entry.id)

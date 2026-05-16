@@ -14,7 +14,7 @@
  */
 
 import { createInterface } from 'node:readline'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import {
@@ -28,13 +28,15 @@ import {
   type CopilotModelEntry,
 } from './copilot-auth.ts'
 
-type Provider = 'github' | 'copilot' | 'codex' | 'openai' | 'gemini' | 'ollama'
+type Provider = 'github' | 'copilot' | 'codex' | 'anthropic' | 'openai' | 'gemini' | 'ollama'
+type ProfileProvider = Exclude<Provider, 'anthropic'>
 
 const PROFILE_PATH = resolve(process.cwd(), '.net-runner-profile.json')
 
 const CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex'
+const ANTHROPIC_SETUP_LABEL = 'Anthropic / Claude subscription — built-in account onboarding flow'
 
-const PROVIDER_PRESETS: Record<Provider, {
+const PROVIDER_PRESETS: Record<ProfileProvider, {
   label: string
   category: 'subscription' | 'api-key' | 'local'
   baseUrl: string
@@ -132,22 +134,24 @@ async function pickProvider(rl: ReturnType<typeof createInterface>): Promise<Pro
   console.log(dim('  — Subscription (OAuth, no API key) —'))
   console.log(`  ${cyan('1')}. ${PROVIDER_PRESETS.copilot.label}`)
   console.log(`  ${cyan('2')}. ${PROVIDER_PRESETS.codex.label}`)
+  console.log(`  ${cyan('3')}. ${ANTHROPIC_SETUP_LABEL}`)
   console.log()
   console.log(dim('  — API key —'))
-  console.log(`  ${cyan('3')}. ${PROVIDER_PRESETS.github.label}  ${green('(default — free)')}`)
-  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.openai.label}`)
-  console.log(`  ${cyan('5')}. ${PROVIDER_PRESETS.gemini.label}`)
+  console.log(`  ${cyan('4')}. ${PROVIDER_PRESETS.github.label}  ${green('(default — free)')}`)
+  console.log(`  ${cyan('5')}. ${PROVIDER_PRESETS.openai.label}`)
+  console.log(`  ${cyan('6')}. ${PROVIDER_PRESETS.gemini.label}`)
   console.log()
   console.log(dim('  — Local —'))
-  console.log(`  ${cyan('6')}. ${PROVIDER_PRESETS.ollama.label}`)
+  console.log(`  ${cyan('7')}. ${PROVIDER_PRESETS.ollama.label}`)
   console.log()
-  const ans = (await prompt(rl, dim('Enter 1-6 (or press Enter for GitHub Models): '))).trim()
+  const ans = (await prompt(rl, dim('Enter 1-7 (or press Enter for GitHub Models): '))).trim()
   if (ans === '1') return 'copilot'
   if (ans === '2') return 'codex'
-  if (ans === '' || ans === '3') return 'github'
-  if (ans === '4') return 'openai'
-  if (ans === '5') return 'gemini'
-  if (ans === '6') return 'ollama'
+  if (ans === '3') return 'anthropic'
+  if (ans === '' || ans === '4') return 'github'
+  if (ans === '5') return 'openai'
+  if (ans === '6') return 'gemini'
+  if (ans === '7') return 'ollama'
   console.log(red(`'${ans}' is not a valid choice. Defaulting to GitHub Models.`))
   return 'github'
 }
@@ -283,7 +287,7 @@ async function runCodexSetup(
 
 async function getToken(
   rl: ReturnType<typeof createInterface>,
-  preset: typeof PROVIDER_PRESETS[Provider],
+  preset: typeof PROVIDER_PRESETS[ProfileProvider],
 ): Promise<string | undefined> {
   if (!preset.tokenVar) return undefined
 
@@ -416,7 +420,7 @@ async function pickFromList(
 
 async function getModel(
   rl: ReturnType<typeof createInterface>,
-  preset: typeof PROVIDER_PRESETS[Provider],
+  preset: typeof PROVIDER_PRESETS[ProfileProvider],
   provider: Provider,
   token: string | undefined,
   copilotModels?: CopilotModelEntry[],
@@ -518,6 +522,33 @@ async function main(): Promise<void> {
   const rl = createInterface({ input: process.stdin, output: process.stdout })
   try {
     const provider = await pickProvider(rl)
+    if (provider === 'anthropic') {
+      let removedProfile = false
+      if (existsSync(PROFILE_PATH)) {
+        try {
+          rmSync(PROFILE_PATH, { force: true })
+          removedProfile = true
+        } catch (err) {
+          console.log()
+          console.log(red(`Could not clear saved profile at ${PROFILE_PATH}: ${(err as Error).message}`))
+          process.exit(1)
+        }
+      }
+      console.log()
+      console.log(
+        green(
+          removedProfile
+            ? '✔ Cleared saved provider profile.'
+            : '✔ No saved provider profile found.',
+        ),
+      )
+      console.log(dim('  Net-Runner will use the built-in Anthropic account/API-key onboarding path.'))
+      console.log()
+      console.log(bold('Launch with:'))
+      console.log(`  ${cyan('bun run dev:anthropic')}`)
+      console.log()
+      return
+    }
     const preset = PROVIDER_PRESETS[provider]
 
     let copilotAuth: { githubAccessToken: string; copilotToken: string; copilotExpiresAt: number } | undefined

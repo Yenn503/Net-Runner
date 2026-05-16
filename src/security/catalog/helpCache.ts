@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { isAbsolute, join, sep } from 'node:path'
 
 const HELP_CACHE_DIR = '.netrunner/help-cache'
 const HELP_TIMEOUT_MS = 5_000
@@ -33,13 +34,18 @@ export async function getCachedHelp(
  */
 function runAttempt(binary: string, args: string[]): Promise<string | null> {
   return new Promise((resolve) => {
+    if ((isAbsolute(binary) || binary.includes(sep)) && !existsSync(binary)) {
+      resolve(null)
+      return
+    }
+
     let output = ''
     let timedOut = false
 
     let child: ReturnType<typeof spawn>
     try {
       child = spawn(binary, args, {
-        shell: false,
+        shell: process.platform === 'win32',
         env: { ...process.env, TERM: 'dumb' },
         stdio: ['ignore', 'pipe', 'pipe'],
       })

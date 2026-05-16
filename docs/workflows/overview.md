@@ -5,7 +5,7 @@ Net-Runner runs assessments through a project-scoped runtime. Workflow state, gu
 The runtime can be driven in two ways:
 
 - through the Net-Runner CLI with a provider credential (API key, or GitHub Copilot subscription via OAuth device-code flow)
-- through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 14 `nr_*` tools
+- through the FastMCP server, where an external MCP client drives the same engagement, evidence, and workflow state through the 16 `nr_*` tools
 
 **Provider categories:**
 

@@ -64,3 +64,15 @@ export function getReportsDir(cwd: string): string {
 export function getIntelligenceStatePath(cwd: string): string {
   return join(getNetRunnerProjectDir(cwd), 'intelligence-state.json')
 }
+
+export function getArsenalDir(cwd: string): string {
+  return join(getNetRunnerProjectDir(cwd), 'arsenal')
+}
+
+export function getArsenalIndexDir(cwd: string): string {
+  return join(getArsenalDir(cwd), 'index')
+}
+
+export function getDiscoveredArsenalPath(cwd: string): string {
+  return join(getArsenalDir(cwd), 'discovered.jsonl')
+}

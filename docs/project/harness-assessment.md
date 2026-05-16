@@ -6,7 +6,7 @@ This document is the candid engineering view of the harness.
 
 - The harness is useful as a local assessment control plane: scope envelope, specialist routing, command execution, artifact persistence, evidence ledger, reporting, and MCP exposure live in one runtime.
 - Specialist agents have domain-specific role contracts and capability mappings instead of generic "security agent" prompts.
-- The single `nr_exec` workhorse keeps the MCP surface small while still exposing the full cataloged toolset.
+- The single `nr_exec` workhorse keeps the MCP surface small while still exposing the full catalogued toolset.
 - Append-only evidence, artifact offload, hash-chain verification, and report generation make the transcript less important than stored state.
 - OpenSwarm-style reporting lessons are reflected in the report path: HTML as designed human output, Markdown as editable source, structured exports for downstream tools.
 
@@ -47,4 +47,5 @@ Not enough by itself when:
 - No validated label without typed validation.
 - No specialist handoff without target slice, scope boundary, known facts, evidence refs, expected artifacts, stop conditions, and next owner.
 - No new MCP tool unless it improves the assessment flow more than `nr_exec` plus structured state.
+- Tool installation is one of those exceptions: `nr_tool_install` provides a typed check/install boundary so external LLMs do not have to invent privileged shell commands during an engagement. Install modes still require explicit confirmation.
 - No decorative report polish that hides weak evidence.

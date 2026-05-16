@@ -100,3 +100,52 @@ exploits:
     detection_notes: CISA KEV — abused by Water Hydra/DarkGate; email gateways and EDR now flag the .url chain
     execution_adapter: manual
     operator_notes: Used for authorized phishing initial-access simulation. Pairs with a spearphishing skill.
+
+  - id: greenplasma
+    cve: none
+    name: GreenPlasma — Windows CTFMON arbitrary section creation LPE
+    exploit_type: privilege-escalation
+    affected_versions: Windows — CTFMON / ctfmon.exe text-services framework (build-specific, verify)
+    references:
+      - https://github.com/Nightmare-Eclipse/GreenPlasma
+    source: https://github.com/Nightmare-Eclipse/GreenPlasma
+    reliability: unverified
+    validation_status: unvalidated
+    prerequisites: Local unprivileged code execution; an interactive desktop session
+    execution_environment: windows-target
+    detection_notes: Section-object creation against the CTFMON broker is unusual — kernel-callback EDR may flag it
+    execution_adapter: custom-script
+    operator_notes: Community C++ PoC, no assigned CVE. Confirm the affected Windows build in the repo README and detonate in vm-isolated first.
+
+  - id: undefend
+    cve: none
+    name: UnDefend — Windows Defender denial-of-service
+    exploit_type: defense-evasion
+    affected_versions: Microsoft Defender (windefend) — build-specific, verify against the target patch level
+    references:
+      - https://github.com/Nightmare-Eclipse/UnDefend
+    source: https://github.com/Nightmare-Eclipse/UnDefend
+    reliability: unverified
+    validation_status: unvalidated
+    prerequisites: Local code execution on the target host
+    execution_environment: windows-target
+    detection_notes: Defender service crash + Windows event-log entries are loud; expect operator-visible degradation of the security UI
+    execution_adapter: custom-script
+    operator_notes: Community PoC, no assigned CVE. Destructive to the AV service — restore Defender state (or have the operator revert the snapshot) after the test. Pairs with payload staging once Defender is down.
+
+  - id: defendnot
+    cve: none
+    name: defendnot — WSC-API fake-AV registration disables Defender
+    exploit_type: defense-evasion
+    affected_versions: Windows 10 / 11 (client only — Windows Server has no Windows Security Center service)
+    references:
+      - https://github.com/es3n1n/defendnot
+      - https://blog.es3n1n.eu/posts/how-i-ruined-my-vacation/
+    source: https://github.com/es3n1n/defendnot
+    reliability: medium
+    validation_status: unvalidated
+    prerequisites: Local administrative privilege on the target (writes WSC registration + autorun task)
+    execution_environment: windows-target
+    detection_notes: Defender flags the binary as VirTool:Win64/Defnot.A; WSC registration of a new AV product is a high-signal telemetry event for mature EDR
+    execution_adapter: custom-script
+    operator_notes: Registers a fake AV via the undocumented WSC API → Defender stands down. Stays on disk (autorun-persisted); plan the cleanup before running. Targeted defence-evasion step before payload detonation in a Defender-only environment.

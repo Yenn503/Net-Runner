@@ -1,10 +1,10 @@
 # MCP Integration
 
-Net-Runner runs a **FastMCP server** (`src/mcp/server.ts`) exposing 14 `nr_*` tools per [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), and also acts as an MCP **client** for outbound servers.
+Net-Runner runs a **FastMCP server** (`src/mcp/server.ts`) exposing 16 `nr_*` tools per [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), and also acts as an MCP **client** for outbound servers.
 
 Two paths:
 
-- **Inbound** — external LLM → Net-Runner (uses the 14 tools)
+- **Inbound** — external LLM → Net-Runner (uses the 16 tools)
 - **Outbound** — Net-Runner → external MCP servers (via `.mcp.json` or `net-runner mcp …`)
 
 Run inbound via `bun run src/mcp/server.ts --stdio` or `bun run mcp:server` (httpStream on `:8745`).
@@ -18,7 +18,7 @@ Run inbound via `bun run src/mcp/server.ts --stdio` or `bun run mcp:server` (htt
 │                    External LLM                         │
 │  (Copilot · Claude Code · Cursor · Windsurf · …)       │
 │                                                         │
-│  Speaks MCP ──► calls 14 nr_* tools                     │
+│  Speaks MCP ──► calls 16 nr_* tools                     │
 │  Uses own file tools for reading code / state / docs   │
 └────────────────────────┬────────────────────────────────┘
                          │ stdio or httpStream
@@ -26,7 +26,7 @@ Run inbound via `bun run src/mcp/server.ts --stdio` or `bun run mcp:server` (htt
 ┌─────────────────────────────────────────────────────────┐
 │              Net-Runner FastMCP Server                   │
 │                                                         │
-│  14 tools (nr_* prefix):                               │
+│  16 tools (nr_* prefix):                               │
 │  • nr_exec          — shell execution (228 tools)       │
 │  • nr_engagement_*  — init, status                     │
 │  • nr_scope_check   — guardrail enforcement            │
@@ -50,14 +50,14 @@ Run inbound via `bun run src/mcp/server.ts --stdio` or `bun run mcp:server` (htt
 
 Two directions:
 
-- **Inbound** — an external LLM connects TO Net-Runner and uses its 14 tools
+- **Inbound** — an external LLM connects TO Net-Runner and uses its 16 tools
 - **Outbound** — Net-Runner connects TO external MCP servers for additional capabilities
 
 ---
 
 ## Direction 1: External LLM → Net-Runner (Inbound)
 
-The external LLM treats Net-Runner as an MCP tool server with 14 `nr_*` tools. `nr_exec` is the workhorse — all 228 cataloged pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
+The external LLM treats Net-Runner as an MCP tool server with 16 `nr_*` tools. `nr_exec` is the workhorse — all 228 catalogued pentest tools run through it. The LLM uses its own built-in file tools for reading code, docs, and state files.
 
 `nr_exec` supports composite execution: pass a batch of commands and get a summary-first per-command result. Oversized output spills to `.netrunner/artifacts/` and is logged to the evidence ledger.
 
@@ -71,11 +71,11 @@ bun install
 
 Inbound MCP runs directly from TypeScript via `bun` — no build step, no provider credentials needed (those matter only when Net-Runner is the LLM runtime).
 
-### Tool surface (14 tools)
+### Tool surface (16 tools)
 
 | Tool | Purpose |
 |---|---|
-| `nr_exec` | **Shell execution — the workhorse.** All 228 cataloged pentest tools and harness commands such as Maigret run here. |
+| `nr_exec` | **Shell execution — the workhorse.** All 228 catalogued pentest tools and harness commands such as Maigret run here. |
 | `nr_engagement_init` | Initialize `.netrunner/` engagement with workflow, targets, scope |
 | `nr_engagement_status` | Get engagement manifest, evidence counts, run state |
 | `nr_scope_check` | Guardrail check — allow/review/block before risky actions |
@@ -84,11 +84,18 @@ Inbound MCP runs directly from TypeScript via `bun` — no build step, no provid
 | `nr_list_evidence` | Query evidence entries with optional type filter |
 | `nr_discover` | Progressive disclosure — list agents, skills, workflows, or capabilities on demand |
 | `nr_tool_help` | Cached `--help` text per catalog tool to reduce flag hallucination |
+| `nr_tool_install` | Check or install missing engagement tools through the controlled installer wrapper |
 | `nr_kg_query` | Lookup prior evidence about a target in the engagement Knowledge Graph |
 | `nr_verify_evidence` | Verify SHA-256 hash chain integrity of the evidence ledger |
 | `nr_validate_finding` | Replay-based finding validation with diff and verdict |
 | `nr_coverage_status` | MITRE ATT&CK coverage from replay-validated findings |
 | `nr_export_report` | Export reports to Markdown, HTML, SARIF 2.1.0, STIX 2.1, or MISP |
+| `nr_arsenal_lookup` | Query the curated exploit arsenal by product/version/CVE before fresh CVE research |
+
+The CLI runtime exposes the same arsenal behavior through the native
+`ArsenalLookup` tool. Both wrappers call the shared `src/security/arsenal.ts`
+loader, matcher, sorter, and renderer so LLM output is consistent across CLI
+and FastMCP.
 
 ### `nr_exec` execution modes
 
@@ -130,7 +137,21 @@ Example Maigret digital-footprint run through the same harness surface:
 }
 ```
 
-If `maigret` is missing, install it with `python3 -m pip install --user maigret`, rerun `/engagement capabilities`, then execute the assessment. The `/digital-footprint-assessment` skill uses this same command path and writes artifacts under `.netrunner/artifacts/digital-footprint/`.
+If `maigret` is missing, call `nr_tool_install` with `mode=check` first, then use `mode=user` with `confirm=true` when it is declared in `~/.netrunner/tools.yaml` (or install it manually with `python3 -m pip install --user maigret`). The `/digital-footprint-assessment` skill uses this same command path and writes artifacts under `.netrunner/artifacts/digital-footprint/`.
+
+### Engagement-time tool installation
+
+`nr_tool_install` wraps `scripts/install-tools.sh` so external MCP clients do not need to invent privileged shell commands.
+
+Modes:
+
+| Mode | Behaviour |
+|---|---|
+| `check` | Runs the missing-tool report only; no confirmation needed |
+| `all` | Installs apt, pipx, Go, GitHub-release, and user-declared tools |
+| `apt` / `pipx` / `go` / `gh` / `user` | Installs only that group |
+
+Install modes require `confirm=true` because they can modify the operator machine. With `environment=auto`, Windows hosts use the `kali-linux` WSL distribution and Linux/macOS hosts use local bash. Use `environment=host` or `environment=wsl-kali` to force the target.
 
 ### Report exports
 
@@ -263,7 +284,7 @@ bun run mcp:server              # http://localhost:8745/mcp
 NR_PORT=9000 bun run mcp:server # custom port
 ```
 
-The terminal shows a sunset gradient banner, all 14 registered tools, and live activity logs with session IDs, durations, and result sizes.
+The terminal shows a sunset gradient banner, all 16 registered tools, and live activity logs with session IDs, durations, and result sizes.
 
 You should now expect to see:
 

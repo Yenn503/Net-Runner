@@ -11,6 +11,7 @@ import { SKILL_TOOL_NAME } from 'src/tools/SkillTool/constants.js'
 import { TODO_WRITE_TOOL_NAME } from 'src/tools/TodoWriteTool/constants.js'
 import { WEB_FETCH_TOOL_NAME } from 'src/tools/WebFetchTool/prompt.js'
 import { WEB_SEARCH_TOOL_NAME } from 'src/tools/WebSearchTool/prompt.js'
+import { ARSENAL_LOOKUP_TOOL_NAME } from 'src/tools/ArsenalLookupTool/constants.js'
 import { getNetRunnerAgentDefinition } from '../../../security/agentDefinitions.js'
 import {
   formatNetRunnerAgentRolePolicy,
@@ -40,6 +41,7 @@ export const NET_RUNNER_SPECIALIST_TOOLSET: readonly string[] = [
   TODO_WRITE_TOOL_NAME,
   WEB_FETCH_TOOL_NAME,
   WEB_SEARCH_TOOL_NAME,
+  ARSENAL_LOOKUP_TOOL_NAME,
 ]
 
 /**
@@ -164,7 +166,7 @@ export function defineNetRunnerSpecialist(
     ? `\n\nSkill pack: your domain playbooks load under the \`${namespace}:\` namespace (curated red-team / forensics skills). Invoke the matching \`${namespace}:*\` skill before improvising a known technique — they carry the methodology, tool flags, and evidence checklist. Bundled \`nr_*\` skills remain available to every agent.`
     : ''
   const arsenal = EXPLOIT_AGENTS.has(options.agentType)
-    ? `\n\nExploit arsenal: before exploiting a fingerprinted target, read \`.netrunner/arsenal/index/*.yaml\` for a known exploit matching the target's product and version. Arsenal entries are vetted leads, not guarantees — always validate against the live target under scope before treating one as a finding. When you confirm a new working exploit or CVE, append a record to \`.netrunner/arsenal/discovered.jsonl\` (schema in \`.netrunner/arsenal/README.md\`) so it is reusable in future engagements.`
+    ? `\n\nExploit arsenal: before exploiting a fingerprinted target, query the curated arsenal cache (\`.netrunner/arsenal/index/*.yaml\`) with product/version or CVE id. In the CLI runtime use \`ArsenalLookup\`; over FastMCP use \`nr_arsenal_lookup\`. Both surfaces use the same shared loader, matcher, sorter, and renderer, and return typed entries with affected versions, references, reliability, prerequisites, execution adapter, and operator notes. Arsenal entries are vetted leads, not guarantees — always validate against the live target under scope before treating one as a finding. When the arsenal has no match, fall back to the \`cve-intelligence-lookup\` skill (searchsploit / CISA KEV / NVD). When you confirm a new working exploit or CVE, append a record to \`.netrunner/arsenal/discovered.jsonl\` (schema in \`.netrunner/arsenal/README.md\`) so it is reusable in future engagements.`
     : ''
   const prompt = `${options.systemPrompt}
 
