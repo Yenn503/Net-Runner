@@ -525,7 +525,13 @@ async function main(): Promise<void> {
     const provider = await pickProvider(rl)
     if (provider === 'anthropic') {
       if (existsSync(PROFILE_PATH)) {
-        rmSync(PROFILE_PATH, { force: true })
+        try {
+          rmSync(PROFILE_PATH, { force: true })
+        } catch (err) {
+          console.log()
+          console.log(red(`Could not clear saved profile at ${PROFILE_PATH}: ${(err as Error).message}`))
+          process.exit(1)
+        }
       }
       console.log()
       console.log(green('✔ Cleared saved provider profile.'))
