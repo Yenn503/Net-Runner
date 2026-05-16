@@ -407,7 +407,11 @@ export function buildSearchingPastContextSection(autoMemDir: string): string[] {
   ]
 }
 
+// Tracks last known state so we only log on transitions
+let _lastAgentMemoryState: boolean | null = null
+
 async function isAgentMemoryRunning(): Promise<boolean> {
+  let running = false
   try {
     const ctrl = new AbortController()
     const id = setTimeout(() => ctrl.abort(), 300)
@@ -415,10 +419,21 @@ async function isAgentMemoryRunning(): Promise<boolean> {
       signal: ctrl.signal,
     })
     clearTimeout(id)
-    return res.ok
+    running = res.ok
   } catch {
-    return false
+    running = false
   }
+
+  if (running !== _lastAgentMemoryState) {
+    _lastAgentMemoryState = running
+    if (running) {
+      logForDebugging('[agentmemory] server detected on :3111')
+    } else {
+      logForDebugging('[agentmemory] server not reachable on :3111')
+    }
+  }
+
+  return running
 }
 
 /**
@@ -451,6 +466,9 @@ export async function loadMemoryPrompt(): Promise<string | null> {
 
   // agentmemory replaces file-based memory prompt when server is running
   if (await isAgentMemoryRunning()) {
+    logEvent('tengu_agentmemory_active', {
+      type: 'memory' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+    })
     return [
       'A local agentmemory server is active at http://localhost:3111.',
       'Use the `memory-search` and `memory-save` skills for memory access.',

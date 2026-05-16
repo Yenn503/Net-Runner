@@ -211,7 +211,7 @@ Dual-path: file-based LLM-driven retrieval (default) or agentmemory REST-backed 
 
 **File path:** 4 memory types. Pipeline: scan memdir → Sonnet selects ≤5 files → system-reminder attachments. Background extraction every turn. `NET_RUNNER_DISABLE_AUTO_MEMORY=1` to disable.
 
-**agentmemory path:** When server running on `:3111` (`bun run memory:start`), prompt switches to `memory-search` / `memory-save` skills. BM25 + vector + graph hybrid search, no LLM calls. Falls back to file path automatically.
+**agentmemory path:** Starts automatically on harness boot (`npx` auto-installs if needed). Prompt switches to `memory-search` / `memory-save` skills. BM25 + vector + graph hybrid search, no LLM calls. Falls back to file path automatically.
 
 ## Evidence & reporting
 

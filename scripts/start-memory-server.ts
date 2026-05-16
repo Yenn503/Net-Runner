@@ -1,6 +1,5 @@
 import { spawn } from 'child_process'
 import { writeFile, unlink } from 'fs/promises'
-import { existsSync } from 'fs'
 import { resolve } from 'path'
 import treeKill from 'tree-kill'
 
@@ -38,15 +37,10 @@ async function main() {
   }
 
   const pkg = '@agentmemory/agentmemory'
-  const pkgDir = resolve('node_modules', pkg)
-  if (!existsSync(pkgDir)) {
-    console.log('agentmemory not installed. Run: bun add', pkg)
-    process.exit(1)
-  }
 
   console.log('Starting agentmemory on port', PORT, '...')
 
-  const proc = spawn('npx', [pkg, '--port', String(PORT)], {
+  const proc = spawn('npx', ['--yes', pkg, '--port', String(PORT)], {
     stdio: 'pipe',
     detached: false,
   })

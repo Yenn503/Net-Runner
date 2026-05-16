@@ -1967,6 +1967,27 @@ async function run(): Promise<CommanderCommand> {
       initBuiltinPlugins();
       initBundledSkills();
     }
+    // Fire-and-forget: start agentmemory in background. npx auto-installs
+    // if missing. Doesn't block startup — loadMemoryPrompt() checks later.
+    (async () => {
+      try {
+        const { spawn } = await import('child_process');
+        const proc = spawn('npx', ['--yes', '@agentmemory/agentmemory', '--port', '3111'], {
+          stdio: 'ignore', detached: true,
+        });
+        proc.unref();
+        proc.on('error', (err: Error) => {
+          logForDebugging(`[agentmemory] spawn error: ${err.message}`);
+        });
+        proc.on('exit', (code: number | null) => {
+          if (code !== 0) logForDebugging(`[agentmemory] exited with code ${code}`);
+          else logForDebugging('[agentmemory] started successfully');
+        });
+        logForDebugging('[agentmemory] background start initiated');
+      } catch (err) {
+        logForDebugging(`[agentmemory] background start failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    })();
     const setupPromise = setup(preSetupCwd, permissionMode, allowDangerouslySkipPermissions, worktreeEnabled, worktreeName, tmuxEnabled, sessionId ? validateUuid(sessionId) : undefined, worktreePRNumber, messagingSocketPath);
     const commandsPromise = worktreeEnabled ? null : getCommands(preSetupCwd);
     const agentDefsPromise = worktreeEnabled ? null : getAgentDefinitionsWithOverrides(preSetupCwd);
