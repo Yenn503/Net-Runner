@@ -8,7 +8,7 @@
  * invokes this script automatically.
  *
  * Provider categories:
- *   Subscription  — copilot (GitHub Copilot), codex (OpenAI Codex / ChatGPT)
+ *   Subscription  — copilot (GitHub Copilot), codex (OpenAI Codex / ChatGPT), anthropic (built-in account flow)
  *   API key       — github (GitHub Models, free), openai, gemini
  *   Local         — ollama (no key, no account)
  */
@@ -29,6 +29,7 @@ import {
 } from './copilot-auth.ts'
 
 type Provider = 'github' | 'copilot' | 'codex' | 'anthropic' | 'openai' | 'gemini' | 'ollama'
+// Anthropic uses the built-in runtime onboarding path and does not persist a provider profile.
 type ProfileProvider = Exclude<Provider, 'anthropic'>
 
 const PROFILE_PATH = resolve(process.cwd(), '.net-runner-profile.json')
@@ -549,7 +550,7 @@ async function main(): Promise<void> {
       console.log()
       return
     }
-    const preset = PROVIDER_PRESETS[provider]
+    const preset = PROVIDER_PRESETS[provider as ProfileProvider]
 
     let copilotAuth: { githubAccessToken: string; copilotToken: string; copilotExpiresAt: number } | undefined
     let copilotModels: CopilotModelEntry[] | undefined

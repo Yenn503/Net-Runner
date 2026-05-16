@@ -7,16 +7,16 @@
 [![MCP](https://img.shields.io/badge/MCP-FastMCP-7C3AED?style=for-the-badge)](https://www.anthropic.com/engineering/code-execution-with-mcp)
 [![License](https://img.shields.io/badge/Educational%20Use-red?style=for-the-badge)](#license)
 
-**Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
+**Red-team runtime for authorised testing.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
 
 <sub>6 specialists · 228 catalogued tools · 32 core skills + 87 curated playbooks · 12 workflows · 10 APT simulations</sub>
 
 </div>
 
 ---
-Red team Agent swarm, built on top of Claude code. 
+Built on the [OpenClaude](https://github.com/Gitlawb/openclaude) runtime with a Net-Runner security workflow layer.
 
-CLI driven or any MCP client (Claude Code, Cursor, Windsurf) can drive the harness too.
+Run it in the CLI or from any MCP client (Claude Code, Cursor, Windsurf).
 
 ## Quick start
 
@@ -35,21 +35,24 @@ bun run dev:profile    # launch
 - **Local** — Ollama
 
 `bun run setup` writes a saved provider profile for Copilot, Codex, GitHub Models, OpenAI, Gemini, and Ollama. Anthropic deliberately stays on the built-in account/API-key onboarding path rather than writing `.net-runner-profile.json`.
-
 ## Specialist agents
 
-- 🎯 **Lead** — phase coordination, routing, scope enforcement, KG queries before discovery, MCTS planner
-- 🛰️ **Recon** — DNS, OSINT, surface mapping, cloud asset enum, 802.11 · `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `theHarvester`, `cloud_enum`, `airodump-ng`, `hcxdumptool`
-- 🕷️ **AppSec** — web (XSS/SQLi/SSRF/smuggling), API (JWT/IDOR), mobile (Frida/MobSF) · `sqlmap`, `dalfox`, `nuclei`, `ffuf`, `jwt_tool`, `arjun`, `jadx`, `frida`, `objection`
-- ⚔️ **Infra** — services, privesc, AD (Kerberos/ADCS/BloodHound), cloud paths, RE + CTF pwn · `netexec`, `impacket-*`, `bloodhound`, `certipy`, `linpeas`, `peirates`, `pacu`, `cloudfox`, `chisel`, `ghidra`, `pwntools`
-- 🔬 **CodeAudit** — SAST, secrets, CVE/IaC, memory + disk forensics, log timelining · `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara`
-- 📋 **Reporter** — chain-of-custody curation, retest, remediation validation, client reports · SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`
+Six specialists. Roles below describe ownership; tool names are examples of focus (specialists share the same harness tool surface).
 
-Each specialist sees the full toolset. Compressed-output discipline applies to internal reasoning except Lead and Reporter.
+- 🎯 **Lead** — coordinates phases, enforces scope/impact guardrails, and routes handoffs.
+- 🛰️ **Recon** — discovery and mapping (targets, services, OSINT, wireless, cloud surface).
+- 🕷️ **AppSec** — web/API/mobile vulnerability validation and exploit-path testing.
+- ⚔️ **Infra** — network/service exploitation, privesc, lateral movement, AD, and binary paths.
+- 🔬 **CodeAudit** — static analysis, secret/dependency/IaC checks, and DFIR-style forensics triage.
+- 📋 **Reporter** — evidence curation, retest validation, and final report export.
+
+Compressed internal output applies to all specialists except Lead and Reporter.
 
 ## Swarm
 
-The Lead doesn't do the work — it routes it. Independent tasks on disjoint targets fan out to specialists running in parallel; dependent work hands off in sequence with a full context packet (target slice, scope, known facts, evidence refs, stop conditions, next owner). Specialists talk to each other directly through the Agent SDK message channel — no round-tripping every decision through the Lead. Findings and artifacts land in the shared `.netrunner/` ledger as they go, so a handoff is a pointer, not a transcript.
+The Lead routes work to specialists. Independent tasks can run in parallel, while dependent tasks are handed off in sequence with full context (scope, known facts, evidence refs, and next owner). Specialists can talk to each other directly through the Agent SDK channel, so not every decision goes back through the Lead. Findings and artifacts are saved to the shared `.netrunner/` ledger as work happens.
+
+Execution model: `nr_exec` is the workhorse for cataloged tools; `nr_discover` exposes agents/skills/workflows/capabilities on demand.
 
 Each specialist also carries a curated skill pack — domain playbooks under `.netrunner/skills/<namespace>/` (`recon:`, `appsec:`, `infra:`, `forensics:`, `lead:`, `reporting:`) covering the techniques that domain actually runs. See [Customization](docs/customization/README.md) to add your own.
 
@@ -67,6 +70,15 @@ The exploit specialists carry a curated arsenal at `.netrunner/arsenal/`. `index
 - **Blue Team** — `dfir-incident-response` · `code-audit-review`
 
 On a cold start the engagement-lead prints the same menu and takes a number + target. Either path works.
+
+## APT simulation
+
+- 40 APT group profiles with MITRE ATT&CK mappings
+- 10 detailed attack chains
+- 10 simulation workflows
+- 13 industry threat profiles
+
+Use `/apt-simulation <group|industry>` to load simulation context and route onto the `lab-target-testing` workflow under normal scope controls.
 
 ## How it works
 
@@ -170,7 +182,7 @@ claude mcp add --transport stdio net-runner -- bun run src/mcp/server.ts --stdio
 
 </details>
 
-## Camofox browser
+## Camofox browser (optional)
 
 Optional Firefox patched at C++ level for anti-bot bypass. Used by the `headless-browser-validation` skill. Auto-falls back to local Playwright/Chromium.
 
