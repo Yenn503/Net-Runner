@@ -14,7 +14,7 @@
  */
 
 import { createInterface } from 'node:readline'
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, copyFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import {
@@ -527,6 +527,8 @@ async function main(): Promise<void> {
       let removedProfile = false
       if (existsSync(PROFILE_PATH)) {
         try {
+          const backupPath = PROFILE_PATH + '.bak'
+          copyFileSync(PROFILE_PATH, backupPath)
           rmSync(PROFILE_PATH, { force: true })
           removedProfile = true
         } catch (err) {
@@ -549,6 +551,23 @@ async function main(): Promise<void> {
       console.log(`  ${cyan('bun run dev:anthropic')}`)
       console.log()
       return
+    }
+    if (provider !== 'anthropic') {
+      const backupPath = PROFILE_PATH + '.bak'
+      if (existsSync(backupPath) && !existsSync(PROFILE_PATH)) {
+        console.log()
+        console.log(yellow('A previous provider profile backup was found.'))
+        const restore = (await prompt(rl, dim('Restore it? [Y/n]: '))).trim().toLowerCase()
+        if (restore === '' || restore === 'y' || restore === 'yes') {
+          copyFileSync(backupPath, PROFILE_PATH)
+          rmSync(backupPath, { force: true })
+          console.log(green('✔ Restored previous profile.'))
+          console.log(dim('  Launch with: bun run dev:profile'))
+          console.log()
+          return
+        }
+        rmSync(backupPath, { force: true })
+      }
     }
     const preset = PROVIDER_PRESETS[provider as ProfileProvider]
 
