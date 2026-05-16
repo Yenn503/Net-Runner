@@ -29,6 +29,7 @@ import {
 } from './copilot-auth.ts'
 
 type Provider = 'github' | 'copilot' | 'codex' | 'anthropic' | 'openai' | 'gemini' | 'ollama'
+// Anthropic uses the built-in runtime onboarding path and does not persist a provider profile.
 type ProfileProvider = Exclude<Provider, 'anthropic'>
 
 const PROFILE_PATH = resolve(process.cwd(), '.net-runner-profile.json')
@@ -524,9 +525,11 @@ async function main(): Promise<void> {
   try {
     const provider = await pickProvider(rl)
     if (provider === 'anthropic') {
+      let removedProfile = false
       if (existsSync(PROFILE_PATH)) {
         try {
           rmSync(PROFILE_PATH, { force: true })
+          removedProfile = true
         } catch (err) {
           console.log()
           console.log(red(`Could not clear saved profile at ${PROFILE_PATH}: ${(err as Error).message}`))
@@ -534,7 +537,13 @@ async function main(): Promise<void> {
         }
       }
       console.log()
-      console.log(green('✔ Cleared saved provider profile.'))
+      console.log(
+        green(
+          removedProfile
+            ? '✔ Cleared saved provider profile.'
+            : '✔ No saved provider profile found.',
+        ),
+      )
       console.log(dim('  Net-Runner will use the built-in Anthropic account/API-key onboarding path.'))
       console.log()
       console.log(bold('Launch with:'))
