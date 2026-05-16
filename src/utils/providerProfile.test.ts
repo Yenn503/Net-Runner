@@ -385,17 +385,14 @@ test('codex profiles require a chatgpt account id', () => {
   assert.equal(env, null)
 })
 
-test('gemini profiles accept google api key fallback', () => {
+test('gemini profiles reject GOOGLE_API_KEY (only GEMINI_API_KEY accepted)', () => {
   const env = buildGeminiProfileEnv({
     processEnv: {
       GOOGLE_API_KEY: 'gem-live',
     },
   })
 
-  assert.deepEqual(env, {
-    GEMINI_MODEL: 'gemini-2.0-flash',
-    GEMINI_API_KEY: 'gem-live',
-  })
+  assert.equal(env, null)
 })
 
 test('gemini profiles require a key', () => {
