@@ -35,18 +35,21 @@ bun run dev:profile    # launch
 - **Local** — Ollama
 
 `bun run setup` writes a saved provider profile for Copilot, Codex, GitHub Models, OpenAI, Gemini, and Ollama. Anthropic deliberately stays on the built-in account/API-key onboarding path rather than writing `.net-runner-profile.json`.
+
 ## Specialist agents
 
-Six specialists. Roles below describe ownership; tool names are examples of focus (specialists share the same harness tool surface).
+Six domain specialists share the same harness tool surface. Each carries a curated skill pack under `.netrunner/skills/<namespace>/`.
 
-- 🎯 **Lead** — coordinates phases, enforces scope/impact guardrails, and routes handoffs.
-- 🛰️ **Recon** — discovery and mapping (targets, services, OSINT, wireless, cloud surface).
-- 🕷️ **AppSec** — web/API/mobile vulnerability validation and exploit-path testing.
-- ⚔️ **Infra** — network/service exploitation, privesc, lateral movement, AD, and binary paths.
-- 🔬 **CodeAudit** — static analysis, secret/dependency/IaC checks, and DFIR-style forensics triage.
-- 📋 **Reporter** — evidence curation, retest validation, and final report export.
+| Agent | Role | Focus areas |
+|-------|------|-------------|
+| 🎯 **Lead** | Phase coordination, routing, scope enforcement | KG queries, MCTS planning, guardrail decisions, handoff orchestration |
+| 🛰️ **Recon** | Discovery, mapping, OSINT | DNS, surface mapping, cloud asset enumeration, 802.11 — `nmap`, `masscan`, `amass`, `bbot`, `theHarvester` |
+| 🕷️ **AppSec** | Web, API, mobile security testing | XSS, SQLi, SSRF, JWT, API fuzzing, mobile analysis — `sqlmap`, `nuclei`, `ffuf`, `jwt_tool`, `frida`, `MobSF` |
+| ⚔️ **Infra** | Network exploitation, privesc, AD, cloud, binary | Kerberos, ADCS, BloodHound, cloud attack paths, RE, CTF — `netexec`, `impacket`, `certipy`, `ghidra`, `pwntools` |
+| 🔬 **CodeAudit** | SAST, secrets, forensics | CVE/IaC scanning, memory forensics, log timelining — `semgrep`, `gitleaks`, `trivy`, `volatility3`, `yara` |
+| 📋 **Reporter** | Evidence, retest, reporting | Chain-of-custody, remediation validation, SHA-256 ledger, export — `nr_save_finding`, `nr_validate_finding`, `nr_export_report` |
 
-Compressed internal output applies to all specialists except Lead and Reporter.
+Compressed internal output discipline applies to all specialists except Lead and Reporter.
 
 ## Swarm
 
