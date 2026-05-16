@@ -7,7 +7,7 @@
 [![MCP](https://img.shields.io/badge/MCP-FastMCP-7C3AED?style=for-the-badge)](https://www.anthropic.com/engineering/code-execution-with-mcp)
 [![License](https://img.shields.io/badge/Educational%20Use-red?style=for-the-badge)](#license)
 
-**Red-team runtime for authorized testing.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
+**Red-team runtime for authorised testing.** Workflow control · evidence ledger · specialist agents · 228 tools through one shell surface.
 
 <sub>6 specialists · 228 cataloged tools · 32 core skills + 87 curated playbooks · 12 workflows · 10 APT simulations</sub>
 
@@ -28,7 +28,8 @@ bun run dev:profile    # launch
 
 ## Providers
 
-- **Subscription (OAuth)** — GitHub Copilot, OpenAI Codex/ChatGPT (via Codex CLI auth)
+- **Subscription (no API key)** — GitHub Copilot (OAuth/device flow)
+- **Subscription (CLI auth)** — OpenAI Codex/ChatGPT (via Codex CLI auth)
 - **API key** — GitHub Models (`GITHUB_TOKEN`), OpenAI, Gemini
 - **Local** — Ollama
 
@@ -41,11 +42,11 @@ bun run dev:profile    # launch
 - 🔬 **CodeAudit** — SAST, secrets, CVE/IaC, memory + disk forensics, log timelining · `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara`
 - 📋 **Reporter** — chain-of-custody curation, retest, remediation validation, client reports · SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`
 
-Each specialist sees the full toolset. Compressed-output discipline applies to internal reasoning except Lead and Reporter.
+Each specialist can use the full toolset. Compressed internal output applies to all specialists except Lead and Reporter.
 
 ## Swarm
 
-The Lead doesn't do the work — it routes it. Independent tasks on disjoint targets fan out to specialists running in parallel; dependent work hands off in sequence with a full context packet (target slice, scope, known facts, evidence refs, stop conditions, next owner). Specialists talk to each other directly through the Agent SDK message channel — no round-tripping every decision through the Lead. Findings and artifacts land in the shared `.netrunner/` ledger as they go, so a handoff is a pointer, not a transcript.
+The Lead routes work to specialists. Independent tasks can run in parallel, while dependent tasks are handed off in sequence with full context (scope, known facts, evidence refs, and next owner). Specialists can talk to each other directly through the Agent SDK channel, so not every decision goes back through the Lead. Findings and artifacts are saved to the shared `.netrunner/` ledger as work happens.
 
 Each specialist also carries a curated skill pack — domain playbooks under `.netrunner/skills/<namespace>/` (`recon:`, `appsec:`, `infra:`, `forensics:`, `lead:`, `reporting:`) covering the techniques that domain actually runs. See [Customization](docs/customization/README.md) to add your own.
 
@@ -71,7 +72,7 @@ On a cold start the engagement-lead prints the same menu and takes a number + ta
 - 10 simulation workflows
 - 13 industry threat profiles
 
-Use `/apt-simulation <group|industry>` to load simulation context and route onto the lab-target workflow under normal scope controls.
+Use `/apt-simulation <group|industry>` to load simulation context and route onto the `lab-target-testing` workflow under normal scope controls.
 
 ## How it works
 
