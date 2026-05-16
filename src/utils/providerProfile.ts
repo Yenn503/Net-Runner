@@ -83,8 +83,7 @@ export function buildGeminiProfileEnv(options: {
   const processEnv = options.processEnv ?? process.env
   const key = sanitizeApiKey(
     options.apiKey ??
-      processEnv.GEMINI_API_KEY ??
-      processEnv.GOOGLE_API_KEY,
+      processEnv.GEMINI_API_KEY,
   )
   if (!key) {
     return null
@@ -250,6 +249,14 @@ export function loadProfileFile(options?: ProfileFileLocation): ProfileFile | nu
       return null
     }
 
+    const sentinelKeys: (keyof ProfileEnv)[] = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'GITHUB_TOKEN', 'CODEX_API_KEY']
+    for (const key of sentinelKeys) {
+      const val = parsed.env[key]
+      if (typeof val === 'string' && val === 'SUA_CHAVE') {
+        delete parsed.env[key]
+      }
+    }
+
     return {
       profile: parsed.profile,
       env: parsed.env,
@@ -332,148 +339,75 @@ export async function buildLaunchEnv(options: {
       : {}
 
   const shellGeminiKey = sanitizeApiKey(
-    processEnv.GEMINI_API_KEY ?? processEnv.GOOGLE_API_KEY,
+    processEnv.GEMINI_API_KEY,
   )
   const persistedGeminiKey = sanitizeApiKey(persistedEnv.GEMINI_API_KEY)
 
   if (options.profile === 'gemini') {
-    const env: NodeJS.ProcessEnv = {
-      ...processEnv,
-      NETRUNNER_USE_GEMINI: '1',
-    }
-
-    delete env.NETRUNNER_USE_OPENAI
-
-    env.GEMINI_MODEL =
-      processEnv.GEMINI_MODEL ||
-      persistedEnv.GEMINI_MODEL ||
-      DEFAULT_GEMINI_MODEL
-    env.GEMINI_BASE_URL =
-      processEnv.GEMINI_BASE_URL ||
-      persistedEnv.GEMINI_BASE_URL ||
-      DEFAULT_GEMINI_BASE_URL
-
     const geminiKey = shellGeminiKey || persistedGeminiKey
-    if (geminiKey) {
-      env.GEMINI_API_KEY = geminiKey
-    } else {
-      delete env.GEMINI_API_KEY
-    }
 
-    delete env.GOOGLE_API_KEY
-    delete env.OPENAI_BASE_URL
-    delete env.OPENAI_MODEL
-    delete env.OPENAI_API_KEY
-    delete env.CODEX_API_KEY
-    delete env.CHATGPT_ACCOUNT_ID
-    delete env.CODEX_ACCOUNT_ID
-
-    return env
+    return buildCompatibilityProcessEnv(processEnv, {
+      NETRUNNER_USE_GEMINI: '1',
+      GEMINI_MODEL:
+        processEnv.GEMINI_MODEL ||
+        persistedEnv.GEMINI_MODEL ||
+        DEFAULT_GEMINI_MODEL,
+      GEMINI_BASE_URL:
+        processEnv.GEMINI_BASE_URL ||
+        persistedEnv.GEMINI_BASE_URL ||
+        DEFAULT_GEMINI_BASE_URL,
+      ...(geminiKey ? { GEMINI_API_KEY: geminiKey } : {}),
+    })
   }
 
   if (options.profile === 'copilot') {
-    // Copilot profile: persisted env carries OPENAI_BASE_URL pointing at
-    // api.githubcopilot.com plus a short-lived OPENAI_API_KEY (the Copilot
-    // service token, refreshed by the launcher before reaching here) and the
-    // long-lived GITHUB_COPILOT_TOKEN used to mint new service tokens.
-    //
-    // NETRUNNER_USE_GITHUB is set so the OpenAI shim's GitHub-mode branch
-    // fires; combined with the api.githubcopilot.com host that branch
-    // attaches the required Editor-Version / Copilot-Integration-Id headers
-    // (without those headers Copilot rejects requests with 'missing
-    // Editor-Version header for IDE auth').
-    const env: NodeJS.ProcessEnv = {
-      ...processEnv,
+    return buildCompatibilityProcessEnv(processEnv, {
       NETRUNNER_USE_OPENAI: '1',
       NETRUNNER_USE_GITHUB: '1',
       NETRUNNER_USE_COPILOT: '1',
-    }
-    delete env.NETRUNNER_USE_GEMINI
-
-    env.OPENAI_BASE_URL =
-      persistedEnv.OPENAI_BASE_URL ||
-      processEnv.OPENAI_BASE_URL ||
-      'https://api.githubcopilot.com'
-    env.OPENAI_MODEL =
-      persistedEnv.OPENAI_MODEL ||
-      processEnv.OPENAI_MODEL ||
-      'gpt-4o'
-    env.OPENAI_API_KEY =
-      persistedEnv.OPENAI_API_KEY ||
-      processEnv.OPENAI_API_KEY ||
-      ''
-
-    if (persistedEnv.GITHUB_COPILOT_TOKEN) {
-      env.GITHUB_COPILOT_TOKEN = persistedEnv.GITHUB_COPILOT_TOKEN
-    }
-    if (persistedEnv.COPILOT_TOKEN_EXPIRES_AT) {
-      env.COPILOT_TOKEN_EXPIRES_AT = persistedEnv.COPILOT_TOKEN_EXPIRES_AT
-    }
-
-    delete env.GEMINI_API_KEY
-    delete env.GEMINI_MODEL
-    delete env.GEMINI_BASE_URL
-    delete env.GOOGLE_API_KEY
-    delete env.CODEX_API_KEY
-    delete env.CHATGPT_ACCOUNT_ID
-    delete env.CODEX_ACCOUNT_ID
-    delete env.GITHUB_TOKEN
-
-    return env
+      NETRUNNER_PROVIDER: 'copilot',
+      OPENAI_BASE_URL:
+        persistedEnv.OPENAI_BASE_URL ||
+        processEnv.OPENAI_BASE_URL ||
+        'https://api.githubcopilot.com',
+      OPENAI_MODEL:
+        persistedEnv.OPENAI_MODEL ||
+        processEnv.OPENAI_MODEL ||
+        'gpt-4o',
+      OPENAI_API_KEY:
+        persistedEnv.OPENAI_API_KEY ||
+        processEnv.OPENAI_API_KEY ||
+        '',
+      ...(persistedEnv.GITHUB_COPILOT_TOKEN
+        ? { GITHUB_COPILOT_TOKEN: persistedEnv.GITHUB_COPILOT_TOKEN }
+        : {}),
+      ...(persistedEnv.COPILOT_TOKEN_EXPIRES_AT
+        ? { COPILOT_TOKEN_EXPIRES_AT: persistedEnv.COPILOT_TOKEN_EXPIRES_AT }
+        : {}),
+    })
   }
 
   if (options.profile === 'github') {
-    const env: NodeJS.ProcessEnv = {
-      ...processEnv,
-      NETRUNNER_USE_GITHUB: '1',
-      NETRUNNER_USE_OPENAI: '1',
-    }
-
-    delete env.NETRUNNER_USE_GEMINI
-
-    env.OPENAI_BASE_URL =
-      persistedEnv.OPENAI_BASE_URL ||
-      processEnv.OPENAI_BASE_URL ||
-      DEFAULT_GITHUB_MODELS_BASE_URL
-    env.OPENAI_MODEL =
-      persistedEnv.OPENAI_MODEL ||
-      processEnv.OPENAI_MODEL ||
-      DEFAULT_GITHUB_MODELS_MODEL
-
     const githubToken =
       sanitizeApiKey(persistedEnv.GITHUB_TOKEN) ||
       sanitizeApiKey(processEnv.GITHUB_TOKEN) ||
       sanitizeApiKey(processEnv.GH_TOKEN)
 
-    if (githubToken) {
-      env.GITHUB_TOKEN = githubToken
-      env.OPENAI_API_KEY = githubToken
-    } else {
-      delete env.GITHUB_TOKEN
-      delete env.OPENAI_API_KEY
-    }
-
-    delete env.GEMINI_API_KEY
-    delete env.GEMINI_MODEL
-    delete env.GEMINI_BASE_URL
-    delete env.GOOGLE_API_KEY
-    delete env.CODEX_API_KEY
-    delete env.CHATGPT_ACCOUNT_ID
-    delete env.CODEX_ACCOUNT_ID
-
-    return env
+    return buildCompatibilityProcessEnv(processEnv, {
+      NETRUNNER_USE_GITHUB: '1',
+      NETRUNNER_USE_OPENAI: '1',
+      NETRUNNER_PROVIDER: 'github',
+      OPENAI_BASE_URL:
+        persistedEnv.OPENAI_BASE_URL ||
+        processEnv.OPENAI_BASE_URL ||
+        DEFAULT_GITHUB_MODELS_BASE_URL,
+      OPENAI_MODEL:
+        persistedEnv.OPENAI_MODEL ||
+        processEnv.OPENAI_MODEL ||
+        DEFAULT_GITHUB_MODELS_MODEL,
+      ...(githubToken ? { GITHUB_TOKEN: githubToken, OPENAI_API_KEY: githubToken } : {}),
+    })
   }
-
-  const env: NodeJS.ProcessEnv = {
-    ...processEnv,
-    NETRUNNER_USE_OPENAI: '1',
-  }
-
-  delete env.NETRUNNER_USE_GEMINI
-  delete env.GEMINI_API_KEY
-  delete env.GEMINI_MODEL
-  delete env.GEMINI_BASE_URL
-  delete env.GOOGLE_API_KEY
 
   if (options.profile === 'ollama') {
     const getOllamaBaseUrl =
@@ -481,27 +415,16 @@ export async function buildLaunchEnv(options: {
     const resolveOllamaModel =
       options.resolveOllamaDefaultModel ?? (async () => 'llama3.1:8b')
 
-    env.OPENAI_BASE_URL = persistedEnv.OPENAI_BASE_URL || getOllamaBaseUrl()
-    env.OPENAI_MODEL =
-      persistedEnv.OPENAI_MODEL ||
-      (await resolveOllamaModel(options.goal))
-
-    delete env.OPENAI_API_KEY
-    delete env.CODEX_API_KEY
-    delete env.CHATGPT_ACCOUNT_ID
-    delete env.CODEX_ACCOUNT_ID
-
-    return env
+    return buildCompatibilityProcessEnv(processEnv, {
+      NETRUNNER_USE_OPENAI: '1',
+      OPENAI_BASE_URL: persistedEnv.OPENAI_BASE_URL || getOllamaBaseUrl(),
+      OPENAI_MODEL:
+        persistedEnv.OPENAI_MODEL ||
+        (await resolveOllamaModel(options.goal)),
+    })
   }
 
   if (options.profile === 'codex') {
-    env.OPENAI_BASE_URL =
-      persistedEnv.OPENAI_BASE_URL && isCodexBaseUrl(persistedEnv.OPENAI_BASE_URL)
-        ? persistedEnv.OPENAI_BASE_URL
-        : DEFAULT_CODEX_BASE_URL
-    env.OPENAI_MODEL = persistedEnv.OPENAI_MODEL || 'codexplan'
-    delete env.OPENAI_API_KEY
-
     const codexKey =
       sanitizeApiKey(processEnv.CODEX_API_KEY) ||
       sanitizeApiKey(persistedEnv.CODEX_API_KEY)
@@ -512,20 +435,17 @@ export async function buildLaunchEnv(options: {
       liveCodexCredentials.accountId ||
       persistedEnv.CHATGPT_ACCOUNT_ID ||
       persistedEnv.CODEX_ACCOUNT_ID
-    if (codexKey) {
-      env.CODEX_API_KEY = codexKey
-    } else {
-      delete env.CODEX_API_KEY
-    }
 
-    if (codexAccountId) {
-      env.CHATGPT_ACCOUNT_ID = codexAccountId
-    } else {
-      delete env.CHATGPT_ACCOUNT_ID
-    }
-    delete env.CODEX_ACCOUNT_ID
-
-    return env
+    return buildCompatibilityProcessEnv(processEnv, {
+      NETRUNNER_USE_OPENAI: '1',
+      OPENAI_BASE_URL:
+        persistedEnv.OPENAI_BASE_URL && isCodexBaseUrl(persistedEnv.OPENAI_BASE_URL)
+          ? persistedEnv.OPENAI_BASE_URL
+          : DEFAULT_CODEX_BASE_URL,
+      OPENAI_MODEL: persistedEnv.OPENAI_MODEL || 'codexplan',
+      ...(codexKey ? { CODEX_API_KEY: codexKey } : {}),
+      ...(codexAccountId ? { CHATGPT_ACCOUNT_ID: codexAccountId } : {}),
+    })
   }
 
   const defaultOpenAIModel = getGoalDefaultOpenAIModel(options.goal)
@@ -544,18 +464,56 @@ export async function buildLaunchEnv(options: {
     (!persistedEnv.OPENAI_MODEL && !persistedEnv.OPENAI_BASE_URL) ||
     persistedOpenAIRequest.transport === 'chat_completions'
 
-  env.OPENAI_BASE_URL =
-    (useShellOpenAIConfig ? processEnv.OPENAI_BASE_URL : undefined) ||
-    (usePersistedOpenAIConfig ? persistedEnv.OPENAI_BASE_URL : undefined) ||
-    DEFAULT_OPENAI_BASE_URL
-  env.OPENAI_MODEL =
-    (useShellOpenAIConfig ? processEnv.OPENAI_MODEL : undefined) ||
-    (usePersistedOpenAIConfig ? persistedEnv.OPENAI_MODEL : undefined) ||
-    defaultOpenAIModel
-  env.OPENAI_API_KEY = processEnv.OPENAI_API_KEY || persistedEnv.OPENAI_API_KEY
-  delete env.CODEX_API_KEY
-  delete env.CHATGPT_ACCOUNT_ID
-  delete env.CODEX_ACCOUNT_ID
+  return buildCompatibilityProcessEnv(processEnv, {
+    NETRUNNER_USE_OPENAI: '1',
+    OPENAI_BASE_URL:
+      (useShellOpenAIConfig ? processEnv.OPENAI_BASE_URL : undefined) ||
+      (usePersistedOpenAIConfig ? persistedEnv.OPENAI_BASE_URL : undefined) ||
+      DEFAULT_OPENAI_BASE_URL,
+    OPENAI_MODEL:
+      (useShellOpenAIConfig ? processEnv.OPENAI_MODEL : undefined) ||
+      (usePersistedOpenAIConfig ? persistedEnv.OPENAI_MODEL : undefined) ||
+      defaultOpenAIModel,
+    OPENAI_API_KEY: processEnv.OPENAI_API_KEY || persistedEnv.OPENAI_API_KEY,
+  })
+}
+
+const NETRUNNER_PROFILE_ENV_KEYS = [
+  'NETRUNNER_USE_OPENAI',
+  'NETRUNNER_USE_GEMINI',
+  'NETRUNNER_USE_GITHUB',
+  'NETRUNNER_USE_COPILOT',
+  'NETRUNNER_PROVIDER',
+  'NETRUNNER_PROFILE_NAME',
+  'OPENAI_BASE_URL',
+  'OPENAI_API_BASE',
+  'OPENAI_MODEL',
+  'OPENAI_API_KEY',
+  'CODEX_API_KEY',
+  'CODEX_ACCOUNT_ID',
+  'CHATGPT_ACCOUNT_ID',
+  'GEMINI_API_KEY',
+  'GEMINI_MODEL',
+  'GEMINI_BASE_URL',
+  'GOOGLE_API_KEY',
+  'GITHUB_TOKEN',
+  'GITHUB_COPILOT_TOKEN',
+  'COPILOT_TOKEN_EXPIRES_AT',
+] as const
+
+function clearManagedProfileEnv(targetEnv: NodeJS.ProcessEnv): void {
+  for (const key of NETRUNNER_PROFILE_ENV_KEYS) {
+    delete targetEnv[key]
+  }
+}
+
+function buildCompatibilityProcessEnv(
+  processEnv: NodeJS.ProcessEnv,
+  profileEnv: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const env = { ...processEnv }
+  clearManagedProfileEnv(env)
+  Object.assign(env, profileEnv)
   return env
 }
 
@@ -563,27 +521,7 @@ export function applyProfileEnvToProcessEnv(
   targetEnv: NodeJS.ProcessEnv,
   nextEnv: NodeJS.ProcessEnv,
 ): void {
-  const keysToClear = [
-    'NETRUNNER_USE_OPENAI',
-    'NETRUNNER_USE_GEMINI',
-    'NETRUNNER_USE_GITHUB',
-    'OPENAI_BASE_URL',
-    'OPENAI_MODEL',
-    'OPENAI_API_KEY',
-    'CODEX_API_KEY',
-    'CHATGPT_ACCOUNT_ID',
-    'CODEX_ACCOUNT_ID',
-    'GEMINI_API_KEY',
-    'GEMINI_MODEL',
-    'GEMINI_BASE_URL',
-    'GOOGLE_API_KEY',
-    'GITHUB_TOKEN',
-  ] as const
-
-  for (const key of keysToClear) {
-    delete targetEnv[key]
-  }
-
+  clearManagedProfileEnv(targetEnv)
   Object.assign(targetEnv, nextEnv)
 }
 

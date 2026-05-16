@@ -101,7 +101,7 @@ const PROVIDER_PRESETS: Record<ProfileProvider, {
     tokenVar: 'GEMINI_API_KEY',
     tokenHint: 'Paste your Google AI Studio API key (AIza...)',
     tokenPattern: /^AIza/,
-    detectFromEnv: () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
+    detectFromEnv: () => process.env.GEMINI_API_KEY,
   },
   ollama: {
     label: 'Ollama                local — no key required',
