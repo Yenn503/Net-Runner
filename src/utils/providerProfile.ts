@@ -389,8 +389,8 @@ export async function buildLaunchEnv(options: {
       persistedEnv.OPENAI_MODEL ||
       'gpt-4o'
     env.OPENAI_API_KEY =
-      processEnv.OPENAI_API_KEY ||
       persistedEnv.OPENAI_API_KEY ||
+      processEnv.OPENAI_API_KEY ||
       ''
 
     if (persistedEnv.GITHUB_COPILOT_TOKEN) {
@@ -431,9 +431,9 @@ export async function buildLaunchEnv(options: {
       DEFAULT_GITHUB_MODELS_MODEL
 
     const githubToken =
+      sanitizeApiKey(persistedEnv.GITHUB_TOKEN) ||
       sanitizeApiKey(processEnv.GITHUB_TOKEN) ||
-      sanitizeApiKey(processEnv.GH_TOKEN) ||
-      sanitizeApiKey(persistedEnv.GITHUB_TOKEN)
+      sanitizeApiKey(processEnv.GH_TOKEN)
 
     if (githubToken) {
       env.GITHUB_TOKEN = githubToken
