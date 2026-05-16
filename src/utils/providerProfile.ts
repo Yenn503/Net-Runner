@@ -381,12 +381,12 @@ export async function buildLaunchEnv(options: {
     delete env.NETRUNNER_USE_GEMINI
 
     env.OPENAI_BASE_URL =
-      processEnv.OPENAI_BASE_URL ||
       persistedEnv.OPENAI_BASE_URL ||
+      processEnv.OPENAI_BASE_URL ||
       'https://api.githubcopilot.com'
     env.OPENAI_MODEL =
-      processEnv.OPENAI_MODEL ||
       persistedEnv.OPENAI_MODEL ||
+      processEnv.OPENAI_MODEL ||
       'gpt-4o'
     env.OPENAI_API_KEY =
       persistedEnv.OPENAI_API_KEY ||
@@ -422,12 +422,12 @@ export async function buildLaunchEnv(options: {
     delete env.NETRUNNER_USE_GEMINI
 
     env.OPENAI_BASE_URL =
-      processEnv.OPENAI_BASE_URL ||
       persistedEnv.OPENAI_BASE_URL ||
+      processEnv.OPENAI_BASE_URL ||
       DEFAULT_GITHUB_MODELS_BASE_URL
     env.OPENAI_MODEL =
-      processEnv.OPENAI_MODEL ||
       persistedEnv.OPENAI_MODEL ||
+      processEnv.OPENAI_MODEL ||
       DEFAULT_GITHUB_MODELS_MODEL
 
     const githubToken =
