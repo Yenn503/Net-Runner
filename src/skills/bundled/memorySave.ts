@@ -38,7 +38,10 @@ Content to save: ${args || '(ask the user what to remember)'}
 
 3. Confirm the response includes an id field.
 
-4. If the server returns an error, fall back to writing a memory .md file.`,
+4. If the server returns an error, fall back to file-based memory:
+    a. Write a .md file with YAML frontmatter (name, description, type) to the auto-memory directory.
+    b. Add a one-line pointer to MEMORY.md index.
+    c. Valid types: user, feedback, project, reference.`,
         },
       ]
     },

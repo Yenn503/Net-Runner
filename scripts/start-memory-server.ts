@@ -62,7 +62,7 @@ async function main() {
     await waitForReady()
   } catch (err) {
     console.error(String(err))
-    if (proc.pid) treeKill(proc.pid!, 'SIGTERM')
+    if (proc.pid) treeKill(proc.pid, 'SIGTERM')
     process.exit(1)
   }
 

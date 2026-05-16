@@ -280,7 +280,7 @@ export function buildMemoryPrompt(params: {
 }): string {
   const { displayName, memoryDir, extraGuidelines } = params
   const fs = getFsImplementation()
-  const entrypoint = memoryDir + ENTRYPOINT_NAME
+  const entrypoint = join(memoryDir, ENTRYPOINT_NAME)
 
   // Directory creation is the caller's responsibility (loadMemoryPrompt /
   // loadAgentMemoryPrompt). Builders only read, they don't mkdir.
