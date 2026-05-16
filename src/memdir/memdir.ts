@@ -407,6 +407,20 @@ export function buildSearchingPastContextSection(autoMemDir: string): string[] {
   ]
 }
 
+async function isAgentMemoryRunning(): Promise<boolean> {
+  try {
+    const ctrl = new AbortController()
+    const id = setTimeout(() => ctrl.abort(), 300)
+    const res = await fetch('http://localhost:3111/agentmemory/livez', {
+      signal: ctrl.signal,
+    })
+    clearTimeout(id)
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 /**
  * Load the unified memory prompt for inclusion in the system prompt.
  * Dispatches based on which memory systems are enabled:
@@ -433,6 +447,15 @@ export async function loadMemoryPrompt(): Promise<string | null> {
         'auto' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
     })
     return buildAssistantDailyLogPrompt(skipIndex)
+  }
+
+  // agentmemory replaces file-based memory prompt when server is running
+  if (await isAgentMemoryRunning()) {
+    return [
+      'A local agentmemory server is active at http://localhost:3111.',
+      'Use the `memory-search` and `memory-save` skills for memory access.',
+      'This replaces the file-based auto-memory prompt (backups still written to disk).',
+    ].join('\n')
   }
 
   // Cowork injects memory-policy text via env var; thread into all builders.

@@ -207,11 +207,11 @@ Runs within active engagements, persists to `.netrunner/intelligence-state.json`
 
 ## Memory & RAG
 
-File-based, LLM-driven retrieval — no vector database needed.
+Dual-path: file-based LLM-driven retrieval (default) or agentmemory REST-backed semantic search.
 
-4 memory types (user, feedback, project, reference). Pipeline: scan memdir → Sonnet selects ≤5 relevant files → inject as system-reminder attachments.
+**File path:** 4 memory types. Pipeline: scan memdir → Sonnet selects ≤5 files → system-reminder attachments. Background extraction every turn. `NET_RUNNER_DISABLE_AUTO_MEMORY=1` to disable.
 
-Background extraction runs each turn. TEAMMEM optional sync with traversal protection. ON by default. `NET_RUNNER_DISABLE_AUTO_MEMORY=1` to disable.
+**agentmemory path:** When server running on `:3111` (`bun run memory:start`), prompt switches to `memory-search` / `memory-save` skills. BM25 + vector + graph hybrid search, no LLM calls. Falls back to file path automatically.
 
 ## Evidence & reporting
 

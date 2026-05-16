@@ -49,6 +49,7 @@
     "mcp": "node dist/cli.mjs mcp serve",
     "mcp:server": "bun run src/mcp/server.ts",
     "mcp:stdio": "bun run src/mcp/server.ts --stdio",
+    "memory:start": "bun run scripts/start-memory-server.ts",
     "test:security-slice": "bun test src/security",
     "test:provider-recommendation": "node --test --experimental-strip-types src/utils/providerRecommendation.test.ts src/utils/providerProfile.test.ts",
     "typecheck": "tsc --noEmit",
@@ -144,6 +145,9 @@
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "typescript": "^5.7.0"
+  },
+  "optionalDependencies": {
+    "@agentmemory/agentmemory": "^0.9.16"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -31,6 +31,8 @@ export type NetRunnerSkillName =
   | 'wifi-assessment'
   | 'mobile-app-testing'
   | 'binary-exploitation'
+  | 'memory-search'
+  | 'memory-save'
 
 export type NetRunnerSkillDefinition = {
   name: NetRunnerSkillName
@@ -258,6 +260,20 @@ export const NET_RUNNER_SKILL_DEFINITIONS: NetRunnerSkillDefinition[] = [
     name: 'binary-exploitation',
     title: 'Binary Exploitation',
     description: 'Triage (checksec/file/strings), static RE (ghidra/radare2/objdump), dynamic debugging (gdb/pwndbg/peda), ROP chain building, pwntools scripting, and controlled PoC development workflow.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'memory-search',
+    title: 'Memory Search',
+    description:
+      'Semantic memory search using the local agentmemory server (BM25 + vector + graph hybrid). Faster and more accurate than grepping .md files.',
+    primaryExecutionModel: 'skills-and-tools',
+  },
+  {
+    name: 'memory-save',
+    title: 'Memory Save',
+    description:
+      'Save an observation, fact, or finding to the local agentmemory server for future semantic retrieval. Extracts key concepts automatically.',
     primaryExecutionModel: 'skills-and-tools',
   },
 ] as const

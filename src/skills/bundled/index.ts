@@ -33,6 +33,8 @@ import { registerThreatIntelEnrichmentSkill } from './threatIntelEnrichment.js'
 import { registerWifiAssessmentSkill } from './wifiAssessment.js'
 import { registerMobileAppTestingSkill } from './mobileAppTesting.js'
 import { registerBinaryExploitationSkill } from './binaryExploitation.js'
+import { registerMemorySearchSkill } from './memorySearch.js'
+import { registerMemorySaveSkill } from './memorySave.js'
 
 function registerDigitalFootprintAssessmentSkill(): void {
   const definition = getNetRunnerSkillDefinition('digital-footprint-assessment')
@@ -560,6 +562,8 @@ export function initBundledSkills(): void {
   registerWifiAssessmentSkill()
   registerMobileAppTestingSkill()
   registerBinaryExploitationSkill()
+  registerMemorySearchSkill()
+  registerMemorySaveSkill()
   registerUpdateConfigSkill()
   registerKeybindingsSkill()
   registerVerifySkill()
