@@ -35,18 +35,22 @@ bun run dev:profile    # launch
 
 ## Specialist agents
 
-- 🎯 **Lead** — phase coordination, routing, scope enforcement, KG queries before discovery, MCTS planner
-- 🛰️ **Recon** — DNS, OSINT, surface mapping, cloud asset enum, 802.11 · `nmap`, `masscan`, `subfinder`, `amass`, `bbot`, `theHarvester`, `cloud_enum`, `airodump-ng`, `hcxdumptool`
-- 🕷️ **AppSec** — web (XSS/SQLi/SSRF/smuggling), API (JWT/IDOR), mobile (Frida/MobSF) · `sqlmap`, `dalfox`, `nuclei`, `ffuf`, `jwt_tool`, `arjun`, `jadx`, `frida`, `objection`
-- ⚔️ **Infra** — services, privesc, AD (Kerberos/ADCS/BloodHound), cloud paths, RE + CTF pwn · `netexec`, `impacket-*`, `bloodhound`, `certipy`, `linpeas`, `peirates`, `pacu`, `cloudfox`, `chisel`, `ghidra`, `pwntools`
-- 🔬 **CodeAudit** — SAST, secrets, CVE/IaC, memory + disk forensics, log timelining · `semgrep`, `gitleaks`, `noseyparker`, `grype`, `trivy`, `checkov`, `volatility3`, `sleuthkit`, `chainsaw`, `hayabusa`, `yara`
-- 📋 **Reporter** — chain-of-custody curation, retest, remediation validation, client reports · SHA-256 ledger, `nr_save_finding`, `nr_validate_finding`, `nr_export_report`
+Six specialists. Roles below describe ownership; tool names are examples of focus (specialists share the same harness tool surface).
 
-Each specialist can use the full toolset. Compressed internal output applies to all specialists except Lead and Reporter.
+- 🎯 **Lead** — coordinates phases, enforces scope/impact guardrails, and routes handoffs.
+- 🛰️ **Recon** — discovery and mapping (targets, services, OSINT, wireless, cloud surface).
+- 🕷️ **AppSec** — web/API/mobile vulnerability validation and exploit-path testing.
+- ⚔️ **Infra** — network/service exploitation, privesc, lateral movement, AD, and binary paths.
+- 🔬 **CodeAudit** — static analysis, secret/dependency/IaC checks, and DFIR-style forensics triage.
+- 📋 **Reporter** — evidence curation, retest validation, and final report export.
+
+Compressed internal output applies to all specialists except Lead and Reporter.
 
 ## Swarm
 
 The Lead routes work to specialists. Independent tasks can run in parallel, while dependent tasks are handed off in sequence with full context (scope, known facts, evidence refs, and next owner). Specialists can talk to each other directly through the Agent SDK channel, so not every decision goes back through the Lead. Findings and artifacts are saved to the shared `.netrunner/` ledger as work happens.
+
+Execution model: `nr_exec` is the workhorse for cataloged tools; `nr_discover` exposes agents/skills/workflows/capabilities on demand.
 
 Each specialist also carries a curated skill pack — domain playbooks under `.netrunner/skills/<namespace>/` (`recon:`, `appsec:`, `infra:`, `forensics:`, `lead:`, `reporting:`) covering the techniques that domain actually runs. See [Customization](docs/customization/README.md) to add your own.
 
