@@ -7,7 +7,7 @@
 [![MCP](https://img.shields.io/badge/MCP-FastMCP-7C3AED?style=for-the-badge)](https://www.anthropic.com/engineering/code-execution-with-mcp)
 [![License](https://img.shields.io/badge/Educational%20Use-red?style=for-the-badge)](#license)
 
-**Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools · 68 skill packs · 12 workflows · 10 APT simulations · exploit arsenal · C2 operations · optional MCP packs (Ghidra, Burp, Binary Ninja, Windows)
+**Agentic red-team runtime.** Workflow control · evidence ledger · specialist agents · 228 tools · exploit arsenal · C2 · evasion · optional MCP packs
 
 </div>
 
@@ -24,15 +24,15 @@ bun run dev:profile    # launch
 
 ## Providers
 
-| Type | Provider | Command |
-|------|----------|---------|
-| Subscription (OAuth) | GitHub Copilot | `bun run dev:copilot` |
-| Subscription (CLI auth) | OpenAI Codex / ChatGPT | `bun run dev:codex` |
-| Subscription (built-in) | Anthropic / Claude | `bun run dev:anthropic` |
-| API key | GitHub Models, OpenAI, Gemini | `GITHUB_TOKEN` / `OPENAI_API_KEY` / `GEMINI_API_KEY` |
-| Local | Ollama | `bun run dev:ollama` |
+| Type | Provider | Launch |
+|------|----------|--------|
+| Subscription (OAuth) | [![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-000?style=for-the-badge&logo=githubcopilot&logoColor=white)](https://github.com/features/copilot) | `bun run dev:copilot` |
+| Subscription (CLI auth) | [![OpenAI Codex](https://img.shields.io/badge/Codex-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com) | `bun run dev:codex` |
+| Subscription (built-in) | [![Anthropic](https://img.shields.io/badge/Anthropic-000?style=for-the-badge&logo=anthropic&logoColor=white)](https://anthropic.com) | `bun run dev:anthropic` |
+| API key | [![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com) · [![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white)](https://deepmind.google) · [![GitHub Models](https://img.shields.io/badge/GitHub%20Models-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com) | `GITHUB_TOKEN` / `OPENAI_API_KEY` / `GEMINI_API_KEY` |
+| Local | [![Ollama](https://img.shields.io/badge/Ollama-000?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com) | `bun run dev:ollama` |
 
-`bun run setup` saves a profile for all except Anthropic (uses built-in account/API-key onboarding).
+`bun run setup` saves a profile for all except Anthropic (uses built-in onboarding).
 
 ## Specialist agents
 
